@@ -1,0 +1,3361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pro X Admin — Bookings Management</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Material Design 3 Dark Theme Tokens */
+    :root {
+      --md-primary: #bb86fc;
+      --md-on-primary: #000000;
+      --md-primary-container: #4f378b;
+      --md-on-primary-container: #eaddff;
+      
+      --md-secondary: #03dac6;
+      --md-on-secondary: #000000;
+      --md-secondary-container: #005047;
+      --md-on-secondary-container: #70f3e3;
+      
+      --md-surface: #141218;
+      --md-surface-container-low: #1c1b20;
+      --md-surface-container: #201f24;
+      --md-surface-container-high: #2b292f;
+      --md-surface-container-highest: #36343a;
+      
+      --md-on-surface: #e4e1e6;
+      --md-on-surface-variant: #c7c5d0;
+      --md-outline: #918f9a;
+      --md-outline-variant: #48464c;
+      
+      --md-success: #00c853;
+      --md-success-container: #003d16;
+      --md-on-success-container: #76ff6f;
+      
+      --md-warning: #ffb74d;
+      --md-warning-container: #5c2e00;
+      --md-on-warning-container: #ffddb3;
+      
+      --md-error: #cf6679;
+      --md-error-container: #93000a;
+      --md-on-error-container: #ffdad6;
+
+      --md-elevation-1: 0px 1px 2px 0px rgba(0, 0, 0, 0.30), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+      --md-elevation-2: 0px 1px 2px 0px rgba(0, 0, 0, 0.30), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+      --md-elevation-3: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px 0px rgba(0, 0, 0, 0.30);
+      --md-elevation-4: 0px 6px 10px 4px rgba(0, 0, 0, 0.15), 0px 2px 3px 0px rgba(0, 0, 0, 0.30);
+      --md-elevation-5: 0px 8px 12px 6px rgba(0, 0, 0, 0.15), 0px 4px 4px 0px rgba(0, 0, 0, 0.30);
+    }
+
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    
+    body {
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at 50% 50%, #1e1b29 0%, var(--md-surface) 100%);
+      color: var(--md-on-surface);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    .app{display:flex;min-height:100vh}
+    
+    /* Sleek Sidebar Glassmorphism */
+    .sidebar {
+      width: 260px;
+      background: rgba(32, 31, 36, 0.65);
+      backdrop-filter: blur(24px) saturate(140%);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+    
+    .sidebar-logo {
+      padding: 28px 24px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .sidebar-logo h2 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: .5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sidebar-logo p {
+      font-size: 11px;
+      color: var(--md-on-surface-variant);
+      margin-top: 4px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .end-toggle {
+      display: flex;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 4px;
+      margin: 16px 16px 8px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .et {
+      flex: 1;
+      padding: 10px 0;
+      border: none;
+      background: transparent;
+      color: var(--md-on-surface-variant);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: all .25s ease;
+      text-align: center;
+    }
+    .et:hover { color: #fff; background: rgba(255,255,255,0.03); }
+    .et.active {
+      background: linear-gradient(135deg, var(--md-primary) 0%, #d6b4ff 100%);
+      color: var(--md-on-primary);
+      box-shadow: 0 4px 14px rgba(187, 134, 252, 0.4);
+      font-weight: 800;
+    }
+    
+    .nav-section { padding: 8px 12px 4px; }
+    .nav-section-label {
+      font-size: 9px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.35);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      padding: 8px 12px 4px;
+    }
+    
+    /* Navigation Items matching Admin Panel */
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all .22s cubic-bezier(0.2, 0, 0, 1);
+      color: var(--md-on-surface-variant);
+      font-size: 13.5px;
+      font-weight: 600;
+      margin: 4px 0;
+      border-left: 3px solid transparent;
+    }
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+      transform: translateX(3px);
+    }
+    .nav-item.active {
+      background: var(--md-primary-container);
+      color: var(--md-on-primary-container);
+      border-left-color: var(--md-primary);
+      box-shadow: var(--md-elevation-1);
+    }
+    .nav-item .ni { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+    .nav-item .nl { flex: 1; }
+    .nav-item .nc {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      background: var(--md-error);
+      color: var(--md-on-error-container);
+      border-radius: 9px;
+      font-size: 10px;
+      font-weight: 800;
+      animation: pp 1.8s infinite;
+    }
+    @keyframes pp { 0%, 100% { transform: scale(1) } 50% { transform: scale(1.15) } }
+    
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .live-chip {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--md-on-surface-variant);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--md-success);
+      box-shadow: 0 0 10px var(--md-success);
+      animation: blink 1.5s infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
+    
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    
+    /* Topbar Layout */
+    .topbar {
+      background: rgba(20, 18, 24, 0.7);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 20px 36px;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .topbar-left h1 { font-size: 24px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+    .topbar-left p { font-size: 12.5px; color: var(--md-on-surface-variant); margin-top: 4px; }
+    
+    .page { display: none; flex-direction: column; height: 100%; overflow-y: auto; }
+    .page.active { display: flex; }
+    .page-inner { padding: 28px 36px; flex: 1; width: 100%; display: block; }
+    
+    /* Premium Stats Row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .sc {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 18px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+      backdrop-filter: blur(10px);
+    }
+    .sc:hover {
+      transform: translateY(-3px);
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: var(--md-elevation-3);
+    }
+    .sc::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+    .sc.c-blue::before { background: var(--md-primary); }
+    .sc.c-warn::before { background: var(--md-warning); }
+    .sc.c-ok::before { background: var(--md-success); }
+    .sc.c-red::before { background: var(--md-error); }
+    .sc.c-purple::before { background: linear-gradient(90deg, #aa00ff, #d500f9); }
+    
+    .sc-num { font-size: 32px; font-weight: 800; color: #fff; line-height: 1; }
+    .sc-lbl {
+      font-size: 10.5px;
+      color: var(--md-on-surface-variant);
+      margin-top: 8px;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      font-weight: 700;
+    }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .section-title { font-size: 17px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; }
+    
+    .status-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    
+    /* Modern Status Tab Pills */
+    .sp {
+      padding: 7px 16px;
+      border-radius: 20px;
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--md-on-surface-variant);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .22s ease;
+      white-space: nowrap;
+    }
+    .sp:hover {
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+    }
+    .sp.active { color: #fff; border-color: transparent; font-weight: 800; }
+    .sp.s-all.active {
+      background: linear-gradient(135deg, var(--md-primary) 0%, #ab75ff 100%);
+      box-shadow: 0 4px 12px rgba(187, 134, 252, 0.35);
+    }
+    .sp.s-pending.active {
+      background: linear-gradient(135deg, var(--md-warning) 0%, #ffe082 100%);
+      color: #000;
+      box-shadow: 0 4px 12px rgba(255, 183, 77, 0.35);
+    }
+    .sp.s-assigned.active, .sp.s-approved.active, .sp.s-resolved.active {
+      background: linear-gradient(135deg, var(--md-success) 0%, #81c784 100%);
+      color: #000;
+      box-shadow: 0 4px 12px rgba(0, 200, 83, 0.35);
+    }
+    .sp.s-denied.active, .sp.s-cancelled.active {
+      background: linear-gradient(135deg, var(--md-error) 0%, #ef9a9a 100%);
+      color: #000;
+      box-shadow: 0 4px 12px rgba(207, 102, 121, 0.35);
+    }
+    .sp.s-critical.active {
+      background: linear-gradient(135deg, #e53935 0%, #ff5252 100%);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(229, 57, 53, 0.4);
+    }
+    .sp.s-sla.active, .sp.s-multi.active, .sp.s-processing.active {
+      background: linear-gradient(135deg, #e65100 0%, var(--md-warning) 100%);
+      color: #000;
+      box-shadow: 0 4px 12px rgba(230, 81, 0, 0.35);
+    }
+    .sp.s-high.active {
+      background: linear-gradient(135deg, #7b1fa2 0%, var(--md-primary) 100%);
+      box-shadow: 0 4px 12px rgba(187, 134, 252, 0.3);
+    }
+    
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+    
+    /* Ultimate Premium Glassmorphism Cards */
+    .rc {
+      background: rgba(32, 31, 36, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      overflow: hidden;
+      cursor: pointer;
+      backdrop-filter: blur(16px) saturate(120%);
+      transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+    }
+    .rc:hover {
+      transform: translateY(-5px);
+      background: rgba(43, 41, 47, 0.65);
+      border-color: rgba(187, 134, 252, 0.4);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 20px rgba(187, 134, 252, 0.15);
+    }
+    .rc.p-crit { border-left: 4px solid var(--md-error); }
+    .rc.p-high { border-left: 4px solid var(--md-warning); }
+    
+    .cimg {
+      position: relative;
+      width: 100%;
+      height: 160px;
+      overflow: hidden;
+      background: linear-gradient(135deg, #201f24 0%, #2b292f 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .cimg img { width: 100%; height: 100%; object-fit: cover; opacity: .75; transition: transform .5s ease; }
+    .rc:hover .cimg img { transform: scale(1.05); opacity: .9; }
+    .cimg-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 48px; opacity: .25; }
+    
+    .cbadge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--md-elevation-1);
+    }
+    .catbadge {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      padding: 4px 11px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .b-pending { background: rgba(255, 183, 77, 0.15); color: var(--md-warning); border: 1px solid rgba(255, 183, 77, 0.25); }
+    .b-assigned, .b-approved, .b-resolved, .b-completed { background: rgba(0, 200, 83, 0.15); color: #81c784; border: 1px solid rgba(0, 200, 83, 0.25); }
+    .b-denied, .b-cancelled { background: rgba(207, 102, 121, 0.15); color: var(--md-error); border: 1px solid rgba(207, 102, 121, 0.25); }
+    .b-awaiting, .b-processing { background: rgba(255, 183, 77, 0.15); color: var(--md-warning); border: 1px solid rgba(255, 183, 77, 0.25); }
+    
+    .cbody { padding: 18px 20px; }
+    .ctitle { font-size: 15.5px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 12px; }
+    .crows { display: flex; flex-direction: column; gap: 7px; }
+    .crow { font-size: 12.5px; color: var(--md-on-surface-variant); display: flex; align-items: flex-start; gap: 8px; }
+    .ci { width: 16px; flex-shrink: 0; font-size: 13px; text-align: center; }
+    
+    .vw { color: #fff; font-weight: 700; }
+    .vb { color: var(--md-primary); font-weight: 700; }
+    .vr { color: var(--md-error); font-weight: 700; }
+    .vo { color: var(--md-warning); font-weight: 700; }
+    .vg { color: var(--md-success); font-weight: 700; }
+    
+    .chip { padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; }
+    .chip-r { background: rgba(207, 102, 121, 0.15); color: var(--md-error); }
+    .chip-o { background: rgba(255, 183, 77, 0.15); color: var(--md-warning); }
+    .chip-g { background: rgba(0, 200, 83, 0.15); color: var(--md-success); }
+    
+    .snip {
+      background: rgba(255, 183, 77, 0.06);
+      border-left: 3px solid var(--md-warning);
+      padding: 6px 12px;
+      border-radius: 0 8px 8px 0;
+      font-size: 11.5px;
+      font-style: italic;
+      color: var(--md-on-surface-variant);
+      margin-top: 8px;
+    }
+    .sbadge { display: inline-block; background: rgba(187, 134, 252, 0.15); color: var(--md-primary); padding: 3px 10px; border-radius: 8px; font-size: 10.5px; font-weight: 700; }
+    
+    .cfoot {
+      font-size: 11.5px;
+      color: rgba(255, 255, 255, 0.35);
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .reassign-btn {
+      width: 100%;
+      margin-top: 12px;
+      padding: 10px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--md-primary) 0%, #aa72ff 100%);
+      color: var(--md-on-primary);
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all .22s ease;
+      box-shadow: 0 4px 12px rgba(187, 134, 252, 0.3);
+    }
+    .reassign-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(187, 134, 252, 0.5); }
+    
+    /* Sleek Translucent Modals */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 9, 12, 0.88);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+    }
+    .modal.active { display: flex; }
+    
+    .mbox {
+      background: var(--md-surface-container);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      max-width: 920px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.85);
+      position: relative;
+    }
+    
+    .mhdr {
+      padding: 24px 32px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      position: sticky;
+      top: 0;
+      background: var(--md-surface-container);
+      z-index: 10;
+    }
+    .mhdr-l .mtitle { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -0.2px; }
+    .mhdr-l .msub { font-size: 12.5px; color: var(--md-on-surface-variant); margin-top: 4px; }
+    
+    .close-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--md-on-surface-variant);
+      transition: all .2s;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .close-btn:hover { background: var(--md-primary); color: var(--md-on-primary); }
+    
+    .mbody { padding: 28px 32px; }
+    
+    .mfoot {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 20px 32px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      position: sticky;
+      bottom: 0;
+      background: var(--md-surface-container);
+    }
+    
+    /* Modern Dashboard Buttons matching styles */
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 20px;
+      font-size: 13.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all .25s ease;
+      min-width: 90px;
+      box-shadow: var(--md-elevation-1);
+    }
+    .btn:disabled { opacity: .28; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+    
+    .btn-sec { background: rgba(255, 255, 255, 0.08); color: var(--md-on-surface); }
+    .btn-sec:hover:not(:disabled) { background: rgba(255, 255, 255, 0.14); }
+    
+    .btn-approve {
+      background: linear-gradient(135deg, var(--md-success) 0%, #66bb6a 100%);
+      color: #000;
+      box-shadow: 0 4px 12px rgba(0, 200, 83, 0.25);
+    }
+    .btn-deny {
+      background: linear-gradient(135deg, var(--md-error) 0%, #ef5350 100%);
+      color: #000;
+      box-shadow: 0 4px 12px rgba(207, 102, 121, 0.25);
+    }
+    .btn-refund {
+      background: linear-gradient(135deg, var(--md-warning) 0%, #ffa726 100%);
+      color: #000;
+      box-shadow: 0 4px 12px rgba(255, 183, 77, 0.25);
+    }
+    .btn-reassign {
+      background: linear-gradient(135deg, var(--md-primary) 0%, #b388ff 100%);
+      color: #000;
+      box-shadow: 0 4px 12px rgba(187, 134, 252, 0.25);
+    }
+    .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--md-elevation-2); }
+    
+    /* Clean Cards Inside Modal */
+    .msec {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+    .msec h3 {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--md-primary);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .msec.hl { background: rgba(255, 183, 77, 0.05); border-color: rgba(255, 183, 77, 0.15); }
+    .msec.hl h3 { color: var(--md-warning); }
+    .msec.m-prov { background: rgba(3, 218, 198, 0.05); border-color: rgba(3, 218, 198, 0.15); }
+    .msec.m-prov h3 { color: var(--md-secondary); }
+    .msec.m-user { background: rgba(187, 134, 252, 0.05); border-color: rgba(187, 134, 252, 0.15); }
+    .msec.m-user h3 { color: var(--md-primary); }
+    
+    .igrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+    .ii .ilbl { font-size: 10px; color: var(--md-on-surface-variant); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+    .ii .ival { font-size: 13.5px; color: #fff; font-weight: 500; }
+    .ii .ival.big { font-size: 20px; color: var(--md-primary); font-weight: 800; }
+    
+    .ucard {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .uav { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; border: 3px solid var(--md-primary); flex-shrink: 0; }
+    .uav-ph {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--md-primary) 0%, #aa72ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--md-on-primary);
+      font-weight: 800;
+      font-size: 20px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(187, 134, 252, 0.2);
+    }
+    .ucard-info h4 { font-size: 14.5px; color: #fff; margin-bottom: 4px; }
+    .ucard-info p { font-size: 12.5px; color: var(--md-on-surface-variant); line-height: 1.7; }
+    
+    .tbadge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-left: 6px; }
+    .tPlatinum { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); }
+    .tGold { background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid rgba(255, 215, 0, 0.3); }
+    .tSilver { background: rgba(192, 192, 192, 0.15); color: #c0c0c0; border: 1px solid rgba(192, 192, 192, 0.3); }
+    .tBronze { background: rgba(205, 127, 50, 0.15); color: #cd7f32; border: 1px solid rgba(205, 127, 50, 0.3); }
+    
+    .hero-img { width: 100%; height: 260px; object-fit: cover; border-radius: 16px; margin-bottom: 18px; opacity: .8; border: 1px solid rgba(255, 255, 255, 0.08); }
+    .img-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 12px; }
+    .img-gallery img { width: 100%; height: 100px; object-fit: cover; border-radius: 10px; cursor: pointer; opacity: .75; border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.25s ease; }
+    .img-gallery img:hover { opacity: 1; transform: scale(1.05); border-color: var(--md-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    
+    .ptag { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 11.5px; font-weight: 700; }
+    .ptag-y { background: rgba(0, 200, 83, 0.15); color: #81c784; }
+    .ptag-n { background: rgba(255, 183, 77, 0.15); color: var(--md-warning); }
+    
+    .reason-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 13.5px;
+      color: var(--md-on-surface-variant);
+      line-height: 1.8;
+      margin-top: 10px;
+      white-space: pre-wrap;
+    }
+    
+    .action-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 16px; font-size: 12px; font-weight: 800; margin-bottom: 16px; }
+    .ap-user { background: rgba(187, 134, 252, 0.15); color: #eaddff; border: 1px solid rgba(187, 134, 252, 0.3); }
+    .ap-prov { background: rgba(3, 218, 198, 0.15); color: #70f3e3; border: 1px solid rgba(3, 218, 198, 0.3); }
+    .ap-issue { background: rgba(255, 183, 77, 0.15); color: #ffddb3; border: 1px solid rgba(255, 183, 77, 0.3); }
+    
+    .admin-ta {
+      width: 100%;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      font-size: 13px;
+      min-height: 80px;
+      resize: vertical;
+      font-family: inherit;
+      color: #fff;
+      transition: all .2s;
+    }
+    .admin-ta:focus { outline: none; border-color: var(--md-primary); background: rgba(255, 255, 255, 0.06); box-shadow: 0 0 10px rgba(187,134,252,0.15); }
+    .admin-ta::placeholder { color: rgba(255, 255, 255, 0.25); }
+    
+    .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+    
+    /* Sleek Provider Card inside Reassignment */
+    .pc {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all .25s ease;
+    }
+    .pc:hover { border-color: rgba(187, 134, 252, 0.4); background: rgba(187, 134, 252, 0.05); }
+    .pc.sel {
+      border-color: var(--md-primary);
+      background: rgba(187, 134, 252, 0.12);
+      box-shadow: 0 4px 16px rgba(187, 134, 252, 0.25);
+    }
+    .pc-hdr { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .pc-av { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--md-primary); }
+    .pc-av-ph {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--md-primary) 0%, #aa72ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--md-on-primary);
+      font-weight: 800;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .pc-name { font-weight: 800; font-size: 13.5px; color: #fff; margin-bottom: 2px; }
+    .pc-info { font-size: 11.5px; color: var(--md-on-surface-variant); margin: 3px 0; display: flex; align-items: center; gap: 5px; }
+    .cat-chip { background: rgba(187, 134, 252, 0.15); color: #c096ff; padding: 3px 8px; border-radius: 7px; font-size: 10px; font-weight: 700; }
+    
+    .loading { text-align: center; padding: 60px 20px; color: var(--md-on-surface-variant); }
+    .spinner { border: 4px solid rgba(255, 255, 255, 0.08); border-top-color: var(--md-primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 14px; }
+    @keyframes spin { to { transform: rotate(360deg) } }
+    
+    .empty { text-align: center; padding: 60px 20px; color: rgba(255, 255, 255, 0.35); }
+    .empty svg { width: 64px; height: 64px; margin-bottom: 12px; opacity: .3; fill: var(--md-on-surface-variant); }
+    .empty h3 { font-size: 17px; color: var(--md-on-surface); margin-bottom: 6px; }
+    .empty p { font-size: 13px; }
+    
+    .tw { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+    .toast { padding: 12px 20px; border-radius: 12px; color: #fff; font-weight: 700; font-size: 13.5px; max-width: 320px; animation: ti .25s ease-out; box-shadow: var(--md-elevation-3); }
+    @keyframes ti { from { transform: translateX(50px); opacity: 0 } to { opacity: 1; transform: none } }
+    .t-ok { background: linear-gradient(135deg, var(--md-success) 0%, #66bb6a 100%); color: #000; }
+    .t-err { background: linear-gradient(135deg, var(--md-error) 0%, #ff5252 100%); color: #000; }
+    .t-inf { background: linear-gradient(135deg, var(--md-primary) 0%, #b388ff 100%); color: #000; }
+    
+    .cfm-ov { display: none; position: fixed; inset: 0; background: rgba(10, 9, 12, 0.88); z-index: 9999; align-items: center; justify-content: center; padding: 24px; backdrop-filter: blur(12px); }
+    .cfm-ov.open { display: flex; }
+    .cfm-box { background: var(--md-surface-container); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 28px; max-width: 420px; width: 100%; box-shadow: var(--md-elevation-5); }
+    .cfm-box h3 { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+    .cfm-box p { font-size: 13.5px; color: var(--md-on-surface-variant); line-height: 1.7; margin-bottom: 20px; }
+    .cfm-btns { display: flex; gap: 10px; }
+    
+    @media(max-width:900px){
+      .mbox{border-radius:0;max-height:100vh}
+      .mbody,.mfoot{padding:18px 14px}
+    }
+    .glass-card{
+  position: relative;
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 18px 40px rgba(0,0,0,.22);
+  backdrop-filter: blur(18px) saturate(1.08);
+}
+
+.card-compact{
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.compact-body{
+  padding: 16px 16px 14px;
+}
+
+.card-topline{
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg,#667eea,#8b5cf6);
+}
+.card-topline-refund{
+  background: linear-gradient(90deg,#f57c00,#ffa726);
+}
+.card-topline-reassign{
+  background: linear-gradient(90deg,#667eea,#764ba2);
+}
+.card-topline-cancel-provider{
+  background: linear-gradient(90deg,#f57c00,#ef5350);
+}
+.card-topline-cancel-user{
+  background: linear-gradient(90deg,#667eea,#42a5f5);
+}
+.card-topline-cancel-issue{
+  background: linear-gradient(90deg, #ffc107, #ffa726);
+}
+
+.card-head-row{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:12px;
+}
+
+.card-subtitle{
+  font-size:11px;
+  color:rgba(255,255,255,.48);
+  margin-top:3px;
+  letter-spacing:.2px;
+}
+
+.card-meta-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:12px;
+}
+
+.meta-pill{
+  min-height:40px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.08);
+  font-size:12px;
+  color:rgba(255,255,255,.78);
+}
+
+.mini-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.3px;
+  white-space:nowrap;
+}
+
+.rc .ctitle{
+  white-space:normal;
+  overflow:visible;
+  text-overflow:unset;
+  line-height:1.35;
+  font-size:15px;
+  margin-bottom:0;
+}
+.clean-card{
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.10);
+  background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+  box-shadow:0 10px 24px rgba(0,0,0,.18);
+}
+
+.clean-card:hover{
+  transform:translateY(-3px);
+  background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+  box-shadow:0 14px 28px rgba(0,0,0,.22);
+}
+
+.clean-cover{
+  position:relative;
+  height:150px;
+  background:linear-gradient(135deg,#202244,#2d315d);
+  overflow:hidden;
+}
+
+.clean-cover img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  opacity:.92;
+}
+
+.clean-cover-fallback{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:42px;
+  color:rgba(255,255,255,.45);
+}
+
+.clean-overlay{
+  position:absolute;
+  inset:0;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  padding:12px;
+  background:linear-gradient(to bottom, rgba(0,0,0,.22), rgba(0,0,0,.02) 55%, rgba(0,0,0,.18));
+}
+
+.subtle-badge{
+  background:rgba(255,255,255,.14);
+  color:rgba(255,255,255,.92);
+  border:1px solid rgba(255,255,255,.18);
+}
+
+.clean-note{
+  margin-top:2px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  color:rgba(255,255,255,.78);
+  font-size:12px;
+  line-height:1.45;
+}
+  </style>
+</head>
+<body>
+<div class="app">
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h2>⚙️ Pro X Admin</h2>
+    <p>Bookings Management</p>
+  </div>
+
+  <div id="nav-user">
+    <div class="nav-section-label">Admin Queue</div>
+    <div class="nav-section">
+      <div class="nav-item active" data-page="u-cancel" onclick="goPage('u-cancel')">
+        <span class="ni">❌</span><span class="nl">Cancellation Requests</span>
+        <span class="nc" id="dot-uc" style="display:none">0</span>
+      </div>
+
+      <div class="nav-item" data-page="u-refund" onclick="goPage('u-refund')">
+        <span class="ni">💸</span><span class="nl">Refund Requests</span>
+        <span class="nc" id="dot-uf" style="display:none">0</span>
+      </div>
+
+      <div class="nav-item" data-page="u-reassign" onclick="goPage('u-reassign')">
+        <span class="ni">🔄</span><span class="nl">Reassignment Queue</span>
+        <span class="nc" id="dot-ur" style="display:none">0</span>
+      </div>
+
+      <div class="nav-item" data-page="u-awaiting" onclick="goPage('u-awaiting')">
+        <span class="ni">⏳</span><span class="nl">Awaiting Provider</span>
+        <span class="nc" id="dot-ua" style="display:none">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="live-chip"><div class="live-dot"></div>Real-time sync active</div>
+  </div>
+</div>
+
+  <div class="main">
+<div class="topbar">
+  <div class="topbar-left">
+    <h1 id="topbar-title">Cancellation Requests</h1>
+    <p id="topbar-sub">Review cancellations, refunds, reassignments, and awaiting-provider cases</p>
+  </div>
+</div>
+
+ <!-- USER CANCELLATIONS -->
+<div class="page active" id="page-u-cancel">
+  <div class="page-inner">
+    <div class="stats-row">
+      <div class="sc c-warn"><div class="sc-num" id="ucs-p">0</div><div class="sc-lbl">Pending</div></div>
+      <div class="sc c-ok"><div class="sc-num" id="ucs-a">0</div><div class="sc-lbl">Approved</div></div>
+      <div class="sc c-red"><div class="sc-num" id="ucs-d">0</div><div class="sc-lbl">Denied</div></div>
+      <div class="sc c-blue"><div class="sc-num" id="ucs-t">0</div><div class="sc-lbl">Total</div></div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">Cancellation Requests</div>
+      <div class="status-pills" id="uc-pills">
+        <button class="sp s-pending active" data-f="pending">⏳ Pending</button>
+        <button class="sp s-all" data-f="user_only">👤 User Cancelled</button>
+        <button class="sp s-all" data-f="provider_only">🔧 Provider Cancelled</button>
+        <button class="sp s-approved" data-f="approved">✅ Approved</button>
+        <button class="sp s-denied" data-f="denied">❌ Denied</button>
+        <button class="sp s-all" data-f="all">All</button>
+      </div>
+    </div>
+
+    <div class="clean-note" style="margin-bottom:16px;">
+      <strong>Admin guide:</strong><br>
+      Provider cancelled → wait for user choice first. If user chooses refund, process refund. If user chooses reassignment, assign replacement provider. If user has not chosen yet, wait for user decision.<br>
+      User cancelled → admin decides refund, reassignment, or deny.
+    </div>
+
+    <div class="loading" id="uc-loading"><div class="spinner"></div><div>Loading…</div></div>
+    <div class="cards-grid" id="uc-grid"></div>
+  </div>
+</div>
+
+
+    <!-- USER REFUNDS -->
+    <div class="page" id="page-u-refund">
+      <div class="page-inner">
+        <div class="stats-row">
+          <div class="sc c-warn"><div class="sc-num" id="pfs-p">0</div><div class="sc-lbl">Pending</div></div>
+          <div class="sc c-ok"><div class="sc-num" id="pfs-d">0</div><div class="sc-lbl">Processed</div></div>
+          <div class="sc c-blue"><div class="sc-num" id="pfs-t">0</div><div class="sc-lbl">Total</div></div>
+        </div>
+        <div class="section-header">
+          <div class="section-title">💸 User Refund Requests</div>
+          <div class="status-pills" id="pf-pills">
+            <button class="sp s-pending active" data-f="pending">⏳ Pending</button>
+            <button class="sp s-processing" data-f="processed">✅ Processed</button>
+            <button class="sp s-all" data-f="all">All</button>
+          </div>
+        </div>
+        <div class="loading" id="pf-loading"><div class="spinner"></div><div>Loading…</div></div>
+        <div class="cards-grid" id="pf-grid"></div>
+      </div>
+    </div>
+
+    <!-- REASSIGNMENT -->
+    <div class="page" id="page-u-reassign">
+      <div class="page-inner">
+        <div class="stats-row">
+          <div class="sc c-warn"><div class="sc-num" id="prs-p">0</div><div class="sc-lbl">Pending</div></div>
+          <div class="sc c-ok"><div class="sc-num" id="prs-a">0</div><div class="sc-lbl">Assigned</div></div>
+          <div class="sc c-red"><div class="sc-num" id="prs-c">0</div><div class="sc-lbl">Cancelled</div></div>
+          <div class="sc c-purple"><div class="sc-num" id="prs-crit">0</div><div class="sc-lbl">Critical</div></div>
+          <div class="sc c-blue"><div class="sc-num" id="prs-t">0</div><div class="sc-lbl">Total</div></div>
+        </div>
+        <div class="section-header">
+          <div class="section-title">🔄 User Reassignment Queue</div>
+          <div class="status-pills" id="pr-pills">
+            <button class="sp s-pending active" data-f="pending">⏳ Pending</button>
+            <button class="sp s-assigned" data-f="assigned">✅ Assigned</button>
+            <button class="sp s-critical" data-f="critical">🔴 Critical</button>
+            <button class="sp s-high" data-f="high">🟣 High</button>
+            <button class="sp s-cancelled" data-f="cancelled">❌ Cancelled</button>
+            <button class="sp s-all" data-f="all">All</button>
+          </div>
+        </div>
+        <div class="loading" id="pr-loading"><div class="spinner"></div><div>Loading…</div></div>
+        <div class="cards-grid" id="pr-grid"></div>
+      </div>
+    </div>
+
+    <!-- AWAITING -->
+    <div class="page" id="page-u-awaiting">
+      <div class="page-inner">
+        <div class="stats-row">
+          <div class="sc c-red"><div class="sc-num" id="pas-c">0</div><div class="sc-lbl">Awaiting Provider</div></div>
+          <div class="sc c-warn"><div class="sc-num" id="pas-s">0</div><div class="sc-lbl">SLA Expired</div></div>
+          <div class="sc c-purple"><div class="sc-num" id="pas-m">0</div><div class="sc-lbl">Multi-Timeout</div></div>
+          <div class="sc c-blue"><div class="sc-num" id="pas-t">0</div><div class="sc-lbl">Total</div></div>
+        </div>
+        <div class="section-header">
+<div class="section-title">⏳ Awaiting Provider Bookings</div>
+          <div class="status-pills" id="pa-pills">
+            <button class="sp s-all active" data-f="all">All Bookings</button>
+            <button class="sp s-sla" data-f="sla">⏰ SLA Expired</button>
+            <button class="sp s-multi" data-f="multi">🔴 Multi-Timeout</button>
+          </div>
+        </div>
+        <div class="loading" id="pa-loading"><div class="spinner"></div><div>Loading…</div></div>
+        <div class="cards-grid" id="pa-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REASSIGNMENT MODAL -->
+<div id="r-modal" class="modal">
+  <div class="mbox">
+    <div class="mhdr">
+      <div class="mhdr-l">
+        <div class="mtitle" id="rm-title">Reassign Provider</div>
+        <div class="msub" id="rm-sub"></div>
+      </div>
+      <button class="close-btn" onclick="closeModal('r-modal')">×</button>
+    </div>
+    <div class="mbody" id="rm-body"></div>
+    <div class="mfoot" id="rm-foot">
+      <button class="btn btn-sec" onclick="closeModal('r-modal')">Close</button>
+      <button class="btn btn-deny" id="rm-deny-btn" onclick="rmDeny()">❌ Deny</button>
+      <button class="btn btn-refund" id="rm-refund-btn" onclick="rmRefund()">💸 Refund</button>
+      <button class="btn btn-reassign" id="rm-btn" onclick="confirmAssignment()" disabled>🔄 Assign Provider</button>
+    </div>
+  </div>
+</div>
+
+<!-- CANCELLATION MODAL -->
+<div id="c-modal" class="modal">
+  <div class="mbox">
+    <div class="mhdr">
+      <div class="mhdr-l">
+        <div class="mtitle" id="cm-title">Cancellation Request</div>
+        <div class="msub" id="cm-sub"></div>
+      </div>
+      <button class="close-btn" onclick="closeModal('c-modal')">×</button>
+    </div>
+    <div class="mbody" id="cm-body"></div>
+    <div class="mfoot" id="cm-foot"></div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div id="cfm-ov" class="cfm-ov">
+  <div class="cfm-box">
+    <h3 id="cfm-t"></h3>
+    <p id="cfm-p"></p>
+    <div class="cfm-btns">
+      <button class="btn btn-sec" style="flex:1" onclick="closeCfm()">Go back</button>
+      <button class="btn" style="flex:1" id="cfm-ok">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="tw" id="tw"></div>
+
+<script>
+/* FIREBASE */
+firebase.initializeApp({
+  apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+  authDomain: "phototester555.firebaseapp.com",
+  projectId: "phototester555",
+  storageBucket: "phototester555.firebasestorage.app",
+  messagingSenderId: "953997763616",
+  appId: "1:953997763616:web:4ac177ad8e79c5f38b8845",
+  measurementId: "G-6VS0G0NQ7K"
+});
+const db = firebase.firestore();
+const auth = firebase.auth();
+const TS = () => firebase.firestore.FieldValue.serverTimestamp();
+
+/* UTILS */
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const inr = n => '₹' + (Number(n)||0).toLocaleString('en-IN');
+const ini = n => (n||'?').split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?';
+
+function fmtTs(v){
+  if(!v) return '—';
+  try{
+    const d = v?.toDate ? v.toDate() : new Date(v.seconds ? v.seconds*1000 : v);
+    return d.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  }catch{
+    return '—';
+  }
+}
+
+let ucAll = [];
+let ucUnsub = null;
+
+
+
+let prAll = [];
+let prUnsub = null;
+let prCurrent = null;
+let prSelProv = null;
+
+
+
+let cCurrent = null;
+
+function toast(msg, type='inf', dur=3200){
+  const wrap=document.getElementById('tw');
+  const el=document.createElement('div');
+  el.className=`toast t-${type}`;
+  el.textContent=msg;
+  wrap.appendChild(el);
+  setTimeout(()=>{
+    el.style.cssText='opacity:0;transform:translateX(50px);transition:all .3s';
+    setTimeout(()=>el.remove(),350);
+  }, dur);
+}
+let _cfmCb=null;
+function showCfm(title,text,label,cls,cb){
+  document.getElementById('cfm-t').textContent=title;
+  document.getElementById('cfm-p').textContent=text;
+  const b=document.getElementById('cfm-ok');
+  b.textContent=label;
+  b.className=`btn ${cls}`;
+  _cfmCb=cb;
+  document.getElementById('cfm-ov').classList.add('open');
+}
+function closeCfm(){
+  document.getElementById('cfm-ov').classList.remove('open');
+  _cfmCb=null;
+}
+document.getElementById('cfm-ok').addEventListener('click',()=>{
+  const cb=_cfmCb;
+  closeCfm();
+  if(cb) cb();
+});
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+['r-modal','c-modal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{
+    if(e.target===document.getElementById(id)) closeModal(id);
+  });
+});
+function setDot(id,n){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.textContent=n>99?'99+':n;
+  el.style.display=n>0?'inline-flex':'none';
+}
+function emptyState(msg){
+  return `<div class="empty"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><h3>No Results</h3><p>${esc(msg)}</p></div>`;
+}
+function errState(msg){
+  return `<div class="empty"><h3>⚠️ Error</h3><p>${esc(msg)}</p></div>`;
+}
+function stageLabel(stage){
+  const map={
+    0:'Stage 0 · Pending',
+    1:'Stage 1 · Accepted',
+    2:'Stage 2 · Ongoing',
+    3:'Stage 3 · Samples Ready',
+    4:'Stage 4 · Completed',
+    5:'Stage 5 · Closed'
+  };
+  return map[stage] || `Stage ${stage}`;
+}
+function getBookingStageLabel(b){
+  const stage = b?.currentStage ?? b?.stage ?? b?.workflowStage ?? b?.stageAtTrigger;
+  if(stage !== undefined && stage !== null) return stageLabel(stage);
+  const s = String(b?.status || '').toLowerCase();
+  if(['pending','awaiting provider','request timed out'].includes(s)) return 'Stage 0 · Pending';
+  if(['accepted','booking confirmed'].includes(s)) return 'Stage 1 · Accepted';
+  if(['ongoing','service in progress','provider left mid-job'].includes(s)) return 'Stage 2 · Ongoing';
+  if(['samples ready'].includes(s)) return 'Stage 3 · Samples Ready';
+  if(['completed'].includes(s)) return 'Stage 4 · Completed';
+  if(['cancelled'].includes(s)) return 'Cancelled';
+  return 'Unknown Stage';
+}
+function getRefundMeta(booking){
+  const total = Number(
+    booking?.estimatedSubtotal ??
+    booking?.selectedPricing?.price ??
+    booking?.amount ??
+    0
+  );
+  // ✅ Refund is always from the ADVANCE PAID (10%), not the full service value
+  // The user only paid advanceAmount; the 90% balance is paid after service completion
+  const advancePaid = Number(
+    booking?.paymentStatus?.advanceAmount ??
+    Math.ceil(total * 0.1)
+  );
+  const stageText = getBookingStageLabel(booking);
+  let percent = 0;
+  if(stageText.includes('Stage 0')) percent = 100;
+  else if(stageText.includes('Stage 1')) percent = 80;
+  else if(stageText.includes('Stage 2')) percent = 50;
+  else if(stageText.includes('Stage 3')) percent = 25;
+  else percent = 0;
+  return { total, advancePaid, percent, refundAmount: Math.round((advancePaid*percent)/100) };
+}
+
+function getBookingAmount(obj){
+  return Number(obj?.bookingAmount ?? obj?.estimatedSubtotal ?? obj?.selectedPricing?.price ?? obj?.amount ?? 0);
+}
+
+function getBookingDisplayDate(obj){
+  if (!obj) return '—';
+
+  if (obj.selectedDate) {
+    try {
+      const d = new Date(obj.selectedDate + 'T00:00:00');
+      return d.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch(e) {}
+  }
+
+  const ts = obj.bookingTimestamp || obj.addedAt || obj.createdAt || obj.updatedAt || null;
+  return fmtTs(ts);
+}
+/* CACHE */
+const C={b:{},u:{},p:{},s:{}};
+async function getB(id){
+  if(!id) return null;
+  if(C.b[id]) return C.b[id];
+  try{
+    const d=await db.collection('bookings').doc(id).get();
+    if(d.exists){ C.b[id]={id:d.id,...d.data()}; return C.b[id]; }
+  }catch{}
+  return null;
+}
+async function getU(id){
+  if(!id) return null;
+  if(C.u[id]) return C.u[id];
+  try{
+    const d=await db.collection('users').doc(id).get();
+    if(d.exists){ C.u[id]={id:d.id,...d.data()}; return C.u[id]; }
+  }catch{}
+  return null;
+}
+async function getP(id){
+  if(!id) return null;
+  if(C.p[id]) return C.p[id];
+  try{
+    const d=await db.collection('providers').doc(id).get();
+    if(d.exists){ C.p[id]={id:d.id,...d.data()}; return C.p[id]; }
+  }catch{}
+  return null;
+}
+async function getSupportCaseByBookingId(bookingId){
+  if(!bookingId) return null;
+  if(C.s[bookingId]) return C.s[bookingId];
+  try{
+    let snap = await db.collection('supportCases').where('bookingId','==',bookingId).limit(1).get();
+    if(snap.empty){
+      snap = await db.collection('supportCases').where('link','==',bookingId).limit(1).get();
+    }
+    if(!snap.empty){
+      C.s[bookingId] = { id:snap.docs[0].id, ...snap.docs[0].data() };
+      return C.s[bookingId];
+    }
+  }catch{}
+  return null;
+}
+
+/* ROUTING */
+let currentPage = 'u-cancel';
+const LOADED = {};
+
+const PAGE_META = {
+  'u-cancel': {
+    title: 'Admin — Cancellation Requests',
+    sub: 'Filter user and provider cancellations from one place.'
+  },
+  'u-refund': {
+    title: 'Admin — Refund Requests',
+    sub: 'Refund cases awaiting admin handling or completion.'
+  },
+  'u-reassign': {
+    title: 'Admin — Reassignment Queue',
+    sub: 'Replacement-provider cases across booking lifecycle stages.'
+  },
+  'u-awaiting': {
+    title: 'Admin — Awaiting Provider',
+    sub: 'Bookings waiting on provider response or SLA timeout handling.'
+  }
+};
+
+
+const PAGE_LOADERS = {
+  'u-cancel'   : () => loadUC(),
+  'u-refund'   : () => loadPF(),
+  'u-reassign' : () => loadPR(),
+  'u-awaiting' : () => loadPA()
+};
+function setEnd(){ return; }
+
+
+
+function goPage(pageId){
+  currentPage=pageId;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===pageId));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===`page-${pageId}`));
+  const meta=PAGE_META[pageId]||{};
+  document.getElementById('topbar-title').textContent=meta.title||pageId;
+  document.getElementById('topbar-sub').textContent=meta.sub||'';
+  if(!LOADED[pageId]){
+    LOADED[pageId]=true;
+    PAGE_LOADERS[pageId]?.();
+  }
+}
+function wirePills(containerId, renderFn){
+  const root=document.getElementById(containerId);
+  if(!root) return;
+  root.querySelectorAll('.sp').forEach(b=>{
+    b.addEventListener('click',e=>{
+      root.querySelectorAll('.sp').forEach(x=>x.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      renderFn(e.currentTarget.dataset.f);
+    });
+  });
+}
+
+function normalizeCancelFromBooking(docId, bk){
+  const cr = bk.cancelRequest || {};
+  const userChoice = String(cr.userChoice || '').toLowerCase();
+  const rawStatus = String(cr.status || 'pending').toLowerCase();
+  const who = String(cr.by || 'user').toLowerCase();
+
+  let queueStatus = rawStatus;
+
+  if (who === 'provider') {
+    if (!userChoice) {
+      queueStatus = 'pending';
+    } else if (userChoice === 'refund' || userChoice === 'replacement') {
+      queueStatus = 'pending';
+    }
+  }
+
+  if (['user_chose_refund', 'user_chose_replacement', 'processing', 'needs_reassignment'].includes(rawStatus)) {
+    queueStatus = 'pending';
+  }
+
+  return {
+    id: docId,
+    bookingId: docId,
+    link: docId,
+
+    status: queueStatus,
+    rawStatus,
+    userChoice,
+    who,
+    cancelledBy: who,
+
+    reason: cr.reason || '',
+    when: cr.requestedAt || cr.userChoiceAt || bk.updatedAt || bk.createdAt,
+    type: cr.type || '',
+    prevStatus: cr.prevStatus || bk.status || '',
+    priority: cr.priority || 'NORMAL',
+
+    customerName: bk.customerName || '',
+    customerId: bk.customerId || '',
+    customerEmail: bk.customerEmail || '',
+    customerPhone: bk.customerPhone || '',
+    customerPhoto: bk.customerPhoto || '',
+
+    providerName: bk.providerName || '',
+    providerId: bk.providerId || '',
+    providerEmail: bk.providerEmail || '',
+    providerPhone: bk.providerPhone || '',
+
+    serviceTitle: bk.serviceName || bk.title || '',
+    category: bk.category || '',
+    bookingAmount: getBookingAmount(bk),
+    evidenceUrls: cr.evidenceUrls || [],
+
+    selectedDate: bk.selectedDate || '',
+    bookingTimestamp: bk.bookingTimestamp || null,
+    createdAt: bk.createdAt || null,
+    addedAt: bk.addedAt || null,
+    coverUrl: bk.coverUrl || '',
+    serviceImageUrl: bk.serviceImageUrl || '',
+    imageUrls: bk.imageUrls || [],
+
+    refundStatus: String(bk?.refundStatus?.status || '').toLowerCase(),
+    bookingStatus: String(bk?.status || '').toLowerCase(),
+    needsReassignment: !!bk?.needsReassignment
+  };
+}
+
+function normalizeSupportCase(docId, sc, booking){
+  return {
+    id: `sc_${docId}`,
+    supportCaseId: docId,
+    source: 'supportcase',
+    bookingId: sc.bookingId || booking?.id || '',
+    link: sc.bookingId || booking?.id || '',
+    status: String(sc.status || 'open').toLowerCase() === 'open' ? 'pending' : String(sc.status || 'pending').toLowerCase(),
+    who: 'user',
+    cancelledBy: 'user',
+    userChoice: '',
+    reason: sc.reason || sc.description || '',
+    when: sc.createdAt || booking?.updatedAt || booking?.createdAt || null,
+    type: sc.type || 'customer_issue',
+    prevStatus: sc.stageAtTrigger || booking?.status || '',
+    priority: sc.priority || ((String(sc.stageAtTrigger || '').toLowerCase() === 'ongoing') ? 'CRITICAL' : 'HIGH'),
+
+    customerName: booking?.customerName || '',
+    customerId: booking?.customerId || '',
+    customerEmail: booking?.customerEmail || '',
+    customerPhone: booking?.customerPhone || '',
+    customerPhoto: booking?.customerPhoto || '',
+
+    providerName: booking?.providerName || '',
+    providerId: booking?.providerId || '',
+    providerEmail: booking?.providerEmail || '',
+    providerPhone: booking?.providerPhone || '',
+
+    serviceTitle: booking?.serviceName || booking?.title || '',
+    category: booking?.category || '',
+    bookingAmount: getBookingAmount(booking),
+    evidenceUrls: sc.evidenceUrls || [],
+
+    selectedDate: booking?.selectedDate || '',
+    bookingTimestamp: booking?.bookingTimestamp || null,
+    createdAt: booking?.createdAt || null,
+    addedAt: booking?.addedAt || null,
+    coverUrl: booking?.coverUrl || '',
+    serviceImageUrl: booking?.serviceImageUrl || '',
+    imageUrls: booking?.imageUrls || [],
+
+    supportCaseStatus: sc.status || 'open',
+    stageAtTrigger: sc.stageAtTrigger || '',
+    supportCaseRaw: sc
+  };
+}
+
+function loadUC() {
+  const lEl = document.getElementById('uc-loading');
+  lEl.style.display = 'block';
+  if (ucUnsub) { ucUnsub(); ucUnsub = null; }
+
+  ucUnsub = db.collection('bookings').onSnapshot(async snap => {
+    try {
+      const bookingMap = {};
+      const allCancellationRows = [];
+
+      snap.docs.forEach(d => {
+        const bk = { id: d.id, ...d.data() };
+        bookingMap[d.id] = bk;
+
+        const by = String(bk?.cancelRequest?.by || '').toLowerCase();
+        if (['user', 'customer', 'provider'].includes(by)) {
+          const row = normalizeCancelFromBooking(d.id, bk);
+          if (row.status || row.reason) {
+            allCancellationRows.push(row);
+          }
+        }
+      });
+
+      const supportSnap = await db.collection('supportCases').get();
+      const supportRows = supportSnap.docs
+        .map(d => {
+          const sc = d.data();
+          const booking = bookingMap[sc.bookingId] || null;
+          return normalizeSupportCase(d.id, sc, booking);
+        })
+        .filter(row => {
+          const s = String(row.supportCaseStatus || '').toLowerCase();
+          return ['open', 'pending'].includes(s);
+        });
+
+      ucAll = [...allCancellationRows, ...supportRows].sort((a, b) => {
+        const ta = a.when?.seconds ? a.when.seconds : (a.when ? new Date(a.when).getTime() / 1000 : 0);
+        const tb = b.when?.seconds ? b.when.seconds : (b.when ? new Date(b.when).getTime() / 1000 : 0);
+        return tb - ta;
+      });
+
+      calcUCStats();
+      lEl.style.display = 'none';
+      renderUC('pending');
+    } catch (e) {
+      lEl.innerHTML = errState(e.message);
+    }
+  }, e => {
+    lEl.innerHTML = errState(e.message);
+  });
+}
+
+
+function calcUCStats(){
+  let p = 0, a = 0, d = 0;
+
+  ucAll.forEach(r => {
+    const s = String(r.status || '').toLowerCase();
+    if (s === 'pending') p++;
+    else if (s === 'approved' || s === 'resolved') a++;
+    else if (s === 'denied') d++;
+  });
+
+  document.getElementById('ucs-p').textContent = p;
+  document.getElementById('ucs-a').textContent = a;
+  document.getElementById('ucs-d').textContent = d;
+  document.getElementById('ucs-t').textContent = ucAll.length;
+  setDot('dot-uc', p);
+}
+
+wirePills('uc-pills', renderUC);
+
+function renderUC(f='pending'){
+  const g = document.getElementById('uc-grid');
+  g.innerHTML = '';
+
+  let list = ucAll;
+
+  if (f === 'pending') {
+    list = ucAll.filter(r => String(r.status || '').toLowerCase() === 'pending');
+  } else if (f === 'approved') {
+    list = ucAll.filter(r => ['approved','resolved'].includes(String(r.status || '').toLowerCase()));
+  } else if (f === 'denied') {
+    list = ucAll.filter(r => String(r.status || '').toLowerCase() === 'denied');
+  } else if (f === 'user_only') {
+    list = ucAll.filter(r => {
+      const who = String(r.who || r.cancelledBy || '').toLowerCase();
+      return who === 'user' || who === 'customer';
+    });
+  } else if (f === 'provider_only') {
+    list = ucAll.filter(r => {
+      const who = String(r.who || r.cancelledBy || '').toLowerCase();
+      return who === 'provider';
+    });
+  }
+
+  if (!list.length) {
+    g.innerHTML = emptyState('No cancellation requests match this filter');
+    return;
+  }
+
+  list.forEach(r => g.appendChild(buildCancelCard(r)));
+}
+
+
+
+
+let pfAll = [], pfUnsub = null;
+function loadPF(){
+  const lEl = document.getElementById('pf-loading');
+  lEl.style.display = 'block';
+  if (pfUnsub) { pfUnsub(); pfUnsub = null; }
+
+  pfUnsub = db.collection('bookings').onSnapshot(async snap => {
+    try {
+      const supportSnap = await db.collection('supportCases').get();
+
+      const supportMap = {};
+      supportSnap.docs.forEach(d => {
+        const sc = { id: d.id, ...d.data() };
+        const bid = sc.bookingId || sc.link;
+        if (!bid) return;
+        if (!supportMap[bid]) supportMap[bid] = [];
+        supportMap[bid].push(sc);
+      });
+
+      pfAll = snap.docs
+        .map(d => ({ id:d.id, ...d.data() }))
+        .filter(b => {
+          const refundStatus = String(b?.refundStatus?.status || '').toLowerCase();
+          const cancelStatus = String(b?.cancelRequest?.status || '').toLowerCase();
+          const userChoice = String(b?.cancelRequest?.userChoice || '').toLowerCase();
+          const supportCases = supportMap[b.id] || [];
+
+          const hasBookingRefund =
+            ['pending','processing','completed'].includes(refundStatus);
+
+          const hasUserChosenRefund =
+            userChoice === 'refund';
+
+          const hasSupportRefund =
+            supportCases.some(sc =>
+              String(sc?.resolution || '').toLowerCase() === 'refund' ||
+              String(sc?.type || '').toLowerCase().includes('refund') ||
+              (String(sc?.status || '').toLowerCase() === 'resolved' && Number(sc?.refundAmount || 0) > 0)
+            );
+
+          const hasApprovedCancelRefund =
+            ['approved','resolved'].includes(cancelStatus) &&
+            ['pending','processing','completed'].includes(refundStatus);
+
+          return hasBookingRefund || hasUserChosenRefund || hasSupportRefund || hasApprovedCancelRefund;
+        });
+
+      const pending = pfAll.filter(x => {
+        const refundStatus = String(x?.refundStatus?.status || '').toLowerCase();
+        const userChoice = String(x?.cancelRequest?.userChoice || '').toLowerCase();
+        return ['pending','processing'].includes(refundStatus) ||
+          (userChoice === 'refund' && !['pending','processing','completed'].includes(refundStatus));
+      }).length;
+
+      const processed = pfAll.filter(x =>
+        String(x?.refundStatus?.status || '').toLowerCase() === 'completed'
+      ).length;
+
+      document.getElementById('pfs-p').textContent = pending;
+      document.getElementById('pfs-d').textContent = processed;
+      document.getElementById('pfs-t').textContent = pfAll.length;
+      setDot('dot-uf', pending);
+
+      lEl.style.display = 'none';
+      renderPF('pending');
+    } catch (e) {
+      lEl.innerHTML = errState(e.message);
+    }
+  }, e => {
+    lEl.innerHTML = errState(e.message);
+  });
+}
+
+wirePills('pf-pills', renderPF);
+
+function renderPF(f='pending'){
+  const g = document.getElementById('pf-grid');
+  g.innerHTML = '';
+
+  let list = pfAll;
+
+  if (f === 'pending') {
+    list = pfAll.filter(x => {
+      const refundStatus = String(x?.refundStatus?.status || '').toLowerCase();
+      const userChoice = String(x?.cancelRequest?.userChoice || '').toLowerCase();
+      return ['pending','processing'].includes(refundStatus) ||
+        (userChoice === 'refund' && !['pending','processing','completed'].includes(refundStatus));
+    });
+  } else if (f === 'processed') {
+    list = pfAll.filter(x =>
+      String(x?.refundStatus?.status || '').toLowerCase() === 'completed'
+    );
+  }
+
+  if (!list.length) {
+    g.innerHTML = emptyState('No refund requests match this filter');
+    return;
+  }
+
+  list.forEach(b => {
+    const c = document.createElement('div');
+    const refundAmt = Number(b?.refundStatus?.amount || 0);
+    const refundStatus = String(b?.refundStatus?.status || 'pending').toLowerCase();
+    const userChoice = String(b?.cancelRequest?.userChoice || '').toLowerCase();
+
+    c.className = 'rc card-compact glass-card refund-card';
+    c.onclick = () => openCancelModal({
+      id: b.id,
+      bookingId: b.id,
+      link: b.id,
+      who: String(b?.cancelRequest?.by || 'user').toLowerCase(),
+      cancelledBy: String(b?.cancelRequest?.by || 'user').toLowerCase(),
+      status: refundStatus || 'pending',
+      rawStatus: String(b?.cancelRequest?.status || 'pending').toLowerCase(),
+      userChoice,
+      reason: b?.cancelRequest?.reason || 'Refund case',
+      prevStatus: b?.cancelRequest?.prevStatus || b?.status || '—',
+      priority: b?.cancelRequest?.priority || 'HIGH',
+      customerName: b?.customerName || '',
+      customerId: b?.customerId || '',
+      customerEmail: b?.customerEmail || '',
+      customerPhone: b?.customerPhone || '',
+      providerName: b?.providerName || '',
+      providerId: b?.providerId || '',
+      providerEmail: b?.providerEmail || '',
+      providerPhone: b?.providerPhone || '',
+      serviceTitle: b?.serviceName || b?.title || '',
+      category: b?.category || '',
+      bookingAmount: getBookingAmount(b),
+      evidenceUrls: b?.cancelRequest?.evidenceUrls || []
+    });
+
+    const isRefundDone = refundStatus === 'completed';
+    const badgeClass = isRefundDone ? 'b-completed' : 'b-processing';
+    const badgeLabel = isRefundDone ? 'Refund Completed' : (userChoice === 'refund' ? 'Refund Requested' : esc(refundStatus.toUpperCase()));
+    const footerLabel = isRefundDone ? 'Refund Processed' : 'Refund Queue';
+
+    c.innerHTML = `
+      <div class="card-topline card-topline-refund"></div>
+      <div class="cbody compact-body">
+        <div class="card-head-row">
+          <div>
+            <div class="ctitle">${esc(b?.serviceName || b?.title || 'Unknown Service')}</div>
+            <div class="card-subtitle">${esc(b?.category || 'General')}</div>
+          </div>
+          <div class="mini-badge ${badgeClass}">${badgeLabel}</div>
+        </div>
+
+        <div class="card-meta-grid">
+          <div class="meta-pill"><span>👤</span><span>${esc(b?.customerName || '—')}</span></div>
+          <div class="meta-pill"><span>🔧</span><span>${esc(b?.providerName || '—')}</span></div>
+          <div class="meta-pill"><span>💰</span><span>${inr(refundAmt || getBookingAmount(b))}</span></div>
+          <div class="meta-pill"><span>📍</span><span>${esc(getBookingStageLabel(b))}</span></div>
+        </div>
+
+        <div class="cfoot">
+          <span>${esc(getBookingDisplayDate(b))}</span>
+          <span class="sbadge">${footerLabel}</span>
+        </div>
+      </div>
+    `;
+    g.appendChild(c);
+  });
+}
+
+function loadPR(){
+  const lEl = document.getElementById('pr-loading');
+  lEl.style.display = 'block';
+  if (prUnsub) { prUnsub(); prUnsub = null; }
+
+  const normalizeReassignDoc = (doc) => {
+    const o = { id: doc.id, ...doc.data() };
+    return {
+      ...o,
+      status: String(o.status || 'pending').toLowerCase(),
+      collectionSource: doc.ref.parent.id
+    };
+  };
+
+  prUnsub = db.collection('bookings').onSnapshot(async bookingSnap => {
+    try {
+      const [legacySnap, snakeSnap] = await Promise.all([
+        db.collection('providerreplacementrequests').get(),
+        db.collection('provider_replacement_requests').get()
+      ]);
+
+      const map = new Map();
+
+      [...legacySnap.docs, ...snakeSnap.docs].forEach(doc => {
+        const row = normalizeReassignDoc(doc);
+        const key = `${row.bookingId || row.id}_${row.triggerType || ''}_${row.status || ''}`;
+        if (!map.has(key)) map.set(key, row);
+      });
+
+      bookingSnap.docs.forEach(doc => {
+        const b = { id: doc.id, ...doc.data() };
+        const userChoice = String(b?.cancelRequest?.userChoice || '').toLowerCase();
+        const cancelBy = String(b?.cancelRequest?.by || '').toLowerCase();
+        const status = String(b?.status || '').toLowerCase();
+
+        const shouldSurface =
+          userChoice === 'replacement' ||
+          status === 'awaiting reassignment' ||
+          status === 'awaiting provider' ||
+          !!b?.needsReassignment;
+
+        if (!shouldSurface) return;
+
+        const key = `${b.id}_booking_state`;
+        if (!map.has(key)) {
+          map.set(key, {
+            id: `booking_${b.id}`,
+            bookingId: b.id,
+            status: 'pending',
+            priority: String(b?.reassignmentPriority || (cancelBy === 'provider' ? 'HIGH' : 'NORMAL')).toUpperCase(),
+            triggerType: cancelBy === 'provider'
+              ? 'Provider cancel — customer requested replacement'
+              : 'Customer requested replacement',
+            customerId: b.customerId || null,
+            customerName: b.customerName || '',
+            customerEmail: b.customerEmail || '',
+            customerPhone: b.customerPhone || '',
+            category: b.category || '',
+            serviceName: b.serviceName || b.title || '',
+            location: b.location || '',
+            selectedDate: b.selectedDate || '',
+            selectedTime: b.selectedTime || '',
+            bookingAmount: getBookingAmount(b),
+            requestedAt: b?.cancelRequest?.userChoiceAt || b?.updatedAt || b?.createdAt,
+            stageAtTrigger: b?.currentStage ?? b?.stage ?? 0,
+            previousProvider: b?.previousProvider || {
+              id: b?.providerId || null,
+              name: b?.providerName || 'Unknown'
+            },
+            serviceImageUrl: b?.serviceImageUrl || b?.coverUrl || null,
+            imageUrls: b?.imageUrls || []
+          });
+        }
+      });
+
+      prAll = Array.from(map.values()).sort((a,b) => {
+        const ta = a.requestedAt?.seconds ? a.requestedAt.seconds : (a.requestedAt ? new Date(a.requestedAt).getTime()/1000 : 0);
+        const tb = b.requestedAt?.seconds ? b.requestedAt.seconds : (b.requestedAt ? new Date(b.requestedAt).getTime()/1000 : 0);
+        return tb - ta;
+      });
+
+      let p = 0, a = 0, cancelled = 0, crit = 0;
+      prAll.forEach(o => {
+        const s = String(o.status || '').toLowerCase().replace(/-/g,'');
+        const pri = String(o.priority || '').toUpperCase();
+        if (['pending','pendingadmin','awaitingprovider'].includes(s)) p++;
+        if (s === 'assigned') a++;
+        if (['cancelled','denied'].includes(s)) cancelled++;
+        if (pri === 'CRITICAL') crit++;
+      });
+
+      document.getElementById('prs-p').textContent = p;
+      document.getElementById('prs-a').textContent = a;
+      document.getElementById('prs-c').textContent = cancelled;
+      document.getElementById('prs-crit').textContent = crit;
+      document.getElementById('prs-t').textContent = prAll.length;
+      setDot('dot-ur', p);
+
+      lEl.style.display = 'none';
+      renderPR('pending');
+    } catch (e) {
+      lEl.innerHTML = errState(e.message);
+    }
+  }, e => {
+    lEl.innerHTML = errState(e.message);
+  });
+}
+
+
+wirePills('pr-pills',renderPR);
+function renderPR(f='pending'){
+  const g=document.getElementById('pr-grid');
+  g.innerHTML='';
+  let list=prAll;
+  if(f==='pending') list=prAll.filter(o=>['pending','pendingadmin'].includes(String(o.status||'').toLowerCase().replace(/-/g,'')));
+  else if(f==='assigned') list=prAll.filter(o=>String(o.status||'').toLowerCase()==='assigned');
+  else if(f==='critical') list=prAll.filter(o=>String(o.priority||'').toUpperCase()==='CRITICAL');
+  else if(f==='high') list=prAll.filter(o=>String(o.priority||'').toUpperCase()==='HIGH');
+  else if(f==='cancelled') list=prAll.filter(o=>['cancelled','denied'].includes(String(o.status||'').toLowerCase()));
+  if(!list.length){ g.innerHTML=emptyState('No reassignment requests match this filter'); return; }
+  list.forEach(o=>g.appendChild(buildReassignCard(o)));
+}
+
+/* AWAITING PROVIDER */
+let paAll=[], paUnsub=null;
+function loadPA(){
+  const lEl=document.getElementById('pa-loading');
+  lEl.style.display='block';
+  if(paUnsub){ paUnsub(); paUnsub=null; }
+
+  paUnsub=db.collection('bookings').where('status','==','Awaiting Provider')
+    .onSnapshot(snap=>{
+      paAll=snap.docs.map(d=>({id:d.id,...d.data()}));
+      const sla=paAll.filter(b=>b.slaExpiredAt).length;
+      const multi=paAll.filter(b=>(b.slaTimeoutCount||0)>=2).length;
+
+      document.getElementById('pas-c').textContent=paAll.length;
+      document.getElementById('pas-s').textContent=sla;
+      document.getElementById('pas-m').textContent=multi;
+      document.getElementById('pas-t').textContent=paAll.length;
+      setDot('dot-ua',paAll.length);
+
+      lEl.style.display='none';
+      renderPA('all');
+    },e=>{
+      lEl.innerHTML=errState(e.message);
+    });
+}
+wirePills('pa-pills',renderPA);
+function renderPA(f='all'){
+  const g=document.getElementById('pa-grid');
+  g.innerHTML='';
+  let list=paAll;
+  if(f==='sla') list=paAll.filter(b=>b.slaExpiredAt);
+  else if(f==='multi') list=paAll.filter(b=>(b.slaTimeoutCount||0)>=2);
+  if(!list.length){ g.innerHTML=emptyState('No awaiting-provider bookings match this filter'); return; }
+  list.forEach(b=>g.appendChild(buildAwaitingCard(b)));
+}
+
+function buildCancelCard(data){
+  const c = document.createElement('div');
+  c.className = 'rc card-compact glass-card clean-card';
+
+  const cancelledBy = String(data.who || data.cancelledBy || '').toLowerCase();
+  const byProv = cancelledBy === 'provider';
+  const status = String(data.status || 'pending').toLowerCase();
+  const userChoice = String(data.userChoice || '').toLowerCase();
+  const isCustomerIssue = data.type === 'customerissue' || data.type === 'customer_issue';
+
+  const cover = data.coverUrl || data.serviceImageUrl || data.imageUrls?.[0] || '';
+  const amount = getBookingAmount(data);
+
+  const badgeClass =
+    status === 'approved' ? 'b-approved' :
+    status === 'denied' ? 'b-denied' :
+    status === 'resolved' ? 'b-resolved' :
+    'b-pending';
+
+  const topLineClass = isCustomerIssue ? 'card-topline-cancel-issue' : (byProv ? 'card-topline-cancel-provider' : 'card-topline-cancel-user');
+
+  let actionText = '';
+  let recommendedText = '';
+
+  const isPreAccept = data.type === 'provider_rejected_pending';
+
+  if (isCustomerIssue) {
+    actionText = 'Customer Raised Issue';
+    recommendedText = 'Admin action required: Deny, Refund, or Reassign Provider';
+  } else if (byProv) {
+    if (isPreAccept) {
+      actionText = 'Provider declined before accepting';
+      recommendedText = 'Assign replacement provider directly — no user decision needed';
+    } else if (userChoice === 'refund') {
+      actionText = 'User chose refund';
+      recommendedText = 'Recommended: process refund';
+    } else if (userChoice === 'replacement') {
+      actionText = 'User chose reassignment';
+      recommendedText = 'Recommended: assign replacement provider';
+    } else {
+      actionText = 'User still needs to decide';
+      recommendedText = 'Waiting for user choice: refund or reassignment';
+    }
+  } else {
+    actionText = 'User cancelled';
+    recommendedText = 'Admin decides: refund, reassignment, or deny';
+  }
+
+  c.onclick = () => openCancelModal(data);
+
+  c.innerHTML = `
+    <div class="card-topline ${topLineClass}"></div>
+    <div class="clean-cover">
+      ${
+        cover
+          ? `<img src="${esc(cover)}" alt="${esc(data.serviceTitle || 'Service cover')}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`
+          : ''
+      }
+      <div class="clean-cover-fallback" style="${cover ? 'display:none;' : 'display:flex;'}">🗂️</div>
+      <div class="clean-overlay">
+        <span class="mini-badge ${badgeClass}">${esc(status.toUpperCase())}</span>
+        <span class="mini-badge subtle-badge">${isCustomerIssue ? 'Customer Issue' : (byProv ? 'Provider Cancelled' : 'User Cancelled')}</span>
+      </div>
+    </div>
+
+    <div class="cbody compact-body">
+      <div class="card-head-row">
+        <div>
+          <div class="ctitle">${esc(data.serviceTitle || 'Unknown Service')}</div>
+          <div class="card-subtitle">${esc(data.category || 'General')}</div>
+        </div>
+      </div>
+
+      <div class="card-meta-grid">
+        <div class="meta-pill"><span>👤</span><span>${esc(data.customerName || '—')}</span></div>
+        <div class="meta-pill"><span>🔧</span><span>${esc(data.providerName || '—')}</span></div>
+        <div class="meta-pill"><span>💰</span><span>${inr(amount)}</span></div>
+        <div class="meta-pill"><span>📅</span><span>${esc(getBookingDisplayDate(data))}</span></div>
+      </div>
+
+      <div class="clean-note">
+        <strong>${esc(actionText)}</strong><br>
+        ${esc(recommendedText)}
+      </div>
+
+      <div class="cfoot">
+        <span>${fmtTs(data.when)}</span>
+        <span class="sbadge">${isCustomerIssue ? 'Customer Issue' : (byProv ? 'Provider Flow' : 'User Flow')}</span>
+      </div>
+    </div>
+  `;
+  return c;
+}
+
+
+function buildReassignCard(o){
+  const c = document.createElement('div');
+  c.className = 'rc card-compact glass-card clean-card';
+
+  const s = String(o.status || 'pending').toLowerCase();
+  const amount = getBookingAmount(o);
+  const cover = o.serviceImageUrl || o.coverUrl || o.imageUrls?.[0] || '';
+
+  const badgeClass =
+    s === 'assigned' ? 'b-assigned' :
+    s === 'cancelled' || s === 'denied' ? 'b-denied' :
+    'b-pending';
+
+  c.onclick = () => openReassignModal(o);
+
+  c.innerHTML = `
+    <div class="card-topline card-topline-reassign"></div>
+    <div class="clean-cover">
+      ${
+        cover
+          ? `<img src="${esc(cover)}" alt="${esc(o.serviceName || 'Service cover')}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`
+          : ''
+      }
+      <div class="clean-cover-fallback" style="${cover ? 'display:none;' : 'display:flex;'}">🔄</div>
+      <div class="clean-overlay">
+        <span class="mini-badge ${badgeClass}">${esc(s.toUpperCase())}</span>
+        <span class="mini-badge subtle-badge">Reassignment</span>
+      </div>
+    </div>
+
+    <div class="cbody compact-body">
+      <div class="card-head-row">
+        <div>
+          <div class="ctitle">${esc(o.serviceName || 'Unknown Service')}</div>
+          <div class="card-subtitle">${esc(o.category || 'General')}</div>
+        </div>
+      </div>
+
+      <div class="card-meta-grid">
+        <div class="meta-pill"><span>👤</span><span>${esc(o.customerName || '—')}</span></div>
+        <div class="meta-pill"><span>🔧</span><span>${esc(o.previousProvider?.name || o.providerName || '—')}</span></div>
+        <div class="meta-pill"><span>💰</span><span>${inr(amount)}</span></div>
+        <div class="meta-pill"><span>📅</span><span>${esc(getBookingDisplayDate(o))}</span></div>
+      </div>
+
+      <div class="clean-note">${esc(o.triggerType || 'Replacement flow')}</div>
+
+      <div class="cfoot">
+        <span>${fmtTs(o.requestedAt || o.userSelectedAt)}</span>
+        <span class="sbadge">Replacement Queue</span>
+      </div>
+    </div>
+  `;
+  return c;
+}
+
+
+
+function buildAwaitingCard(b){
+  const c = document.createElement('div');
+  c.className = 'rc card-compact glass-card clean-card';
+
+  const cover = b.coverUrl || b.serviceImageUrl || b.imageUrls?.[0] || '';
+  const amount = getBookingAmount(b);
+  const isSlaExpired = !!b.slaExpiredAt;
+  const timeoutCount = b.slaTimeoutCount || 0;
+
+  let slaNote = 'Awaiting provider action';
+  if (timeoutCount >= 2) slaNote = `⚠️ Provider timed out ×${timeoutCount} — urgent`;
+  else if (isSlaExpired) slaNote = '⏰ SLA expired — provider did not respond within 4 hours';
+
+  c.innerHTML = `
+    <div class="card-topline ${isSlaExpired ? 'card-topline-awaiting' : 'card-topline-reassign'}"></div>
+    <div class="clean-cover">
+      ${cover ? `<img src="${esc(cover)}" alt="${esc(b.serviceName||b.title||'Service')}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : ''}
+      <div class="clean-cover-fallback" style="${cover?'display:none;':'display:flex;'}">⏳</div>
+      <div class="clean-overlay">
+        <span class="mini-badge ${isSlaExpired ? 'b-denied' : 'b-awaiting'}">${isSlaExpired ? '⏰ SLA EXPIRED' : 'AWAITING PROVIDER'}</span>
+        <span class="mini-badge subtle-badge">${timeoutCount >= 2 ? `Timeout ×${timeoutCount}` : 'Pending'}</span>
+      </div>
+    </div>
+
+    <div class="cbody compact-body">
+      <div class="card-head-row">
+        <div>
+          <div class="ctitle">${esc(b.serviceName || b.title || 'Unknown Service')}</div>
+          <div class="card-subtitle">${esc(b.category || 'General')}</div>
+        </div>
+      </div>
+
+      <div class="card-meta-grid">
+        <div class="meta-pill"><span>👤</span><span>${esc(b.customerName || '—')}</span></div>
+        <div class="meta-pill"><span>🔧</span><span>${esc(b.previousProvider?.name || b.providerName || '—')}</span></div>
+        <div class="meta-pill"><span>💰</span><span>${inr(amount)}</span></div>
+        <div class="meta-pill"><span>📅</span><span>${esc(getBookingDisplayDate(b))}</span></div>
+      </div>
+
+      <div class="clean-note" style="${isSlaExpired ? 'border-color:rgba(229,57,53,.3);background:rgba(229,57,53,.06);' : ''}">
+        ${esc(slaNote)}
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        ${!isSlaExpired ? `<button class="btn btn-deny" style="flex:1;padding:9px 12px;border-radius:10px;font-size:12px;"
+          onclick="event.stopPropagation();denyAwaitingBooking('${b.id}')">❌ Deny</button>` : ''}
+        <button class="btn btn-refund" style="flex:1;padding:9px 12px;border-radius:10px;font-size:12px;"
+          onclick="event.stopPropagation();openRefundPickerForAwaiting('${b.id}')">💸 Refund</button>
+        <button class="btn btn-reassign" style="flex:1;padding:9px 12px;border-radius:10px;font-size:12px;"
+          onclick="event.stopPropagation();triggerFromBooking('${b.id}')">🔄 Reassign</button>
+      </div>
+
+      <div class="cfoot">
+        <span>${isSlaExpired ? `SLA expired: ${fmtTs(b.slaExpiredAt)}` : esc(getBookingDisplayDate(b))}</span>
+        <span class="sbadge">Stage 0</span>
+      </div>
+    </div>
+  `;
+  return c;
+}
+
+/* OPEN CANCELLATION MODAL */
+
+async function openCancelModal(data){
+  cCurrent=data;
+  const bookingId=data.bookingId||data.link||data.id;
+  const cancelledBy = String(data.who || data.cancelledBy || '').toLowerCase();
+  const isCustomerIssue = data.type === 'customerissue' || data.type === 'customer_issue';
+
+  if (isCustomerIssue) {
+    document.getElementById('cm-title').textContent = `Customer Issue — ${data.serviceTitle || 'Service'}`;
+  } else {
+    document.getElementById('cm-title').textContent =
+      `${cancelledBy === 'provider' ? 'Provider Cancellation Request' : 'User Cancellation Request'} — ${data.serviceTitle || 'Service'}`;
+  }
+  document.getElementById('cm-sub').textContent=`Booking: ${bookingId}`;
+  const body=document.getElementById('cm-body');
+  body.innerHTML=`<div class="loading"><div class="spinner"></div><div>Loading…</div></div>`;
+  document.getElementById('c-modal').classList.add('active');
+
+  const [booking,userDoc,provDoc,supportCase] = await Promise.all([
+    getB(bookingId),
+    getU(data.customerId),
+    getP(data.providerId||data.provider),
+    getSupportCaseByBookingId(bookingId)
+  ]);
+
+  body.innerHTML=buildCancelBody(data,booking,userDoc,provDoc,supportCase);
+  buildCancelFoot(data,booking,supportCase);
+}
+function buildCancelBody(data,booking,userDoc,provDoc,supportCase){
+  const bookingId=data.bookingId||data.link||data.id;
+  const amount=getBookingAmount(booking||data);
+  const stageText=getBookingStageLabel(booking||data);
+  const refundMeta=getRefundMeta(booking||data);
+  const byProv=String(data.who||data.cancelledBy||'').toLowerCase()==='provider';
+  const status=String(data.status||'pending').toLowerCase();
+  const badgeCls=status==='approved'?'chip-g':status==='denied'?'chip-r':'chip-o';
+  const isCustomerIssue = data.type === 'customerissue' || data.type === 'customer_issue';
+
+  const uName=userDoc?.displayName||userDoc?.fullName||data.customerName||'Unknown';
+  const uEmail=userDoc?.email||userDoc?.identity?.email||data.customerEmail||'—';
+  const uPhone=userDoc?.phone||userDoc?.identity?.phone||data.customerPhone||'—';
+  const uPhoto=userDoc?.photoURL||data.customerPhoto||'';
+
+  const pName=provDoc?.fullName||`${provDoc?.firstName||''} ${provDoc?.lastName||''}`.trim()||data.providerName||'Unknown';
+  const pEmail=provDoc?.identity?.email||provDoc?.email||data.providerEmail||'—';
+  const pPhone=provDoc?.identity?.phone||provDoc?.phone||data.providerPhone||'—';
+  const pPhoto=provDoc?.profile?.photoURL||'';
+
+  const cover=booking?.coverUrl||booking?.serviceImageUrl||booking?.imageUrls?.[0]||'';
+  let h='';
+
+  if(cover) h+=`<img src="${esc(cover)}" class="hero-img" onerror="this.style.display='none'">`;
+
+  if (isCustomerIssue) {
+    h += `<div class="action-pill ap-issue">⚠️ Issue Raised by Customer</div>`;
+  } else {
+    h += `<div class="action-pill ${byProv ? 'ap-prov' : 'ap-user'}">
+      ${byProv ? '🔧 Cancellation Requested by Provider' : '👤 Cancellation Requested by User'}
+    </div>`;
+  }
+
+  h+=`<div class="msec"><h3>📋 Booking Summary</h3><div class="igrid">
+    <div class="ii"><div class="ilbl">Booking ID</div><div class="ival">${esc(bookingId)}</div></div>
+    <div class="ii"><div class="ilbl">Service</div><div class="ival">${esc(data.serviceTitle||booking?.serviceName||booking?.title||'—')}</div></div>
+    <div class="ii"><div class="ilbl">Category</div><div class="ival">${esc(data.category||booking?.category||'—')}</div></div>
+    <div class="ii"><div class="ilbl">${isCustomerIssue ? 'Raised By' : 'Cancelled By'}</div><div class="ival">${isCustomerIssue ? 'Customer Issue' : (byProv ? 'Provider' : 'User')}</div></div>
+    <div class="ii"><div class="ilbl">Stage</div><div class="ival">${esc(stageText)}</div></div>
+    <div class="ii"><div class="ilbl">Total Price</div><div class="ival big">${inr(amount)}</div></div>
+    <div class="ii"><div class="ilbl">Request Status</div><div class="ival"><span class="chip ${badgeCls}">${esc(status.toUpperCase())}</span></div></div>
+    <div class="ii"><div class="ilbl">Requested At</div><div class="ival">${fmtTs(data.when||booking?.cancelRequest?.requestedAt)}</div></div>
+    <div class="ii"><div class="ilbl">Advance Paid</div><div class="ival" style="color:#a5b4fc;font-weight:700">${inr(refundMeta.advancePaid)}</div></div>
+    <div class="ii"><div class="ilbl">Refund Suggestion</div><div class="ival">${refundMeta.percent}% of advance = ${inr(refundMeta.refundAmount)}</div></div>
+    <div class="ii"><div class="ilbl">User Choice</div><div class="ival">${isCustomerIssue ? 'Reassigned / Refund' : esc(data.userChoice ? data.userChoice.toUpperCase() : 'Pending User Decision')}</div></div>
+  </div></div>`;
+
+  if(data.reason){
+    h+=`<div class="msec hl"><h3>💬 Reason</h3><div class="reason-box">${esc(data.reason)}</div></div>`;
+  }
+
+  if(supportCase){
+    h+=`<div class="msec"><h3>🛠 Support Case</h3><div class="igrid">
+      <div class="ii"><div class="ilbl">Case ID</div><div class="ival">${esc(supportCase.id||'—')}</div></div>
+      <div class="ii"><div class="ilbl">Type</div><div class="ival">${esc(supportCase.type||supportCase.issueType||'—')}</div></div>
+      <div class="ii"><div class="ilbl">Status</div><div class="ival">${esc(supportCase.status||'—')}</div></div>
+      <div class="ii"><div class="ilbl">Priority</div><div class="ival">${esc(supportCase.priority||'—')}</div></div>
+    </div>${supportCase.description?`<div class="reason-box">${esc(supportCase.description)}</div>`:''}</div>`;
+  }
+
+  if(data.evidenceUrls?.length){
+    h+=`<div class="msec"><h3>🖼 Evidence</h3><div class="img-gallery">${data.evidenceUrls.map(u=>`<img src="${esc(u)}" onerror="this.style.display='none'">`).join('')}</div></div>`;
+  }
+
+  h+=`<div class="msec"><h3>👤 Customer</h3><div class="ucard">
+    ${uPhoto?`<img src="${esc(uPhoto)}" class="uav" onerror="this.outerHTML='<div class=uav-ph>${ini(uName)}</div>'">`:`<div class="uav-ph">${ini(uName)}</div>`}
+    <div class="ucard-info"><h4>${esc(uName)}</h4>
+      <p><b>Email:</b> ${esc(uEmail)}</p>
+      <p><b>Phone:</b> ${esc(uPhone)}</p>
+    </div>
+  </div></div>`;
+
+  h+=`<div class="msec m-prov"><h3>🔧 Provider</h3><div class="ucard">
+    ${pPhoto?`<img src="${esc(pPhoto)}" class="uav" onerror="this.outerHTML='<div class=uav-ph>${ini(pName)}</div>'">`:`<div class="uav-ph">${ini(pName)}</div>`}
+    <div class="ucard-info"><h4>${esc(pName)}</h4>
+      <p><b>Email:</b> ${esc(pEmail)}</p>
+      <p><b>Phone:</b> ${esc(pPhone)}</p>
+      <p><b>Category:</b> ${esc(booking?.category||data.category||'—')}</p>
+    </div>
+  </div></div>`;
+
+  h+=`<div class="msec"><h3>🗒 Admin Note</h3>
+    <textarea class="admin-ta" id="c-note" placeholder="Add admin note..."></textarea></div>`;
+
+  return h;
+}
+
+function buildCancelFoot(data, booking, supportCase){
+  const foot = document.getElementById('cm-foot');
+  const refundMeta = getRefundMeta(booking || data);
+
+  const isCustomerIssue = data.type === 'customerissue' || data.type === 'customer_issue' || booking?.status === 'Issue Raised';
+
+  let isCompleted = false;
+
+  if (isCustomerIssue) {
+    // For customer issues, we look at the supportCase or booking.issueRequest status
+    const scStatus = String(supportCase?.status || data.status || '').toLowerCase();
+    const scResolution = String(supportCase?.resolution || booking?.issueRequest?.resolution || '').toLowerCase();
+    const refundDone = String(booking?.refundStatus?.status || '').toLowerCase() === 'completed';
+    const isDenied = scStatus === 'denied' || scStatus === 'closed' || String(booking?.issueRequest?.status || '').toLowerCase() === 'denied';
+    const isResolved = scStatus === 'resolved' || String(booking?.issueRequest?.status || '').toLowerCase() === 'resolved';
+
+    isCompleted = refundDone || isDenied || isResolved || scResolution === 'reassigned' || scResolution === 'refund';
+  } else {
+    // For standard cancellation requests
+    const refundDone = String(data.refundStatus || booking?.refundStatus?.status || '').toLowerCase() === 'completed';
+    const isDenied   = String(data.rawStatus || data.status || booking?.cancelRequest?.status || '').toLowerCase() === 'denied';
+    const reassigned = String(booking?.cancelRequest?.resolution || '').toLowerCase() === 'reassign';
+
+    isCompleted = refundDone || isDenied || reassigned;
+  }
+
+  if (isCompleted) {
+    foot.innerHTML = `<button class="btn btn-sec" onclick="closeModal('c-modal')">Close</button>`;
+    return;
+  }
+
+  // Admin always gets all three options — regardless of who cancelled, user choice, or booking stage
+  foot.innerHTML = `
+    <button class="btn btn-sec" onclick="closeModal('c-modal')">Close</button>
+    <button class="btn btn-deny" onclick="showCfm('Deny Request','Deny this request and restore the booking to its previous status?','Deny','btn-deny',()=>uDeny(cCurrent))">❌ Deny</button>
+    <button class="btn btn-refund" onclick="showRefundDecision(cCurrent, ${refundMeta.percent}, ${refundMeta.refundAmount})">💸 Refund</button>
+    <button class="btn btn-reassign" onclick="showReassignDecision(cCurrent)">🔄 Reassign</button>
+  `;
+}
+
+
+
+
+function showRefundDecision(data, suggestedPercent, suggestedAmount) {
+  // Build a custom inline picker instead of the generic confirm overlay
+  const foot = document.getElementById('cm-foot');
+  const totalBooking = getBookingAmount(data) ||
+    (suggestedPercent > 0 ? Math.round(suggestedAmount / (suggestedPercent / 100)) : 0);
+  // ✅ Refundable base = advance paid (10% of booking), NOT the full service value
+  const advancePaid = Number(data.paymentStatus?.advanceAmount ?? Math.ceil(totalBooking * 0.1));
+
+  foot.innerHTML = `
+    <div style="width:100%;margin-bottom:10px;">
+      <div style="font-size:11px;color:rgba(255,255,255,.45);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">
+        Refund is from the Advance Paid
+      </div>
+      <div style="font-size:12px;margin-bottom:8px;display:flex;gap:16px;">
+        <span>💳 <strong style="color:#a5b4fc">Advance Paid: ₹${inr(advancePaid)}</strong></span>
+        <span style="color:rgba(255,255,255,.35)">| Total Booking: ₹${inr(totalBooking)}</span>
+      </div>
+      <div style="font-size:11px;color:rgba(255,200,100,.7);margin-bottom:10px;">
+        ⚠️ Only the advance amount (₹${inr(advancePaid)}) is refundable. The 90% balance was never charged.
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;" id="refund-pct-pills">
+        ${[0,25,50,80,100].map(p => `
+          <button onclick="selectRefundPct(${p},${advancePaid})" id="rpct-${p}"
+            style="padding:7px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,${p===suggestedPercent?'.0':'0.15'});
+            background:${p===suggestedPercent?'linear-gradient(135deg,#f57c00,#ffa726)':'transparent'};
+            color:${p===suggestedPercent?'#fff':'rgba(255,255,255,.5)'};font-size:12px;font-weight:700;cursor:pointer;">
+            ${p}%${p===suggestedPercent?' ★':''}
+          </button>`).join('')}
+        <button onclick="selectRefundPct('custom',${advancePaid})" id="rpct-custom"
+          style="padding:7px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.15);
+          background:transparent;color:rgba(255,255,255,.5);font-size:12px;font-weight:700;cursor:pointer;">
+          Custom %
+        </button>
+      </div>
+      <div id="refund-custom-wrap" style="display:none;margin-bottom:10px;">
+        <input id="refund-custom-input" type="number" min="0" max="100" placeholder="Enter % (0–100)"
+          style="width:100%;padding:10px;border-radius:9px;border:1.5px solid rgba(255,255,255,.15);
+          background:rgba(255,255,255,.06);color:#fff;font-size:14px;font-weight:700;"
+          oninput="updateCustomRefund(${advancePaid})">
+      </div>
+      <div id="refund-summary" style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:10px;min-height:20px;"></div>
+    </div>
+    <button class="btn btn-sec" onclick="closeModal('c-modal')">Close</button>
+    <button class="btn btn-refund" id="refund-confirm-btn" disabled
+      onclick="confirmCustomRefund(cCurrent)">Confirm Refund</button>
+  `;
+
+  // Auto-select suggested percent
+  selectRefundPct(suggestedPercent, advancePaid);
+}
+
+let _refundPct = 0, _refundAmt = 0;
+
+function selectRefundPct(pct, total) {
+  _refundPct = 0; _refundAmt = 0;
+  document.querySelectorAll('#refund-pct-pills button').forEach(b => {
+    b.style.background = 'transparent';
+    b.style.color = 'rgba(255,255,255,.5)';
+    b.style.borderColor = 'rgba(255,255,255,.15)';
+  });
+  const wrap = document.getElementById('refund-custom-wrap');
+
+  if (pct === 'custom') {
+    wrap.style.display = 'block';
+    const btn = document.getElementById('rpct-custom');
+    btn.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
+    btn.style.color = '#fff';
+    document.getElementById('refund-confirm-btn').disabled = true;
+    document.getElementById('refund-summary').textContent = 'Enter a custom percentage above.';
+    return;
+  }
+
+  wrap.style.display = 'none';
+  const amt = Math.round(total * pct / 100);
+  _refundPct = pct; _refundAmt = amt;
+
+  const btn = document.getElementById(`rpct-${pct}`);
+  if (btn) {
+    btn.style.background = 'linear-gradient(135deg,#f57c00,#ffa726)';
+    btn.style.color = '#fff';
+  }
+  document.getElementById('refund-summary').innerHTML =
+    `Refund <strong style="color:#ffa726">${pct}%</strong> → <strong style="color:#a5b4fc">₹${inr(amt)}</strong> to customer`;
+  document.getElementById('refund-confirm-btn').disabled = (pct === 0 && amt === 0);
+}
+
+function updateCustomRefund(total) {
+  const val = parseFloat(document.getElementById('refund-custom-input').value) || 0;
+  const clamped = Math.min(100, Math.max(0, val));
+  const amt = Math.round(total * clamped / 100);
+  _refundPct = clamped; _refundAmt = amt;
+  document.getElementById('refund-summary').innerHTML =
+    `Refund <strong style="color:#ffa726">${clamped}%</strong> → <strong style="color:#a5b4fc">₹${inr(amt)}</strong> to customer`;
+  document.getElementById('refund-confirm-btn').disabled = (clamped <= 0);
+}
+
+function confirmCustomRefund(data) {
+  if (_refundAmt <= 0 && _refundPct <= 0) return;
+  processRefundDecision(data, _refundPct, _refundAmt);
+}
+
+
+
+async function processRefundDecision(data, percent, refundAmount){
+  const note = (document.getElementById('c-note')?.value || document.getElementById('r-note')?.value || '').trim();
+  const bookingId = data.bookingId || data.link || data.id;
+  const ts = TS();
+  const uid = auth.currentUser?.uid;
+
+  if (!uid) {
+    toast('Admin session missing. Please log in again.', 'err');
+    return;
+  }
+
+  try {
+    if (data.source === 'supportcase' && data.supportCaseId) {
+      await db.collection('supportCases').doc(data.supportCaseId).set({
+        status: 'resolved',
+        resolution: 'refund',
+        refundPercent: percent,
+        refundAmount,
+        decidedAt: ts,
+        decidedBy: uid,
+        adminNote: note || null,
+        updatedAt: ts
+      }, { merge:true });
+    }
+
+    const currentBooking = await getB(bookingId);
+    const isCustomerIssue = data.type === 'customerissue' || data.type === 'customer_issue' || data.source === 'supportcase' || currentBooking?.status === 'Issue Raised';
+
+    // ✅ Derive advance paid — this is the only refundable amount
+    const totalBookingAmt = getBookingAmount(currentBooking);
+    const advancePaid = Number(currentBooking?.paymentStatus?.advanceAmount ?? Math.ceil(totalBookingAmt * 0.1));
+
+    // ── Step 1: Update booking to CANCELLED with refund QUEUED (not completed yet) ──
+    if (isCustomerIssue) {
+      await db.collection('bookings').doc(bookingId).update({
+        'status': 'Cancelled',
+        'cancelledAt': ts,
+        'refundStatus': {
+          status: 'queued',           // ← queued, not completed — payout.html will complete it
+          amount: refundAmount,
+          percent,
+          advancePaid,
+          queuedAt: ts,
+          queuedBy: uid
+        },
+        'refundInitiated': true,
+        'hasSupportCase': false,
+        'issueRaised': false,
+        'issueRequest': {
+          ...(currentBooking?.issueRequest || {}),
+          status: 'resolved',
+          resolution: 'refund',
+          refundPercent: percent,
+          refundAmount,
+          advancePaid,
+          decidedAt: ts,
+          decidedBy: uid
+        },
+        'adminNote': note || null,
+        'updatedAt': ts
+      });
+    } else {
+      await db.collection('bookings').doc(bookingId).update({
+        'status': 'Cancelled',
+        'cancelledAt': ts,
+        'refundStatus': {
+          status: 'queued',           // ← queued, not completed
+          amount: refundAmount,
+          percent,
+          advancePaid,
+          queuedAt: ts,
+          queuedBy: uid
+        },
+        'refundInitiated': true,
+        'cancelRequest.status': 'approved',
+        'cancelRequest.resolution': 'refund',
+        'cancelRequest.userChoice': currentBooking?.cancelRequest?.userChoice || data?.userChoice || 'refund',
+        'cancelRequest.userChoiceAt': currentBooking?.cancelRequest?.userChoiceAt || ts,
+        'cancelRequest.refundPercent': percent,
+        'cancelRequest.refundAmount': refundAmount,
+        'cancelRequest.advancePaid': advancePaid,
+        'cancelRequest.finalRefundAmount': refundAmount,
+        'cancelRequest.approvedRefundAmount': refundAmount,
+        'cancelRequest.decidedAt': ts,
+        'cancelRequest.decidedBy': uid,
+        'cancelRequest.adminNote': note || null,
+        'issueRaised': true,
+        'adminNote': note || null,
+        'updatedAt': ts
+      });
+    }
+
+    // ── Step 2: Write to refundQueue so payout.html can show and finalize it ──
+    await db.collection('refundQueue').add({
+      bookingId,
+      status: 'pending',          // pending | processed
+      resolution: 'refund',
+      createdAt: ts,
+      queuedAt: ts,
+      queuedByAdmin: uid,
+
+      // ── Customer details
+      customerId: currentBooking?.customerId || data.customerId || null,
+      customerName: currentBooking?.customerName || data.customerName || '—',
+      customerPhone: currentBooking?.customerPhone || data.customerPhone || '—',
+      customerEmail: currentBooking?.customerEmail || data.customerEmail || '—',
+
+      // ── Provider details
+      providerId: currentBooking?.providerId || data.providerId || null,
+      providerName: currentBooking?.providerName || data.providerName || '—',
+      providerEmail: currentBooking?.providerEmail || data.providerEmail || '—',
+      providerPhone: currentBooking?.providerPhone || data.providerPhone || '—',
+
+      // ── Booking details
+      serviceName: currentBooking?.serviceName || currentBooking?.title || data.serviceTitle || '—',
+      selectedDate: currentBooking?.selectedDate || data.selectedDate || '—',
+      category: currentBooking?.category || data.category || '—',
+      serviceImageUrl: currentBooking?.serviceImageUrl || (currentBooking?.imageUrls && currentBooking.imageUrls[0]) || null,
+
+      // ── Financials
+      totalBookingAmount: totalBookingAmt,
+      advancePaid,
+      suggestedRefundPercent: percent,
+      suggestedRefundAmount: refundAmount,
+
+      // ── Admin context
+      adminNote: note || null,
+      isCustomerIssue
+    });
+
+    // ── Step 3: Log to booking_cancellations for audit ──
+    await db.collection('booking_cancellations').add({
+      bookingId,
+      customerId: data.customerId || null,
+      who: data.who || data.cancelledBy || 'admin',
+      requestedBy: data.who || data.cancelledBy || 'admin',
+      reason: data.reason || '',
+      when: ts,
+      decision: 'refund',
+      refund: { percent, amount: refundAmount, status: 'queued' },
+      decidedBy: uid,
+      adminNote: note || null,
+      source: 'admin_dashboard'
+    });
+
+    toast(`✅ Refund queued! Go to Payout → Refunds tab to complete.`, 'ok');
+    closeModal('c-modal');
+  } catch (e) {
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+
+/* ── Deny / Refund from inside the reassign-provider modal ── */
+function rmDeny(){
+  if(!prCurrent){ toast('No case loaded','err'); return; }
+  showCfm('Deny Request','Deny this request and restore the booking to its previous status?','Deny','btn-deny',async()=>{
+    closeModal('r-modal');
+    await uDeny(prCurrent);
+  });
+}
+
+function rmRefund() {
+  if (!prCurrent) return toast('No case loaded', 'err');
+  closeModal('r-modal');
+  cCurrent = prCurrent;
+  const refundMeta = getRefundMeta(prCurrent);
+  document.getElementById('cm-title').textContent = `Refund — ${prCurrent.serviceName || 'Service'}`;
+  document.getElementById('cm-sub').textContent = `Booking ${prCurrent.bookingId}`;
+  document.getElementById('cm-body').innerHTML = `<div class="msec"><h3>Admin Note</h3><textarea class="admin-ta" id="c-note" placeholder="Add admin note..."></textarea></div>`;
+  document.getElementById('cm-foot').innerHTML = '';
+  document.getElementById('c-modal').classList.add('active');
+  showRefundDecision(prCurrent, refundMeta.percent, refundMeta.refundAmount);
+}
+
+
+async function uDeny(data){
+  const note=(document.getElementById('c-note')?.value||document.getElementById('r-note')?.value||'').trim();
+  const bookingId=data.bookingId||data.link||data.id;
+  const ts = TS();
+  const uid = auth.currentUser?.uid;
+
+  if (!uid) {
+    toast('Admin session missing. Please log in again.', 'err');
+    return;
+  }
+
+  try{
+    if(data.source === 'supportcase' && data.supportCaseId){
+      await db.collection('supportCases').doc(data.supportCaseId).set({
+        status:'denied',
+        resolution:'denied',
+        decidedAt:ts,
+        decidedBy:uid,
+        adminNote:note||null,
+        updatedAt:ts
+      }, { merge:true });
+    } else if(data.id){
+      await db.collection('cancellation_requests').doc(data.id).set({
+        status:'denied',
+        decidedAt:ts,
+        decidedBy:uid,
+        adminNote:note||null,
+        updatedAt:ts
+      }, { merge:true });
+    }
+
+    const bk = await getB(bookingId);
+    const isCustomerIssue = data.type === 'customerissue' || data.type === 'customer_issue' || data.source === 'supportcase' || bk?.status === 'Issue Raised';
+
+    if (isCustomerIssue) {
+      await db.collection('bookings').doc(bookingId).set({
+        status: bk?.issueRequest?.prevStatus || data?.prevStatus || bk?.stageAtTrigger || 'Ongoing',
+        hasSupportCase: false,
+        issueRaised: false,
+        issueRequest: {
+          ...(bk?.issueRequest || {}),
+          status: 'denied',
+          resolution: 'denied',
+          decidedAt: ts,
+          decidedBy: uid,
+          adminNote: note || null
+        },
+        adminNote: note || null,
+        updatedAt: ts
+      }, { merge: true });
+    } else {
+      await db.collection('bookings').doc(bookingId).set({
+        status: bk?.cancelRequest?.prevStatus || bk?.status || 'Accepted',
+        cancelRequest: {
+          ...(bk?.cancelRequest || {}),
+          status: 'denied',
+          decidedAt: ts,
+          decidedBy: uid
+        },
+        adminNote: note || null,
+        updatedAt: ts
+      }, { merge: true });
+    }
+
+    toast('❌ Request denied','ok');
+    closeModal('c-modal');
+  }catch(e){
+    toast('Error: '+e.message,'err');
+  }
+}
+
+/* REASSIGN FLOW */
+async function showReassignDecision(data){
+  const bookingId=data.bookingId||data.link||data.id;
+  const booking=await getB(bookingId);
+ closeModal('c-modal'); //
+  openReassignModal({
+    id:null,
+    bookingId,
+    serviceName:data.serviceTitle||booking?.serviceName||booking?.title||'Service',
+    serviceImageUrl:booking?.coverUrl||booking?.serviceImageUrl||null,
+    imageUrls:booking?.imageUrls||[],
+    category:data.category||booking?.category||'General',
+    customerId:data.customerId||booking?.customerId||null,
+    customerName:data.customerName||booking?.customerName||'Unknown',
+    customerEmail:data.customerEmail||booking?.customerEmail||null,
+    customerPhone:data.customerPhone||booking?.customerPhone||null,
+    customerPhoto:booking?.customerPhoto||null,
+    selectedDate:booking?.selectedDate||null,
+    selectedTime:booking?.selectedTime||null,
+    location:booking?.location||null,
+    bookingAmount:getBookingAmount(booking),
+    selectedPricing:booking?.selectedPricing||null,
+    brief:booking?.brief||null,
+    providerId:data.providerId||booking?.providerId||null,
+    providerName:data.providerName||booking?.providerName||'Unknown',
+    providerEmail:data.providerEmail||booking?.providerEmail||null,
+    providerPhone:data.providerPhone||booking?.providerPhone||null,
+    previousProvider:{
+      id:data.providerId||booking?.providerId||null,
+      name:data.providerName||booking?.providerName||'Unknown',
+      email:data.providerEmail||booking?.providerEmail||null,
+      phone:data.providerPhone||booking?.providerPhone||null
+    },
+    reason:data.reason||'Admin-selected reassignment',
+    triggerType:'Admin reassignment',
+    stageAtTrigger:booking?.currentStage ?? booking?.stage ?? 0,
+    priority:data.priority||'HIGH',
+    prevStatus:booking?.status||data.prevStatus||'Pending',
+    status:'pending',
+    supportCaseId:data.supportCaseId||null,
+    type:data.type||null,
+    adminNote:(document.getElementById('c-note')?.value||document.getElementById('r-note')?.value||'').trim()
+  });
+}
+
+/* REASSIGNMENT MODAL */
+async function triggerFromBooking(bookingId){
+  const b=await getB(bookingId);
+  if(!b){ toast('Booking not found','err'); return; }
+  openReassignModal({
+    id:null,
+    bookingId,
+    serviceName:b.serviceName||b.title,
+    serviceImageUrl:b.coverUrl||b.serviceImageUrl,
+    imageUrls:b.imageUrls||[],
+    category:b.category,
+    customerId:b.customerId,
+    customerName:b.customerName,
+    customerEmail:b.customerEmail,
+    customerPhone:b.customerPhone,
+    customerPhoto:b.customerPhoto,
+    selectedDate:b.selectedDate,
+    selectedTime:b.selectedTime,
+    location:b.location,
+    bookingAmount:getBookingAmount(b),
+    estimatedSubtotal:b.estimatedSubtotal||0,
+    providerId:b.providerId,
+    providerName:b.providerName,
+    providerEmail:b.providerEmail,
+    providerPhone:b.providerPhone,
+    previousProvider:{id:b.providerId||null,name:b.providerName||'Unknown',email:b.providerEmail||null,phone:b.providerPhone||null},
+    reason:'SLA Timeout — provider did not respond in time',
+    triggerType:'SLA timeout',
+    stageAtTrigger:0,
+    priority:'HIGH',
+    prevStatus:'Pending',
+    status:'pending',
+    selectedPricing:b.selectedPricing,
+    brief:b.brief,
+    adminNote:''
+  });
+}
+
+async function openReassignModal(data) {
+  // ── Reset state fully before opening ──
+  prCurrent = null;
+  prSelProv = null;
+  document.getElementById('rm-btn').disabled = true;
+  document.getElementById('rm-title').textContent = `Reassign ${data.serviceName || data.serviceTitle || 'Service'}`;
+  document.getElementById('rm-sub').textContent = `Booking ${data.bookingId || data.id || 'NA'}`;
+
+  const body = document.getElementById('rm-body');
+  body.innerHTML = `<div class="loading"><div class="spinner"></div><div>Loading providers...</div></div>`;
+
+  // ── Open modal first so user sees spinner ──
+  document.getElementById('r-modal').classList.add('active');
+
+  // ── Now set current AFTER opening ──
+  prCurrent = data;
+
+  const [booking, provDoc] = await Promise.all([
+    getB(data.bookingId || data.id),
+    getP(data.previousProvider?.id || data.providerId)
+  ]);
+
+  // Merge booking data into prCurrent so confirmAssignment has full context
+  prCurrent = {
+    ...data,
+    customerId: data.customerId || booking?.customerId || null,
+    customerName: data.customerName || booking?.customerName || 'Unknown',
+    customerEmail: data.customerEmail || booking?.customerEmail || null,
+    customerPhone: data.customerPhone || booking?.customerPhone || null,
+    customerPhoto: booking?.customerPhoto || null,
+    selectedDate: data.selectedDate || booking?.selectedDate || null,
+    selectedTime: data.selectedTime || booking?.selectedTime || null,
+    location: data.location || booking?.location || null,
+    bookingAmount: getBookingAmount(data || booking),
+    estimatedSubtotal: booking?.estimatedSubtotal || 0,
+    selectedPricing: data.selectedPricing || booking?.selectedPricing || null,
+    brief: data.brief || booking?.brief || null,
+    previousProvider: {
+      id: data.previousProvider?.id || data.providerId || null,
+      name: data.previousProvider?.name || data.providerName || provDoc?.fullName || 'Unknown',
+      email: data.previousProvider?.email || data.providerEmail || null,
+      phone: data.previousProvider?.phone || data.providerPhone || null
+    },
+    stageAtTrigger: data.stageAtTrigger ?? booking?.currentStage ?? booking?.stage ?? 0,
+    category: data.category || booking?.category || 'General',
+  };
+
+  body.innerHTML = buildReassignBody(prCurrent, booking, null, provDoc);
+  loadNewProviders();
+}
+
+
+
+function buildReassignBody(data,booking,userDoc,provDoc){
+  const amt=getBookingAmount(data||booking);
+  const uName=userDoc?.displayName||userDoc?.fullName||data.customerName||'Unknown';
+  const uEmail=userDoc?.email||userDoc?.identity?.email||data.customerEmail||'—';
+  const uPhone=userDoc?.phone||userDoc?.identity?.phone||data.customerPhone||'—';
+  const uPhoto=userDoc?.photoURL||data.customerPhoto||'';
+
+  const pName=provDoc?.fullName||`${provDoc?.firstName||''} ${provDoc?.lastName||''}`.trim()||data.previousProvider?.name||data.providerName||'Unknown';
+  const pEmail=provDoc?.identity?.email||provDoc?.email||data.previousProvider?.email||data.providerEmail||'—';
+  const pPhone=provDoc?.identity?.phone||provDoc?.phone||data.previousProvider?.phone||data.providerPhone||'—';
+  const pPhoto=provDoc?.profile?.photoURL||provDoc?.['profile.photoURL']||'';
+  const pTier=provDoc?.tier||'';
+
+  const cover=data.serviceImageUrl||booking?.coverUrl||data.imageUrls?.[0]||booking?.imageUrls?.[0]||'';
+  const sp=data.selectedPricing||booking?.selectedPricing;
+  const brief=data.brief||booking?.brief;
+  let h='';
+
+  if(cover) h+=`<img src="${esc(cover)}" class="hero-img" onerror="this.style.display='none'">`;
+
+  if(data.reason||data.prevStatus){
+    h+=`
+      <div class="msec hl"><h3>⚠️ Why Reassignment Was Triggered</h3>
+        <div class="igrid">
+          ${data.triggerType?`<div class="ii"><div class="ilbl">Trigger</div><div class="ival">${esc(data.triggerType)}</div></div>`:''}
+          ${data.prevStatus?`<div class="ii"><div class="ilbl">Status at Trigger</div><div class="ival vo">${esc(data.prevStatus)}</div></div>`:''}
+          <div class="ii"><div class="ilbl">Priority</div><div class="ival"><span class="sbadge">${esc(data.priority||'NORMAL')}</span></div></div>
+          <div class="ii"><div class="ilbl">Stage</div><div class="ival">${esc(data.stageAtTrigger!==undefined ? stageLabel(data.stageAtTrigger) : '—')}</div></div>
+        </div>
+        ${data.reason?`<div class="reason-box">${esc(data.reason)}</div>`:''}
+      </div>`;
+  }
+
+  h+=`<div class="msec"><h3>📋 Booking Details</h3>
+    <div class="igrid">
+      <div class="ii"><div class="ilbl">Service</div><div class="ival">${esc(data.serviceName||booking?.serviceName||'—')}</div></div>
+      <div class="ii"><div class="ilbl">Category</div><div class="ival">${esc(data.category||booking?.category||'—')}</div></div>
+      <div class="ii"><div class="ilbl">Date & Time</div><div class="ival">${esc(data.selectedDate||booking?.selectedDate||'—')} ${esc(data.selectedTime||booking?.selectedTime||'')}</div></div>
+      <div class="ii"><div class="ilbl">Location</div><div class="ival">${esc(data.location||booking?.location||'—')}</div></div>
+      <div class="ii"><div class="ilbl">Amount</div><div class="ival big">${inr(amt)}</div></div>
+      <div class="ii"><div class="ilbl">Payment</div><div class="ival"><span class="ptag ${booking?.paymentConfirmed?'ptag-y':'ptag-n'}">${booking?.paymentConfirmed?'✔ Confirmed':'Pending'}</span></div></div>
+      ${booking?.paymentMethod?`<div class="ii"><div class="ilbl">Method</div><div class="ival">${esc(booking.paymentMethod)}</div></div>`:''}
+    </div>
+  </div>`;
+
+  if(sp){
+    h+=`<div class="msec"><h3>💰 Pricing Details</h3>
+      <div class="igrid">
+        <div class="ii"><div class="ilbl">Mode</div><div class="ival">${esc(sp.mode||'—')}</div></div>
+        ${sp.mode==='package'?`<div class="ii"><div class="ilbl">Package</div><div class="ival">${esc(sp.title||sp.raw?.title||sp.raw?.key||'—')}</div></div>`:''}
+        ${sp.mode==='hourly'?`<div class="ii"><div class="ilbl">Rate/hr</div><div class="ival">${inr(sp.rate)}</div></div><div class="ii"><div class="ilbl">Hours</div><div class="ival">${sp.hours||sp.minHours||'—'}</div></div>`:''}
+        <div class="ii"><div class="ilbl">Total</div><div class="ival big">${inr(sp.price||amt)}</div></div>
+      </div>
+    </div>`;
+  }
+
+  if(brief?.text){
+    h+=`<div class="msec"><h3>📝 Customer Brief</h3><div class="reason-box">${esc(brief.text)}</div></div>`;
+  }
+
+  h+=`<div class="msec"><h3>👤 Customer</h3>
+    <div class="ucard">
+      ${uPhoto?`<img src="${esc(uPhoto)}" class="uav" onerror="this.outerHTML='<div class=uav-ph>${ini(uName)}</div>'">`:`<div class="uav-ph">${ini(uName)}</div>`}
+      <div class="ucard-info"><h4>${esc(uName)}</h4><p><b>Email:</b> ${esc(uEmail)}</p><p><b>Phone:</b> ${esc(uPhone)}</p></div>
+    </div>
+  </div>`;
+
+  h+=`<div class="msec m-prov"><h3>🔧 Previous Provider</h3>
+    <div class="ucard">
+      ${pPhoto?`<img src="${esc(pPhoto)}" class="uav" onerror="this.outerHTML='<div class=uav-ph>${ini(pName)}</div>'">`:`<div class="uav-ph">${ini(pName)}</div>`}
+      <div class="ucard-info">
+        <h4>${esc(pName)}${pTier?`<span class="tbadge t${pTier}">${esc(pTier)}</span>`:''}</h4>
+        <p><b>Email:</b> ${esc(pEmail)}</p>
+        <p><b>Phone:</b> ${esc(pPhone)}</p>
+      </div>
+    </div>
+  </div>`;
+
+  h+=`<div class="msec"><h3>🗒 Admin Note</h3>
+    <textarea class="admin-ta" id="r-note" placeholder="Add admin note...">${esc(data.adminNote||'')}</textarea>
+  </div>`;
+
+  h+=`<div class="msec"><h3>🔄 Available Providers</h3>
+    <div id="prov-container"><div class="loading"><div class="spinner"></div><div>Loading available providers…</div></div></div>
+  </div>`;
+
+  return h;
+}
+async function loadNewProviders() {
+  prSelProv = null;
+  document.getElementById('rm-btn').disabled = true;
+  const cont = document.getElementById('prov-container');
+  if (!cont) return;
+
+  cont.innerHTML = `<div class="loading"><div class="spinner"></div>Loading available providers...</div>`;
+
+  try {
+    const snap = await db.collection('providers').where('status', '==', 'approved').get();
+
+    if (snap.empty) {
+      cont.innerHTML = `<p style="color:rgba(255,255,255,.35);font-size:13px">No approved providers found.</p>`;
+      return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'pgrid';
+
+    const skipId     = prCurrent?.previousProvider?.id || prCurrent?.providerId;
+    const bookingCat = String(prCurrent?.category || '').toLowerCase();
+
+    snap.docs.forEach(d => {
+      const prov = { id: d.id, ...d.data() };
+      if (prov.id === skipId) return;
+
+      // ── Read domain/specialisation from new nested OR legacy flat fields ──
+      const domain = String(
+        prov.profile?.primaryDomain ||
+        prov.primaryDomain ||
+        ''
+      ).toLowerCase();
+
+      // specialisations: new = array, legacy = string or flat field
+      const rawSpecs = prov.profile?.specialisations || prov.specialisations || [];
+      const specsArr = Array.isArray(rawSpecs)
+        ? rawSpecs
+        : String(rawSpecs).split(',').map(s => s.trim()).filter(Boolean);
+
+      // keySkills: new = array, legacy = string
+      const rawSkills = prov.profile?.keySkills || prov.keySkills || [];
+      const skillsArr = Array.isArray(rawSkills)
+        ? rawSkills
+        : String(rawSkills).split(',').map(s => s.trim()).filter(Boolean);
+
+      const allTags = [...specsArr, ...skillsArr, domain].map(s => s.toLowerCase());
+
+      // ── Category filter ───────────────────────────────────────────────────
+      if (bookingCat) {
+        const catMapping = {
+          'photographers': ['photo', 'media'],
+          'videographers': ['video', 'media'],
+          'drone operators': ['drone', 'aerial', 'media'],
+          'video editors': ['video', 'edit', 'media'],
+          'graphic designers': ['graphic', 'design', 'ui', 'ux'],
+          'web developers': ['web', 'dev'],
+          'app developers': ['app', 'dev'],
+          'ui/ux designers': ['ui', 'ux', 'design'],
+          'content writers': ['content', 'writ'],
+          'digital marketers': ['digital', 'market', 'seo'],
+          'seo specialists': ['seo', 'market']
+        };
+        const mappedTags = catMapping[bookingCat] || bookingCat.split(/[\s&/-]+/).filter(w => w.length > 3);
+
+        const matches =
+          domain.includes(bookingCat) ||
+          bookingCat.includes(domain) ||
+          allTags.some(t => t.includes(bookingCat) || bookingCat.includes(t)) ||
+          mappedTags.some(mt => domain.includes(mt) || allTags.some(t => t.includes(mt)));
+        if (!matches) return;
+      }
+
+      grid.appendChild(buildProvCard(prov, specsArr, skillsArr));
+    });
+
+    if (!grid.children.length) {
+      cont.innerHTML = `<p style="color:rgba(255,255,255,.35);font-size:13px">No matching approved providers available for this category.</p>`;
+      return;
+    }
+
+    cont.innerHTML = '';
+    cont.appendChild(grid);
+
+  } catch (e) {
+    cont.innerHTML = `<p style="color:#ef9a9a;font-size:13px">${esc(e.message)}</p>`;
+  }
+}
+
+function buildProvCard(prov, specsArr, skillsArr) {
+  const c = document.createElement('div');
+  c.className = 'pc';
+  c.dataset.id = prov.id;
+
+  // ── Identity ──────────────────────────────────────────────────────────────
+  const name  = prov.identity?.fullName || prov.fullName ||
+                `${prov.firstName || ''} ${prov.lastName || ''}`.trim() || 'Unknown';
+  const email = prov.identity?.email || prov.email || '';
+  const phone = prov.identity?.phone || prov.phone || '';
+  const photo = prov.profile?.photoURL || prov.photoURL || null;
+
+  // ── Profile ───────────────────────────────────────────────────────────────
+  const domain     = prov.profile?.primaryDomain || prov.primaryDomain || '';
+  const expBucket  = prov.profile?.experienceBucket || ''; // "1-3", "3-5" etc.
+  const expNum     = prov.profile?.experience || prov.experience || null;
+  const expLabel   = expBucket
+    ? `${expBucket} yrs`
+    : expNum ? `${expNum} yrs` : '';
+
+  const mediaSpec  = prov.profile?.mediaSpecialization || prov.mediaSpecialization || '';
+  const techSpec   = prov.profile?.techSpecialization  || prov.techSpecialization  || '';
+  const domainSpec = mediaSpec || techSpec || domain;
+
+  // Prefer passed-in arrays (already resolved), fallback to re-resolve
+  if (!specsArr) {
+    const raw = prov.profile?.specialisations || prov.specialisations || [];
+    specsArr  = Array.isArray(raw) ? raw : String(raw).split(',').map(s => s.trim()).filter(Boolean);
+  }
+  if (!skillsArr) {
+    const raw = prov.profile?.keySkills || prov.keySkills || [];
+    skillsArr  = Array.isArray(raw) ? raw : String(raw).split(',').map(s => s.trim()).filter(Boolean);
+  }
+
+  // Show top 3 tags (specs first, then skills)
+  const allTags   = [...specsArr, ...skillsArr].filter(Boolean);
+  const topTags   = allTags.slice(0, 3);
+
+  // ── Extras ────────────────────────────────────────────────────────────────
+  const tier   = prov.tier   || '';
+  const rating = prov.rating || prov.averageRating || null;
+  const city   = prov.identity?.city || prov.city || '';
+
+  const ini = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+  c.innerHTML = `
+    <div class="pc-hdr">
+      ${photo
+        ? `<img src="${esc(photo)}" class="pc-av" onerror="this.outerHTML='<div class=\\"pc-av-ph\\">${ini}</div>'">`
+        : `<div class="pc-av-ph">${ini}</div>`}
+      <div>
+        <div class="pc-name">
+          ${esc(name)}
+          ${tier ? `<span class="tbadge t${tier}">${esc(tier)}</span>` : ''}
+        </div>
+        ${domainSpec ? `<div class="pc-info"><span class="cat-chip">${esc(domainSpec)}</span></div>` : ''}
+      </div>
+    </div>
+
+    ${email  ? `<div class="pc-info">${esc(email)}</div>` : ''}
+    ${phone  ? `<div class="pc-info">${esc(phone)}</div>` : ''}
+    ${city   ? `<div class="pc-info">📍 ${esc(city)}</div>` : ''}
+    ${expLabel ? `<div class="pc-info">🕒 ${esc(expLabel)} experience</div>` : ''}
+    ${rating ? `<div class="pc-info">⭐ ${Number(rating).toFixed(1)}</div>` : ''}
+
+    ${topTags.length ? `
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">
+        ${topTags.map(t => `<span class="cat-chip">${esc(t)}</span>`).join('')}
+      </div>` : ''}
+  `;
+
+  c.addEventListener('click', () => {
+    document.querySelectorAll('.pc').forEach(x => x.classList.remove('sel'));
+    c.classList.add('sel');
+    prSelProv = prov;
+    document.getElementById('rm-btn').disabled = false;
+  });
+
+  return c;
+}
+
+
+async function confirmAssignment(){
+  if(!prCurrent || !prSelProv){ 
+    toast('Please select a provider first','err'); 
+    return; 
+  }
+
+  const note = (document.getElementById('r-note')?.value || '').trim();
+  const prov = prSelProv;
+  const req = prCurrent;
+  const ts = TS();
+  const uid = auth.currentUser?.uid;
+
+  if (!uid) {
+    toast('Admin session missing. Please log in again.', 'err');
+    return;
+  }
+
+  const pName = prov.fullName || `${prov.firstName||''} ${prov.lastName||''}`.trim() || 'Provider';
+
+  try {
+    if(req.supportCaseId){
+      await db.collection('supportCases').doc(req.supportCaseId).set({
+        status:'resolved',
+        resolution:'reassigned',
+        assignedProviderId:prov.id,
+        assignedProviderName:pName,
+        decidedAt:ts,
+        decidedBy:uid,
+        adminNote:note||null,
+        updatedAt:ts
+      }, { merge:true });
+    }
+
+    const reassignmentPayload = {
+      bookingId: req.bookingId,
+      supportCaseId: req.supportCaseId || null,
+      status: 'pending',
+      assignedProviderId: prov.id,
+      assignedProviderName: pName,
+      assignedProviderEmail: prov.identity?.email || prov.email || null,
+      assignedProviderPhone: prov.identity?.phone || prov.phone || null,
+      requestedAt: req.requestedAt || ts,
+      assignedAt: ts,
+      assignedBy: uid,
+      customerId: req.customerId || null,
+      customerName: req.customerName || '',
+      category: req.category || '',
+      serviceName: req.serviceName || req.serviceTitle || '',
+      previousProvider: req.previousProvider || null,
+      priority: req.priority || 'HIGH',
+      triggerType: req.triggerType || 'Admin reassignment',
+      adminNote: note || null,
+      updatedAt: ts
+    };
+
+    await db.collection('provider_replacement_requests').add(reassignmentPayload);
+
+    if(req.bookingId){
+      const existingBooking = await getB(req.bookingId);
+
+      const oldProviderId = req.previousProvider?.id || existingBooking?.providerId || null;
+      const oldProviderName = req.previousProvider?.name || existingBooking?.providerName || 'Unknown';
+      const isCustomerIssue = req.type === 'customerissue' || req.type === 'customer_issue' || existingBooking?.status === 'Issue Raised';
+
+      const bookingUpdate = {
+        status:'Pending',
+        providerId: prov.id,
+        providerName: pName,
+        providerEmail: prov.identity?.email || prov.email || null,
+        providerPhone: prov.identity?.phone || prov.phone || null,
+        providerPhoto: prov.profile?.photoURL || prov.photoURL || null,
+
+        // ✅ FIX: Reset SLA timer — new provider gets a fresh 4-hour window from NOW
+        providerAssignedAt: ts,
+
+        providerReassigned:true,
+        needsReassignment:false,
+        issueRaised:false,
+        reassignedByAdmin:true,
+        customerConfirmedReassignment:true,
+
+        // Keep rejected booking visible to old provider
+        rejectedByProviderId: oldProviderId,
+        rejectedByProviderName: oldProviderName,
+
+        reassignmentRequestedProviderId: prov.id,
+        reassignmentRequestedProviderName: pName,
+        reassignmentRequestedProviderEmail: prov.identity?.email || prov.email || null,
+        reassignmentRequestedProviderPhone: prov.identity?.phone || prov.phone || null,
+        reassignmentRequestedAt: ts,
+
+        previousProvider:{
+          id: oldProviderId,
+          name: oldProviderName,
+          email:req.previousProvider?.email||null,
+          phone:req.previousProvider?.phone||null
+        },
+
+        adminNote: note || null,
+        updatedAt: ts
+      };
+
+      if (isCustomerIssue) {
+        bookingUpdate.hasSupportCase = false;
+        bookingUpdate.issueRequest = {
+          ...(existingBooking?.issueRequest || {}),
+          status: 'resolved',
+          resolution: 'reassigned',
+          decidedAt: ts,
+          decidedBy: uid
+        };
+      } else {
+        bookingUpdate.cancelRequest = {
+          ...(existingBooking?.cancelRequest || {}),
+          by: 'admin',
+          status: 'resolved',
+          resolution: 'reassign',
+          userChoice: existingBooking?.cancelRequest?.userChoice || 'replacement',
+          userChoiceAt: existingBooking?.cancelRequest?.userChoiceAt || ts,
+          decidedAt: ts,
+          decidedBy: uid
+        };
+      }
+
+      await db.collection('bookings').doc(req.bookingId).set(bookingUpdate, { merge:true });
+
+      await db.collection('booking_cancellations').add({
+        bookingId: req.bookingId,
+        customerId: req.customerId || null,
+        who: req.who || req.cancelledBy || 'provider',
+        requestedBy: req.who || req.cancelledBy || 'provider',
+        reason: req.reason || '',
+        when: ts,
+        decision: 'reassign',
+        assignedProviderId: prov.id,
+        assignedProviderName: pName,
+        decidedBy: uid,
+        adminNote: note || null,
+        source: 'admin_dashboard'
+      });
+    }
+
+    toast('✅ Provider reassigned — booking now pending new provider acceptance','ok');
+    closeModal('r-modal');
+    closeModal('c-modal');
+  } catch(e){
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+
+async function verifyAdminUser(user) {
+  if (!user) return false;
+
+  try {
+    const snap = await db.collection('admin_users').doc(user.uid).get();
+    if (!snap.exists) return false;
+
+    const data = snap.data() || {};
+    return data.isActive === true;
+  } catch (e) {
+    console.error('Admin verification failed:', e);
+    return false;
+  }
+}
+/* ═══════════════════ AWAITING PROVIDER ACTIONS ═══════════════════ */
+
+async function denyAwaitingBooking(bookingId){
+  const uid = auth.currentUser?.uid;
+  if(!uid){ toast('Admin session missing','err'); return; }
+  const booking = await getB(bookingId);
+  if(!booking){ toast('Booking not found','err'); return; }
+  showCfm(
+    'Deny & Restore Booking',
+    'Restore this booking to Pending so the provider can still accept it?',
+    'Deny & Restore', 'btn-deny',
+    async () => {
+      const ts = TS();
+      try {
+        await db.collection('bookings').doc(bookingId).set({
+          status: booking.cancelRequest?.prevStatus || 'Pending',
+          needsReassignment: false,
+          issueRaised: false,
+          cancelRequest: { ...(booking.cancelRequest||{}), status:'denied', decidedAt:ts, decidedBy:uid },
+          adminNote: 'Admin denied awaiting-provider case — booking restored',
+          updatedAt: ts
+        }, { merge:true });
+        toast('❌ Booking restored to previous status','ok');
+        delete C.b[bookingId];
+      } catch(e){ toast('Error: '+e.message,'err'); }
+    }
+  );
+}
+
+async function openRefundPickerForAwaiting(bookingId){
+  const uid = auth.currentUser?.uid;
+  if(!uid){ toast('Admin session missing','err'); return; }
+  const booking = await getB(bookingId);
+  if(!booking){ toast('Booking not found','err'); return; }
+
+  const refundMeta = getRefundMeta(booking);
+  // Reuse the cancellation modal as a refund-picker container
+  cCurrent = {
+    bookingId,
+    who: 'admin',
+    cancelledBy: 'admin',
+    serviceTitle: booking.serviceName || booking.title || 'Service',
+    customerId: booking.customerId || null,
+    providerId: booking.providerId || null,
+    bookingAmount: getBookingAmount(booking),
+    reason: 'SLA expired — provider did not respond',
+    source: 'awaiting_provider'
+  };
+  document.getElementById('cm-title').textContent = `Refund — ${cCurrent.serviceTitle}`;
+  document.getElementById('cm-sub').textContent = `Booking: ${bookingId}`;
+  document.getElementById('cm-body').innerHTML = `
+    <div class="msec hl"><h3>⏰ SLA Expired</h3>
+      <div class="igrid">
+        <div class="ii"><div class="ilbl">Service</div><div class="ival">${esc(booking.serviceName||booking.title||'—')}</div></div>
+        <div class="ii"><div class="ilbl">Customer</div><div class="ival">${esc(booking.customerName||'—')}</div></div>
+        <div class="ii"><div class="ilbl">Amount</div><div class="ival big">${inr(getBookingAmount(booking))}</div></div>
+        <div class="ii"><div class="ilbl">Timeouts</div><div class="ival vr">${booking.slaTimeoutCount||1}×</div></div>
+      </div>
+    </div>
+    <div class="msec"><h3>🗒 Admin Note</h3>
+      <textarea class="admin-ta" id="c-note" placeholder="Add admin note...">SLA expired — provider did not respond within 4 hours.</textarea>
+    </div>`;
+  document.getElementById('cm-foot').innerHTML = '';
+  document.getElementById('c-modal').classList.add('active');
+  showRefundDecision(cCurrent, refundMeta.percent, refundMeta.refundAmount);
+}
+
+/* ═══════════════════ SLA AUTO-EXPIRY CHECKER ═══════════════════ */
+const SLA_MS = 4 * 60 * 60 * 1000; // 4 hours — must match provider-side
+let _slaCheckInterval = null;
+
+async function checkAndMarkSlaExpired(){
+  const uid = auth.currentUser?.uid;
+  if(!uid) return;
+  const now = Date.now();
+  try {
+    const snap = await db.collection('bookings')
+      .where('status','==','Pending')
+      .get();
+
+    const batch = db.batch();
+    let count = 0;
+
+    snap.docs.forEach(d => {
+      const b = d.data();
+      // Skip if already flagged or in a cancel flow
+      if(b.slaExpiredAt) return;
+      if(String(b.cancelRequest?.status||'').toLowerCase() === 'pending' &&
+         String(b.cancelRequest?.by||'').toLowerCase() === 'provider') return;
+
+      const startMs =
+        (b.providerAssignedAt?.seconds ? b.providerAssignedAt.seconds*1000 : null) ||
+        (b.createdAt?.seconds ? b.createdAt.seconds*1000 : null) ||
+        (b.createdOn?.seconds ? b.createdOn.seconds*1000 : null) ||
+        null;
+
+      if(!startMs) return;
+      if((now - startMs) < SLA_MS) return;
+
+      // SLA has passed — mark it
+      batch.update(d.ref, {
+        status: 'Awaiting Provider',
+        slaExpiredAt: TS(),
+        needsReassignment: true,
+        slaTimeoutCount: (b.slaTimeoutCount||0) + 1,
+        previousProvider: {
+          id: b.providerId||null,
+          name: b.providerName||'Unknown',
+          email: b.providerEmail||null,
+          phone: b.providerPhone||null,
+          timedOutAt: TS()
+        },
+        updatedAt: TS()
+      });
+      count++;
+    });
+
+    if(count > 0){
+      await batch.commit();
+      // Notify admin
+      toast(`⏰ ${count} booking${count>1?'s':''} SLA expired and moved to Awaiting Provider`, 'err', 6000);
+      console.warn(`[SLA] Marked ${count} booking(s) as Awaiting Provider`);
+    }
+  } catch(e){
+    console.error('[SLA checker]', e.message);
+  }
+}
+
+function startSlaChecker(){
+  if(_slaCheckInterval) return;
+  // Run immediately on load, then every 5 minutes
+  checkAndMarkSlaExpired();
+  _slaCheckInterval = setInterval(checkAndMarkSlaExpired, 5 * 60 * 1000);
+}
+
+auth.onAuthStateChanged(async (user) => {
+  try {
+    if (!user) {
+      window.location.href = 'index.html';
+      return;
+    }
+
+    const ok = await verifyAdminUser(user);
+    if (!ok) {
+      await auth.signOut();
+      window.location.href = 'index.html';
+      return;
+    }
+
+    console.log('Admin session ready:', user.uid);
+
+    // Start SLA expiry checker — runs every 5 min, notifies admin of expired bookings
+    startSlaChecker();
+
+    if (!LOADED['u-cancel']) {
+      LOADED['u-cancel'] = true;
+      loadUC();
+    }
+  } catch (e) {
+    console.error('Auth bootstrap error:', e);
+    toast('Auth error: ' + e.message, 'err');
+  }
+});
+
+</script>
+</body>
+</html>

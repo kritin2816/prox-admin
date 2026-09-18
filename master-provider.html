@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro X - Master Provider Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Firebase SDK v8 (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        /* CSS Variables for Theming */
+        :root {
+            --color-primary: #667eea;
+            --color-primary-dark: #5568d3;
+            --color-secondary: #764ba2;
+            --color-success: #10b981;
+            --color-warning: #f59e0b;
+            --color-error: #ef4444;
+            --color-info: #3b82f6;
+
+            /* Light theme */
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --border-color: #334155;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(to right, #a044ff, #6a3093);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: var(--shadow-lg);
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            text-decoration: none;
+            color: white;
+        }
+
+        .header-actions { display: flex; gap: 1rem; align-items: center; }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-outline {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-outline:hover { background: rgba(255, 255, 255, 0.25); }
+
+        /* Main Layout */
+        .main-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Sidebar - Provider List */
+        .sidebar {
+            width: 350px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            outline: none;
+        }
+
+        .search-box:focus { border-color: var(--color-primary); }
+
+        .provider-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .provider-item {
+            padding: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 0.5rem;
+            transition: background 0.2s;
+            border: 1px solid transparent;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .provider-item:hover { background: var(--bg-tertiary); }
+        .provider-item.active {
+            background: var(--bg-tertiary);
+            border-color: var(--color-primary);
+        }
+
+        .provider-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .provider-info h4 { margin-bottom: 0.2rem; font-size: 0.95rem; }
+        .provider-info p { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.2rem; }
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-silver { background: #e2e8f0; color: #475569; }
+        .badge-gold { background: #fef08a; color: #854d0e; }
+        .badge-platinum { background: #e0e7ff; color: #3730a3; }
+        .badge-success { background: rgba(16, 185, 129, 0.1); color: var(--color-success); }
+        .badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--color-warning); }
+
+        /* Main Detail Area */
+        .detail-area {
+            flex: 1;
+            background: var(--bg-primary);
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: none; /* hidden until provider selected */
+        }
+
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+        }
+        
+        .empty-state h2 { margin-bottom: 0.5rem; color: var(--text-secondary); }
+
+        /* Overview Header */
+        .detail-header {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .detail-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .detail-title h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+        .detail-title p { color: var(--text-secondary); display: flex; gap: 1rem; align-items: center; }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 1.25rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-title {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 0.75rem 1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-size: 1rem;
+        }
+
+        .tab-btn:hover { color: var(--color-primary); }
+        .tab-btn.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Section Cards */
+        .content-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .content-card h3 { margin-bottom: 1rem; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;}
+        
+        /* Tables inside tabs */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th, .data-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .loading-spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            gap: 1rem;
+        }
+
+        .loading-container .loading-spinner {
+            border-color: var(--border-color);
+            border-top-color: var(--color-primary);
+            width: 40px;
+            height: 40px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar { width: 300px; }
+        }
+        @media (max-width: 768px) {
+            .main-layout { flex-direction: column; }
+            .sidebar { width: 100%; height: 300px; border-right: none; border-bottom: 1px solid var(--border-color); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="dashboard.html" class="logo">
+                <span class="logo-icon">👑</span>
+                <span>Pro X Master Provider</span>
+            </a>
+            <div class="header-actions">
+                <button class="btn btn-outline" id="theme-toggle">🌙</button>
+                <button class="btn btn-outline" onclick="window.location.href='dashboard.html'">Back to Dashboard</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <input type="text" id="search-input" class="search-box" placeholder="Search providers...">
+            </div>
+            <div class="provider-list" id="provider-list">
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <p>Loading Providers...</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Empty State -->
+        <div class="empty-state" id="empty-state">
+            <h2>No Provider Selected</h2>
+            <p>Select a provider from the list to view their master details.</p>
+        </div>
+
+        <!-- Detail Area -->
+        <main class="detail-area" id="detail-area">
+            
+            <div class="detail-header">
+                <div class="detail-avatar" id="detail-avatar"></div>
+                <div class="detail-title">
+                    <h1 id="detail-name">Provider Name</h1>
+                    <p>
+                        <span id="detail-email">email@example.com</span>
+                        <span class="badge" id="detail-status">Active</span>
+                        <span class="badge" id="detail-tier">Silver</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Top Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">💰 Total Earnings</div>
+                    <div class="stat-value" id="stat-earnings">₹0.00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">📅 Total Bookings</div>
+                    <div class="stat-value" id="stat-bookings">0</div>
+                    <div style="font-size: 0.75rem; color: var(--color-success); margin-top: 5px;">
+                        <span id="stat-bookings-success">0</span> Successful • <span id="stat-bookings-cancel" style="color: var(--color-error)">0</span> Canceled
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">⭐ Overall Rating</div>
+                    <div class="stat-value" id="stat-rating">N/A</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">⚠️ Delays</div>
+                    <div class="stat-value" id="stat-delays" style="color: var(--color-warning);">0</div>
+                </div>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <div class="tabs">
+                <button class="tab-btn active" data-target="tab-profile">Profile & KYC</button>
+                <button class="tab-btn" data-target="tab-analytics">Analytics 📊</button>
+                <button class="tab-btn" data-target="tab-financials">Financials 💳</button>
+                <button class="tab-btn" data-target="tab-bookings">Bookings</button>
+                <button class="tab-btn" data-target="tab-subscription">Subscription</button>
+                <button class="tab-btn" data-target="tab-services">Services</button>
+            </div>
+
+            <!-- Tab Content: Profile -->
+            <div class="tab-content active" id="tab-profile">
+                <div class="content-card">
+                    <h3>Identity Information</h3>
+                    <table class="data-table">
+                        <tbody id="profile-table">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab Content: Analytics -->
+            <div class="tab-content" id="tab-analytics">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div class="content-card">
+                        <h3>Bookings by Status</h3>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="chart-booking-status"></canvas>
+                        </div>
+                    </div>
+                    <div class="content-card">
+                        <h3>Earnings Over Time (Last 6 Months)</h3>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="chart-earnings"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Financials -->
+            <div class="tab-content" id="tab-financials">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="stat-card" style="border-color: var(--color-warning);">
+                        <div class="stat-title">⏳ Pending Payout</div>
+                        <div class="stat-value" id="finance-pending">₹0.00</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 5px;" id="finance-pending-count">0 bookings</div>
+                    </div>
+                    <div class="stat-card" style="border-color: var(--color-success);">
+                        <div class="stat-title">✅ Completed Payout</div>
+                        <div class="stat-value" id="finance-completed">₹0.00</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 5px;" id="finance-completed-count">0 bookings</div>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <h3>Bank Transfer & UPI Details</h3>
+                    <table class="data-table">
+                        <tbody id="bank-table">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="content-card">
+                    <h3>Payout History</h3>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Booking ID</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Payout Split</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payout-table">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Bookings -->
+            <div class="tab-content" id="tab-bookings">
+                <div class="content-card">
+                    <h3>Recent Bookings</h3>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Amount</th>
+                                    <th>Rating</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bookings-table">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Subscription -->
+            <div class="tab-content" id="tab-subscription">
+                <div class="content-card">
+                    <h3>Current Subscription</h3>
+                    <table class="data-table">
+                        <tbody id="sub-table">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="content-card">
+                    <h3>Subscription History</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Action</th>
+                                <th>Admin/System Note</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sub-history-table">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab Content: Services -->
+            <div class="tab-content" id="tab-services">
+                <div class="content-card">
+                    <h3>Detailed Services Information</h3>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Image</th>
+                                    <th>Service Name & Desc</th>
+                                    <th>Category</th>
+                                    <th>Duration</th>
+                                    <th>Base Price</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="services-table">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+            authDomain: "phototester555.firebaseapp.com",
+            projectId: "phototester555",
+            storageBucket: "phototester555.firebasestorage.app",
+            messagingSenderId: "953997763616",
+            appId: "1:953997763616:web:4ac177ad8e79c5f38b8845",
+            measurementId: "G-6VS0G0NQ7K"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // State
+        let allProviders = [];
+        let currentProvider = null;
+        let allBookings = [];
+        let charts = {};
+
+        function normalizeUrl(url) {
+            if (!url || typeof url !== 'string') return '';
+            const trimmed = url.trim();
+            if (!trimmed || trimmed === '#') return '';
+            if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//i.test(trimmed)) {
+                return trimmed;
+            }
+            if (trimmed.startsWith('//')) {
+                return 'https:' + trimmed;
+            }
+            if (/^(mailto|tel):/i.test(trimmed)) {
+                return trimmed;
+            }
+            return 'https://' + trimmed;
+        }
+        
+        // DOM Elements
+        const providerList = document.getElementById('provider-list');
+        const searchInput = document.getElementById('search-input');
+        const emptyState = document.getElementById('empty-state');
+        const detailArea = document.getElementById('detail-area');
+
+        // Check Auth
+        auth.onAuthStateChanged(user => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            db.collection('admin_users').doc(user.uid).get().then(doc => {
+                if (!doc.exists) {
+                    auth.signOut();
+                    window.location.href = 'index.html';
+                } else {
+                    initApp();
+                }
+            });
+        });
+
+        async function initApp() {
+            setupTheme();
+            setupTabs();
+            await fetchProviders();
+            setupSearch();
+        }
+
+        function setupTheme() {
+            const toggle = document.getElementById('theme-toggle');
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            toggle.textContent = savedTheme === 'light' ? '🌙' : '☀️';
+            
+            toggle.addEventListener('click', () => {
+                const current = document.documentElement.getAttribute('data-theme');
+                const next = current === 'light' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+                toggle.textContent = next === 'light' ? '🌙' : '☀️';
+            });
+        }
+
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.target).classList.add('active');
+                });
+            });
+        }
+
+        async function fetchProviders() {
+            try {
+                const snap = await db.collection('providers').get();
+                allProviders = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderProviderList(allProviders);
+            } catch (err) {
+                console.error("Error fetching providers", err);
+                providerList.innerHTML = '<p style="padding: 1rem; color: var(--color-error)">Error loading providers</p>';
+            }
+        }
+
+        function renderProviderList(providers) {
+            if (providers.length === 0) {
+                providerList.innerHTML = '<p style="padding: 1rem; text-align: center; color: var(--text-secondary)">No providers found</p>';
+                return;
+            }
+
+            providerList.innerHTML = providers.map(p => {
+                const name = p.name || p.username || p.fullName || 'Unknown';
+                const email = p.email || '';
+                const initial = name.charAt(0).toUpperCase();
+                const status = String(p.status || p.approvalStatus || 'pending').toLowerCase();
+                const isActive = p.isActive !== false;
+                
+                let badgeClass = 'badge-warning';
+                if (status === 'approved') badgeClass = 'badge-success';
+                
+                return `
+                    <div class="provider-item" data-id="${p.id}" onclick="selectProvider('${p.id}')">
+                        <div class="provider-avatar">${initial}</div>
+                        <div class="provider-info" style="flex:1">
+                            <h4>${name}</h4>
+                            <p>${email}</p>
+                            <span class="badge ${badgeClass}">${status}</span>
+                            ${!isActive ? '<span class="badge badge-warning" style="margin-left:5px">Inactive</span>' : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function setupSearch() {
+            searchInput.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = allProviders.filter(p => {
+                    const name = (p.name || p.username || p.fullName || '').toLowerCase();
+                    const email = (p.email || '').toLowerCase();
+                    return name.includes(term) || email.includes(term);
+                });
+                renderProviderList(filtered);
+            });
+        }
+
+        async function selectProvider(providerId) {
+            // Update active state in sidebar
+            document.querySelectorAll('.provider-item').forEach(el => el.classList.remove('active'));
+            const selectedEl = document.querySelector(`.provider-item[data-id="${providerId}"]`);
+            if (selectedEl) selectedEl.classList.add('active');
+
+            // Find provider
+            currentProvider = allProviders.find(p => p.id === providerId);
+            if (!currentProvider) return;
+
+            // Show UI
+            emptyState.style.display = 'none';
+            detailArea.style.display = 'block';
+
+            // Populate Overview Header
+            const name = currentProvider.name || currentProvider.username || currentProvider.fullName || 'Unknown';
+            document.getElementById('detail-avatar').textContent = name.charAt(0).toUpperCase();
+            document.getElementById('detail-name').textContent = name;
+            document.getElementById('detail-email').textContent = currentProvider.email || 'No email provided';
+            
+            const status = String(currentProvider.status || currentProvider.approvalStatus || 'pending').toUpperCase();
+            document.getElementById('detail-status').textContent = status;
+            document.getElementById('detail-status').className = 'badge ' + (status === 'APPROVED' ? 'badge-success' : 'badge-warning');
+            
+            const tier = String(currentProvider.tier || (currentProvider.subscription && currentProvider.subscription.plan) || 'Silver');
+            document.getElementById('detail-tier').textContent = tier.toUpperCase();
+            document.getElementById('detail-tier').className = 'badge badge-' + tier.toLowerCase();
+
+            // Fetch Sub-collections (Bookings, Services, History)
+            await fetchProviderDetails(providerId);
+        }
+
+        async function fetchProviderDetails(providerId) {
+            try {
+                // Bookings
+                const bookingsQuery = await db.collection('bookings')
+                    .where('providerId', '==', providerId)
+                    .get();
+                
+                const bookings = bookingsQuery.docs.map(d => ({id: d.id, ...d.data()}));
+                
+                // Services (usually stored in root collection 'services' with providerId or uid)
+                let services = [];
+                try {
+                    const servicesQuery = await db.collection('services').where('providerId', '==', providerId).get();
+                    services = servicesQuery.docs.map(d => ({id: d.id, ...d.data()}));
+                    
+                    // Fallback to 'uid' field if 'providerId' yields no results
+                    if (services.length === 0) {
+                        const servicesUidQuery = await db.collection('services').where('uid', '==', providerId).get();
+                        services = servicesUidQuery.docs.map(d => ({id: d.id, ...d.data()}));
+                    }
+                } catch(e) { console.log('Error fetching root services', e); }
+                
+                if(services.length === 0 && Array.isArray(currentProvider.services)) {
+                    services = currentProvider.services; // fallback if stored in array
+                }
+
+                // Subscription History (admin_actions log for this provider)
+                let subHistory = [];
+                try {
+                    const historyQuery = await db.collection('providers').doc(providerId).collection('admin_actions')
+                        .orderBy('createdAt', 'desc')
+                        .get();
+                    subHistory = historyQuery.docs.map(d => ({id: d.id, ...d.data()}));
+                } catch(e) { console.log('No admin_actions subcollection'); }
+
+                populateStats(bookings);
+                populateProfile();
+                populateBookings(bookings);
+                populateServices(services);
+                populateSubscription(subHistory);
+                renderCharts(bookings);
+
+            } catch (err) {
+                console.error("Error fetching provider details", err);
+                alert("Failed to load some provider details.");
+            }
+        }
+
+        function renderCharts(bookings) {
+            const rootStyle = getComputedStyle(document.documentElement);
+            const textColor = rootStyle.getPropertyValue('--text-primary').trim();
+            const gridColor = rootStyle.getPropertyValue('--border-color').trim();
+
+            // 1. Booking Status Doughnut Chart
+            let statusCounts = { Completed: 0, Canceled: 0, Ongoing: 0, Delayed: 0 };
+            bookings.forEach(b => {
+                const s = String(b.status || b.state || '').toLowerCase();
+                if (['cancelled', 'canceled', 'refunded'].includes(s)) statusCounts.Canceled++;
+                else if (['completed', 'payment completed'].includes(s)) statusCounts.Completed++;
+                else statusCounts.Ongoing++;
+                if (b.delayed === true || s.includes('delay')) statusCounts.Delayed++;
+            });
+
+            if(charts.status) charts.status.destroy();
+            const ctxStatus = document.getElementById('chart-booking-status').getContext('2d');
+            charts.status = new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Canceled', 'Ongoing', 'Delayed'],
+                    datasets: [{
+                        data: [statusCounts.Completed, statusCounts.Canceled, statusCounts.Ongoing, statusCounts.Delayed],
+                        backgroundColor: ['#10b981', '#ef4444', '#3b82f6', '#f59e0b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: textColor } } }
+                }
+            });
+
+            // 2. Earnings Line Chart (Last 6 Months)
+            const months = [];
+            const earningsData = [];
+            const now = new Date();
+            for(let i=5; i>=0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                months.push(d.toLocaleString('default', { month: 'short' }));
+                earningsData.push(0);
+            }
+
+            const planForChart = String(currentProvider.tier || (currentProvider.subscription && currentProvider.subscription.plan) || 'silver').toLowerCase();
+            let payoutRateForChart = 85;
+            if (planForChart === 'platinum') payoutRateForChart = 95;
+            if (planForChart === 'gold') payoutRateForChart = 90;
+
+            bookings.forEach(b => {
+                const s = String(b.status || b.state || '').toLowerCase();
+                if (['completed', 'payment completed', 'customer received', 'work accepted'].includes(s)) {
+                    const bDate = b.createdAt ? new Date(b.createdAt.toDate ? b.createdAt.toDate() : b.createdAt) : null;
+                    if(bDate) {
+                        const monthDiff = (now.getFullYear() - bDate.getFullYear()) * 12 + now.getMonth() - bDate.getMonth();
+                        if(monthDiff >= 0 && monthDiff < 6) {
+                            const amt = Number(b.amount || b.price || b.totalAmount || 0);
+                            const providerShare = Math.round(amt * (payoutRateForChart / 100));
+                            earningsData[5 - monthDiff] += providerShare;
+                        }
+                    }
+                }
+            });
+
+            if(charts.earnings) charts.earnings.destroy();
+            const ctxEarnings = document.getElementById('chart-earnings').getContext('2d');
+            charts.earnings = new Chart(ctxEarnings, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Earnings (₹)',
+                        data: earningsData,
+                        backgroundColor: '#667eea',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { ticks: { color: textColor }, grid: { color: gridColor } },
+                        x: { ticks: { color: textColor }, grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function populateStats(bookings) {
+            let total = bookings.length;
+            let success = 0;
+            let cancel = 0;
+            let ongoing = 0;
+            let earnings = 0;
+            let ratingSum = 0;
+            let ratingCount = 0;
+            let delays = 0;
+
+            let pendingPayout = 0;
+            let pendingCount = 0;
+            let completedPayout = 0;
+            let completedCount = 0;
+
+            const plan = String(currentProvider.tier || (currentProvider.subscription && currentProvider.subscription.plan) || 'silver').toLowerCase();
+            let payoutRate = 85;
+            if (plan === 'platinum') payoutRate = 95;
+            if (plan === 'gold') payoutRate = 90;
+
+            bookings.forEach(b => {
+                const status = String(b.status || b.state || '').toLowerCase();
+                const amt = Number(b.amount || b.price || b.totalAmount || 0);
+                
+                let rate = payoutRate;
+                if (b.payoutRate !== undefined && b.payoutRate !== null && !isNaN(Number(b.payoutRate))) {
+                    rate = Number(b.payoutRate);
+                } else if (b.payoutCalculation && b.payoutCalculation.payoutRate !== undefined && b.payoutCalculation.payoutRate !== null && !isNaN(Number(b.payoutCalculation.payoutRate))) {
+                    rate = Number(b.payoutCalculation.payoutRate);
+                }
+                const providerShare = Math.round(amt * (rate / 100));
+                
+                // Canceled
+                if (['cancelled', 'canceled', 'refunded', 'declined'].includes(status)) cancel++;
+                // Success
+                else if (['completed', 'payment completed', 'customer received', 'work accepted'].includes(status)) {
+                    success++;
+                    earnings += providerShare;
+
+                    if (b.payoutStatus === 'paid') {
+                        completedPayout += providerShare;
+                        completedCount++;
+                    } else {
+                        pendingPayout += providerShare;
+                        pendingCount++;
+                    }
+                }
+                // Ongoing
+                else ongoing++;
+
+                // Delays
+                if (b.delayed === true || status.includes('delay')) delays++;
+
+                // Rating
+                const rating = Number(b.rating || (b.review && b.review.rating) || 0);
+                if (rating > 0) {
+                    ratingSum += rating;
+                    ratingCount++;
+                }
+            });
+
+            document.getElementById('stat-bookings').textContent = total;
+            document.getElementById('stat-bookings-success').textContent = success;
+            document.getElementById('stat-bookings-cancel').textContent = cancel;
+            document.getElementById('stat-earnings').textContent = '₹' + earnings.toLocaleString('en-IN');
+            document.getElementById('stat-delays').textContent = delays;
+            
+            const avgRating = ratingCount > 0 ? (ratingSum / ratingCount).toFixed(1) : 'N/A';
+            document.getElementById('stat-rating').textContent = avgRating;
+
+            // Update Financials Tab
+            document.getElementById('finance-pending').textContent = '₹' + pendingPayout.toLocaleString('en-IN');
+            document.getElementById('finance-pending-count').textContent = pendingCount + ' bookings awaiting transfer';
+            document.getElementById('finance-completed').textContent = '₹' + completedPayout.toLocaleString('en-IN');
+            document.getElementById('finance-completed-count').textContent = completedCount + ' paid bookings';
+
+            populateFinancialsTab(bookings, payoutRate);
+        }
+
+        function populateFinancialsTab(bookings, payoutRate) {
+            const p = currentProvider;
+            const payout = p.payout || {};
+
+            let rows = [];
+
+            if (payout.india && typeof payout.india === 'object') {
+                const ind = payout.india;
+                const proofUrl = ind.bankProofUrl;
+                const proofHtml = proofUrl ? `
+                    <a href="${normalizeUrl(proofUrl)}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 0.25rem; color: #667eea; font-weight: 600; text-decoration: none; border: 1px solid #e2e8f0; padding: 0.25rem 0.5rem; border-radius: 6px; background: var(--bg-secondary); transition: all 0.2s;">
+                        📄 View Bank Proof <span style="font-size: 0.75rem;">↗</span>
+                    </a>
+                ` : 'N/A';
+
+                rows = [
+                    ['Payout Region', 'India (Domestic)'],
+                    ['Account Holder Name', ind.acctName || 'N/A'],
+                    ['Account Number', ind.acctNumber || 'N/A'],
+                    ['IFSC Code', ind.ifsc || 'N/A'],
+                    ['Bank Name', ind.bankName || 'N/A'],
+                    ['UPI ID', ind.upi || 'N/A'],
+                    ['PAN Card Number', ind.pan || 'N/A'],
+                    ['GSTIN', ind.gstin || 'N/A'],
+                    ['Bank Account Proof', proofHtml]
+                ];
+            } else if (payout.international && typeof payout.international === 'object') {
+                const intl = payout.international;
+                rows = [
+                    ['Payout Region', 'International (Wire Transfer / Alternative)'],
+                    ['Account Holder Name', intl.intlAcctName || 'N/A'],
+                    ['Account Number', intl.intlAcctNumber || 'N/A'],
+                    ['IBAN', intl.iban || 'N/A'],
+                    ['SWIFT / BIC Code', intl.swift || 'N/A'],
+                    ['Routing Number', intl.routing || 'N/A'],
+                    ['Alternative Payout Type', intl.altPayoutType || 'N/A'],
+                    ['Alternative Payout ID / Address', intl.altPayoutId || 'N/A']
+                ];
+            } else {
+                // Fallback for flat legacy fields
+                rows = [
+                    ['Payout Region', 'India (Domestic Fallback / Legacy)'],
+                    ['Account Holder Name', payout.acctName || 'N/A'],
+                    ['Account Number', payout.acctNumber || 'N/A'],
+                    ['IFSC Code', payout.ifsc || 'N/A'],
+                    ['Bank Name', payout.bankName || 'N/A'],
+                    ['UPI ID', payout.upi || 'N/A']
+                ];
+            }
+
+            const table = document.getElementById('bank-table');
+            table.innerHTML = rows.map(r => `
+                <tr>
+                    <th style="width: 30%">${r[0]}</th>
+                    <td><strong>${r[1]}</strong></td>
+                </tr>
+            `).join('');
+
+            const payoutTable = document.getElementById('payout-table');
+            const completedBookings = bookings.filter(b => {
+                const s = String(b.status || b.state || '').toLowerCase();
+                return ['completed', 'payment completed', 'customer received', 'work accepted'].includes(s);
+            });
+
+            completedBookings.sort((a, b) => {
+                const tA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
+                const tB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
+                return tB - tA; // desc
+            });
+
+            if (completedBookings.length === 0) {
+                payoutTable.innerHTML = '<tr><td colspan="5" style="text-align:center">No completed bookings for payout yet.</td></tr>';
+                return;
+            }
+
+            payoutTable.innerHTML = completedBookings.map(b => {
+                const dateStr = b.createdAt ? new Date(b.createdAt.toDate ? b.createdAt.toDate() : b.createdAt).toLocaleDateString() : 'N/A';
+                const amt = Number(b.amount || b.price || b.totalAmount || 0);
+                
+                let rate = payoutRate;
+                if (b.payoutRate !== undefined && b.payoutRate !== null && !isNaN(Number(b.payoutRate))) {
+                    rate = Number(b.payoutRate);
+                } else if (b.payoutCalculation && b.payoutCalculation.payoutRate !== undefined && b.payoutCalculation.payoutRate !== null && !isNaN(Number(b.payoutCalculation.payoutRate))) {
+                    rate = Number(b.payoutCalculation.payoutRate);
+                }
+                
+                const providerShare = Math.round(amt * (rate / 100));
+                const platformFee = amt - providerShare;
+                const status = b.payoutStatus === 'paid' ? 'PAID' : 'PENDING';
+                const badge = b.payoutStatus === 'paid' ? 'badge-success' : 'badge-warning';
+
+                return `
+                    <tr>
+                        <td style="font-size:0.8rem">#${b.id.substring(0,8)}...</td>
+                        <td>${dateStr}</td>
+                        <td>₹${amt.toLocaleString('en-IN')}</td>
+                        <td>
+                            <div style="font-size: 0.85rem">
+                                <strong>₹${providerShare.toLocaleString('en-IN')}</strong> (${rate}%) to Provider<br>
+                                <span style="color: var(--text-secondary)">₹${platformFee.toLocaleString('en-IN')} to Platform</span>
+                            </div>
+                        </td>
+                        <td><span class="badge ${badge}">${status}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function populateProfile() {
+            const p = currentProvider;
+            const identity = p.identity || {};
+            const profile = p.profile || {};
+            const kyc = p.kyc || {};
+            const work = p.work || {};
+            const business = p.business || {};
+
+            // Resolve address
+            let addressStr = 'N/A';
+            if (p.address) {
+                addressStr = typeof p.address === 'object' ? Object.values(p.address).filter(Boolean).join(', ') : p.address;
+            } else if (identity.city) {
+                addressStr = identity.city + (identity.country ? ', ' + identity.country : '');
+            }
+
+            // Resolve experience
+            const experienceVal = profile.experience || business.experience;
+            const experienceStr = experienceVal ? experienceVal + ' years' : 'N/A';
+
+            // Resolve skills, specialisations, equipment
+            const skillsVal = profile.keySkills || p.skills;
+            const skillsStr = skillsVal ? (Array.isArray(skillsVal) ? skillsVal.join(', ') : skillsVal) : 'N/A';
+            
+            const specVal = profile.specialisations || p.specialisation || p.specialisations;
+            const specStr = specVal ? (Array.isArray(specVal) ? specVal.join(', ') : specVal) : (profile.mediaSpecialization || profile.techSpecialization || 'N/A');
+
+            const equipVal = profile.equipment;
+            const equipStr = equipVal ? (Array.isArray(equipVal) ? equipVal.join(', ') : equipVal) : 'N/A';
+
+            // Resolve KYC Document links
+            const idFiles = kyc.idFilesUrls || kyc.idFileUrl || p.idFileUrl;
+            let kycHtml = 'N/A';
+            if (idFiles) {
+                const filesArray = Array.isArray(idFiles) ? idFiles : [idFiles];
+                kycHtml = filesArray.filter(Boolean).map((url, idx) => `
+                    <a href="${normalizeUrl(url)}" target="_blank" rel="noopener noreferrer" class="document-link" style="display: inline-flex; align-items: center; gap: 0.25rem; color: #667eea; font-weight: 600; text-decoration: none; margin-right: 1rem; border: 1px solid #e2e8f0; padding: 0.25rem 0.5rem; border-radius: 6px; background: var(--bg-secondary); transition: all 0.2s;">
+                        📄 Doc ${idx + 1} <span style="font-size: 0.75rem;">↗</span>
+                    </a>
+                `).join('');
+                if (!kycHtml) kycHtml = 'N/A';
+            }
+
+            // Resolve CV & Portfolio links
+            const cvUrl = work.cvUrl || p.cvUrl;
+            const cvHtml = cvUrl ? `
+                <a href="${normalizeUrl(cvUrl)}" target="_blank" rel="noopener noreferrer" class="document-link" style="display: inline-flex; align-items: center; gap: 0.25rem; color: #667eea; font-weight: 600; text-decoration: none; border: 1px solid #e2e8f0; padding: 0.25rem 0.5rem; border-radius: 6px; background: var(--bg-secondary); transition: all 0.2s;">
+                    📄 View CV <span style="font-size: 0.75rem;">↗</span>
+                </a>
+            ` : 'N/A';
+
+            const portfolioUrl = work.portfolio || work.mediaPortfolioUrl || p.portfolioUrl || p.portfolio;
+            const portfolioHtml = portfolioUrl ? `
+                <a href="${normalizeUrl(portfolioUrl)}" target="_blank" rel="noopener noreferrer" class="document-link" style="display: inline-flex; align-items: center; gap: 0.25rem; color: #667eea; font-weight: 600; text-decoration: none; border: 1px solid #e2e8f0; padding: 0.25rem 0.5rem; border-radius: 6px; background: var(--bg-secondary); transition: all 0.2s;">
+                    🔗 View Portfolio <span style="font-size: 0.75rem;">↗</span>
+                </a>
+            ` : 'N/A';
+
+            const workLinks = Array.isArray(work.links) ? work.links : (p.links || [p.workLink1, p.workLink2, p.workLink3].filter(Boolean));
+            const workLinksHtml = (workLinks && workLinks.length > 0) ? workLinks.filter(Boolean).map((link, idx) => `
+                <a href="${normalizeUrl(link)}" target="_blank" rel="noopener noreferrer" class="document-link" style="display: inline-flex; align-items: center; gap: 0.25rem; color: #667eea; font-weight: 600; text-decoration: none; margin-right: 0.5rem; border: 1px solid #e2e8f0; padding: 0.25rem 0.5rem; border-radius: 6px; background: var(--bg-secondary); transition: all 0.2s;">
+                    🔗 Sample ${idx + 1} <span style="font-size: 0.75rem;">↗</span>
+                </a>
+            `).join('') : 'N/A';
+
+            const table = document.getElementById('profile-table');
+            const rows = [
+                ['Full Name', identity.fullName || p.fullName || p.name || 'N/A'],
+                ['Username', p.username || 'N/A'],
+                ['Email', identity.email || p.email || 'N/A'],
+                ['Phone', identity.phone || p.phone || p.phoneNumber || 'N/A'],
+                ['Date of Birth', p.dob || 'N/A'],
+                ['Gender', identity.gender || p.gender || 'N/A'],
+                ['Address', addressStr],
+                ['Joined Date', p.createdAt ? new Date(p.createdAt.toDate ? p.createdAt.toDate() : p.createdAt).toLocaleDateString() : 'N/A'],
+                ['Aadhaar/ID Number', kyc.aadhaar || kyc.idNumber || 'N/A'],
+                ['PAN Number', kyc.pan || 'N/A'],
+                ['Business Name', business.name || 'N/A'],
+                ['Experience', experienceStr],
+                ['Key Skills', skillsStr],
+                ['Specialisations', specStr],
+                ['Equipment Details', equipStr],
+                ['KYC Verification Documents', kycHtml],
+                ['Curriculum Vitae (CV)', cvHtml],
+                ['Professional Portfolio', portfolioHtml],
+                ['Work Samples / Portfolio Links', workLinksHtml]
+            ];
+
+            table.innerHTML = rows.map(r => `
+                <tr>
+                    <th style="width: 30%">${r[0]}</th>
+                    <td>${r[1]}</td>
+                </tr>
+            `).join('');
+        }
+
+        function populateBookings(bookings) {
+            const table = document.getElementById('bookings-table');
+            if (bookings.length === 0) {
+                table.innerHTML = '<tr><td colspan="5" style="text-align:center">No bookings found</td></tr>';
+                return;
+            }
+
+            bookings.sort((a, b) => {
+                const tA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
+                const tB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
+                return tB - tA; // desc
+            });
+
+            table.innerHTML = bookings.map(b => {
+                const dateStr = b.createdAt ? new Date(b.createdAt.toDate ? b.createdAt.toDate() : b.createdAt).toLocaleDateString() : 'N/A';
+                const status = String(b.status || b.state || 'Unknown');
+                const amt = b.amount || b.price || b.totalAmount || 0;
+                const rating = b.rating || (b.review && b.review.rating) || '-';
+
+                let statusBadge = 'badge-silver';
+                if (['completed', 'payment completed'].includes(status.toLowerCase())) statusBadge = 'badge-success';
+                if (['cancelled', 'canceled'].includes(status.toLowerCase())) statusBadge = 'badge-warning';
+
+                return `
+                    <tr>
+                        <td style="font-size:0.8rem">#${b.id.substring(0,8)}...</td>
+                        <td>${dateStr}</td>
+                        <td><span class="badge ${statusBadge}">${status.toUpperCase()}</span></td>
+                        <td>₹${amt}</td>
+                        <td>${rating}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getLowestPrice(pricing) {
+            if (!pricing) return 0;
+            const prices = [];
+            
+            // Handle package pricing
+            if (pricing.packages && Array.isArray(pricing.packages)) {
+                pricing.packages.forEach(pkg => {
+                    if (pkg.enabled === false) return;
+                    const price = Number(pkg.price || 0);
+                    if (price > 0) prices.push(price);
+                });
+            }
+            
+            // Handle hourly pricing
+            if (pricing.hourly && pricing.hourly.enabled !== false) {
+                const rate = Number(pricing.hourly.rate || 0);
+                const minHours = Number(pricing.hourly.minHours || 1);
+                if (rate > 0) prices.push(rate * minHours);
+            }
+            
+            return prices.length > 0 ? Math.min(...prices) : 0;
+        }
+
+        function populateServices(services) {
+            const table = document.getElementById('services-table');
+            if (services.length === 0) {
+                table.innerHTML = '<tr><td colspan="6" style="text-align:center">No active services</td></tr>';
+                return;
+            }
+
+            table.innerHTML = services.map(s => {
+                const name = s.name || s.title || 'Unnamed Service';
+                const desc = s.description || s.shortDesc || 'No description provided';
+                const cat = s.category || 'N/A';
+                
+                let duration = s.duration || s.estimatedTime || 'N/A';
+                if (duration === 'N/A' && s.pricing && s.pricing.packages && s.pricing.packages.length > 0) {
+                    duration = s.pricing.packages[0].duration || 'N/A';
+                }
+                
+                const price = getLowestPrice(s.pricing) || s.price || s.basePrice || 0;
+                const active = s.isActive !== false ? 'Active' : 'Inactive';
+                const badge = active === 'Active' ? 'badge-success' : 'badge-warning';
+                
+                let imgHtml = '<div style="width: 50px; height: 50px; background: var(--bg-tertiary); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-tertiary); font-size: 0.7rem;">No Img</div>';
+                
+                const mediaUrl = s.image || s.imageUrl || s.thumbnail || (s.media && s.media.coverUrl);
+                
+                if(mediaUrl) {
+                    imgHtml = `<img src="${mediaUrl}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;" alt="${name}">`;
+                }
+
+                return `
+                    <tr>
+                        <td>${imgHtml}</td>
+                        <td>
+                            <strong>${name}</strong><br>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary)">${desc.substring(0, 50)}${desc.length > 50 ? '...' : ''}</span>
+                        </td>
+                        <td>${cat}</td>
+                        <td>${duration}</td>
+                        <td>₹${price}</td>
+                        <td><span class="badge ${badge}">${active}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function populateSubscription(historyLogs) {
+            const p = currentProvider;
+            const sub = p.subscription || {};
+            
+            const plan = sub.plan || p.tier || p.subscriptionPlan || 'Silver';
+            const status = sub.status || 'Active';
+            const granted = sub.grantedTier || 'None';
+            const updatedAt = sub.updatedAt ? new Date(sub.updatedAt.toDate ? sub.updatedAt.toDate() : sub.updatedAt).toLocaleDateString() : 'N/A';
+
+            document.getElementById('sub-table').innerHTML = `
+                <tr><th style="width: 30%">Current Plan</th><td><span class="badge badge-${plan.toLowerCase()}">${plan.toUpperCase()}</span></td></tr>
+                <tr><th>Status</th><td><span class="badge ${status.toLowerCase() === 'active' ? 'badge-success' : 'badge-warning'}">${status.toUpperCase()}</span></td></tr>
+                <tr><th>Pre-granted Upgrade</th><td>${granted.toUpperCase()}</td></tr>
+                <tr><th>Last Updated</th><td>${updatedAt}</td></tr>
+            `;
+
+            const histTable = document.getElementById('sub-history-table');
+            const subActions = historyLogs.filter(h => h.type === 'subscription_change' || h.type === 'approval');
+            
+            if (subActions.length === 0) {
+                histTable.innerHTML = '<tr><td colspan="3" style="text-align:center">No subscription history found</td></tr>';
+                return;
+            }
+
+            histTable.innerHTML = subActions.map(h => {
+                const date = h.createdAt ? new Date(h.createdAt.toDate ? h.createdAt.toDate() : h.createdAt).toLocaleString() : 'N/A';
+                return `
+                    <tr>
+                        <td>${date}</td>
+                        <td><strong>${(h.action || h.type).toUpperCase()}</strong></td>
+                        <td style="font-size:0.9rem; color: var(--text-secondary)">
+                            ${h.note || ''} <br>
+                            ${h.pauseReason ? `<em>Reason: ${h.pauseReason}</em>` : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+    </script>
+</body>
+</html>

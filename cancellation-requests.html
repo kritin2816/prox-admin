@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cancellation Requests Management</title>
+    
+    <!-- Firebase SDK v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 50px;
+            border-bottom: 4px solid rgba(255,255,255,0.2);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 15px;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 25px 50px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #666;
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .content {
+            padding: 40px 50px;
+        }
+
+        .filters-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 12px 28px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            color: #555;
+        }
+
+        .filter-tab:hover {
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .filter-tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .request-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .request-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .card-image-wrapper {
+            position: relative;
+            width: 100%;
+            height: 220px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            backdrop-filter: blur(10px);
+        }
+
+        .badge-pending {
+            background: rgba(255, 243, 205, 0.95);
+            color: #856404;
+        }
+
+        .badge-approved {
+            background: rgba(212, 237, 218, 0.95);
+            color: #155724;
+        }
+
+        .badge-denied {
+            background: rgba(248, 215, 218, 0.95);
+            color: #721c24;
+        }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 12px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .card-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .card-info {
+            font-size: 13px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-info-icon {
+            width: 20px;
+            text-align: center;
+        }
+
+        .card-date {
+            font-size: 12px;
+            color: #999;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 1200px;
+            width: 100%;
+            max-height: 92vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.5);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(40px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 30px 40px;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .close-btn {
+            background: #f0f0f0;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            line-height: 1;
+            padding: 8px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .modal-body {
+            padding: 40px;
+        }
+
+        .hero-section {
+            margin-bottom: 30px;
+        }
+
+        .hero-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .gallery-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .gallery-image:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .section {
+            background: linear-gradient(135deg, #f8f9fa, #ffffff);
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            border: 1px solid #e8e8e8;
+        }
+
+        .section h3 {
+            font-size: 18px;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #888;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 15px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .user-avatar-placeholder {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 28px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .user-details h4 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        .user-details p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .tier-badge {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 10px;
+        }
+
+        .tier-platinum {
+            background: linear-gradient(135deg, #e5e5e5, #ffffff);
+            color: #666;
+            border: 2px solid #999;
+        }
+
+        .tier-gold {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #b8860b;
+        }
+
+        .tier-silver {
+            background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+            color: #696969;
+        }
+
+        .tier-bronze {
+            background: linear-gradient(135deg, #cd7f32, #e6a874);
+            color: #8b4513;
+        }
+
+        .reason-box {
+            background: linear-gradient(135deg, #fff3cd, #fffacd);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 5px solid #ffc107;
+            margin: 20px 0;
+        }
+
+        .reason-box h4 {
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .reason-box p {
+            color: #856404;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .evidence-section {
+            background: linear-gradient(135deg, #e3f2fd, #f0f7ff);
+            padding: 25px;
+            border-radius: 16px;
+            margin: 25px 0;
+            border-left: 5px solid #2196f3;
+        }
+
+        .evidence-section h3 {
+            color: #1565c0;
+        }
+
+        .payment-status {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .payment-confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .payment-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            padding: 30px 40px;
+            border-top: 2px solid #e0e0e0;
+            background: #f8f9fa;
+            position: sticky;
+            bottom: 0;
+        }
+
+        .btn {
+            padding: 14px 35px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        .btn-approve {
+            background: linear-gradient(135deg, #4caf50, #66bb6a);
+            color: white;
+        }
+
+        .btn-approve:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-deny {
+            background: linear-gradient(135deg, #f44336, #e57373);
+            color: white;
+        }
+
+        .btn-deny:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+        }
+
+        .btn-cancel {
+            background: #e0e0e0;
+            color: #555;
+        }
+
+        .btn-cancel:hover {
+            background: #d0d0d0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 80px 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 25px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 25px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 24px;
+            margin-bottom: 12px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 25px 20px;
+            }
+
+            .stats-bar {
+                padding: 20px;
+            }
+
+            .content {
+                padding: 25px 20px;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                border-radius: 0;
+                max-height: 100vh;
+            }
+
+            .modal-body {
+                padding: 25px 20px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Cancellation Requests Management</h1>
+            <p>Review and process booking cancellation requests with comprehensive details</p>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-number" id="stat-pending">0</div>
+                <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-approved">0</div>
+                <div class="stat-label">Approved</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-denied">0</div>
+                <div class="stat-label">Denied</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-total">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="filters-section">
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-status="pending">⏳ Pending</button>
+                    <button class="filter-tab" data-status="approved">✅ Approved</button>
+                    <button class="filter-tab" data-status="denied">❌ Denied</button>
+                    <button class="filter-tab" data-status="all">📋 All Requests</button>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div>Loading cancellation requests...</div>
+            </div>
+            <div id="requests-grid" class="cards-grid"></div>
+        </div>
+    </div>
+
+    <div id="detail-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-title">Request Details</div>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-actions" id="modal-actions"></div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+            authDomain: "phototester555.firebaseapp.com",
+            projectId: "phototester555",
+            storageBucket: "phototester555.firebasestorage.app",
+            messagingSenderId: "953997763616",
+            appId: "1:953997763616:web:4ac177ad8e79c5f38b8845",
+            measurementId: "G-6VS0G0NQ7K"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let currentFilter = 'pending';
+        let currentRequest = null;
+        let stats = { pending: 0, approved: 0, denied: 0, total: 0 };
+        let allRequests = [];
+
+        const cache = {
+            bookings: {},
+            users: {},
+            providers: {}
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            firebase.auth().onAuthStateChanged(async (user) => {
+                if (!user) {
+                    console.log('No user logged in, redirecting to login');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                try {
+                    const adminDoc = await db.collection('admin_users').doc(user.uid).get();
+                    if (!adminDoc.exists || !adminDoc.data().isActive) {
+                        console.log('User is not an active admin, signing out');
+                        await firebase.auth().signOut();
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error verifying admin status:', error);
+                    await firebase.auth().signOut();
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                initializeFilters();
+                loadAllRequests();
+            });
+        });
+
+        function initializeFilters() {
+            document.querySelectorAll('.filter-tab').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentFilter = e.target.dataset.status;
+                    displayFilteredRequests();
+                });
+            });
+        }
+
+        async function loadAllRequests() {
+            const loadingEl = document.getElementById('loading');
+            loadingEl.style.display = 'block';
+
+            try {
+                const snapshot = await db.collection('cancellation_requests')
+                    .orderBy('when', 'desc')
+                    .get();
+
+                stats = { pending: 0, approved: 0, denied: 0, total: snapshot.size };
+                allRequests = [];
+
+                for (const doc of snapshot.docs) {
+                    const data = { id: doc.id, ...doc.data() };
+                    allRequests.push(data);
+                    
+                    const status = (data.status || 'pending').toLowerCase();
+                    if (stats[status] !== undefined) stats[status]++;
+                }
+
+                document.getElementById('stat-pending').textContent = stats.pending;
+                document.getElementById('stat-approved').textContent = stats.approved;
+                document.getElementById('stat-denied').textContent = stats.denied;
+                document.getElementById('stat-total').textContent = stats.total;
+
+                loadingEl.style.display = 'none';
+                displayFilteredRequests();
+            } catch (error) {
+                console.error('Error loading requests:', error);
+                loadingEl.innerHTML = `<div class="empty-state"><h3>⚠️ Error</h3><p>${error.message}</p></div>`;
+            }
+        }
+
+        async function displayFilteredRequests() {
+            const gridEl = document.getElementById('requests-grid');
+            gridEl.innerHTML = '';
+
+            let filteredRequests = allRequests;
+            if (currentFilter !== 'all') {
+                filteredRequests = allRequests.filter(req => {
+                    const status = (req.status || 'pending').toLowerCase();
+                    return status === currentFilter;
+                });
+            }
+
+            if (filteredRequests.length === 0) {
+                gridEl.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                        <h3>No Requests Found</h3>
+                        <p>No cancellation requests match the selected filter</p>
+                    </div>
+                `;
+                return;
+            }
+
+            for (const data of filteredRequests) {
+                const booking = await getBooking(data.bookingId);
+                const card = createCompactCard(data, booking);
+                gridEl.appendChild(card);
+            }
+        }
+
+        // Helper: calculate refund from the ADVANCE PAID base, not full booking value
+        function calculateRefund(advancePaidAmount, percent) {
+            if (!advancePaidAmount || !percent) return 0;
+            return Math.round((advancePaidAmount * percent / 100) * 100) / 100;
+        }
+        // Helper: derive advance paid from booking data
+        function getAdvancePaid(booking) {
+            const total = Number(booking?.estimatedSubtotal || booking?.selectedPricing?.price || booking?.amount || 0);
+            return Number(booking?.paymentStatus?.advanceAmount ?? Math.ceil(total * 0.1));
+        }
+
+        function createCompactCard(data, booking) {
+            const card = document.createElement('div');
+            card.className = 'request-card';
+            card.onclick = () => openDetailModal(data);
+
+            const status = (data.status || 'pending').toLowerCase();
+            const badgeClass = `badge-${status}`;
+            const serviceTitle = booking?.serviceName || 'Unknown Service';
+            const coverImage = booking?.serviceImageUrl || booking?.imageUrls?.[0] || 'https://via.placeholder.com/400x300?text=No+Image';
+            const customerName = booking?.customerName || data.who || 'Unknown Customer';
+            const bookingAmount = booking?.estimatedSubtotal || booking?.selectedPricing?.price || booking?.amount || 0;
+
+            card.innerHTML = `
+                <div class="card-image-wrapper">
+                    <img src="${coverImage}" class="card-image" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
+                    <div class="card-badge ${badgeClass}">${status.toUpperCase()}</div>
+                </div>
+                <div class="card-content">
+                    <div class="card-title">${escapeHtml(serviceTitle)}</div>
+                    <div class="card-meta">
+                        <div class="card-info">
+                            <span class="card-info-icon">👤</span>
+                            <span>${escapeHtml(customerName)}</span>
+                        </div>
+                        <div class="card-info">
+                            <span class="card-info-icon">📁</span>
+                            <span>${escapeHtml(booking?.category || 'N/A')}</span>
+                        </div>
+                        <div class="card-info">
+                            <span class="card-info-icon">💰</span>
+                            <span>₹${bookingAmount.toLocaleString('en-IN')}</span>
+                        </div>
+                        ${data.refundPercent !== undefined ? `
+                        <div class="card-info" style="color: #28a745; font-weight: 600;">
+                            <span class="card-info-icon">💵</span>
+                            <span>Refund: ${data.refundPercent}% (₹${calculateRefund(bookingAmount, data.refundPercent).toLocaleString('en-IN')})</span>
+                        </div>` : ''}
+                    </div>
+                    <div class="card-date">🕐 ${formatDate(data.when)}</div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        async function openDetailModal(data) {
+            currentRequest = data;
+            
+            const booking = await getBooking(data.bookingId);
+            const customer = booking ? await getUser(booking.customerId) : await getUser(data.customerId);
+            const provider = booking ? await getProvider(booking.providerId) : null;
+
+            const serviceTitle = booking?.serviceName || 'Unknown Service';
+            document.getElementById('modal-title').textContent = `Cancellation Request - ${serviceTitle}`;
+
+            let content = '';
+
+            const heroImage = booking?.serviceImageUrl || booking?.imageUrls?.[0] || null;
+            if (heroImage) {
+                content += `
+                    <div class="hero-section">
+                        <img src="${heroImage}" class="hero-image" onerror="this.style.display='none'">
+                    </div>
+                `;
+            }
+
+            if (booking) {
+                content += `
+                    <div class="section">
+                        <h3>📋 Service Details</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">Service Name</div>
+                                <div class="info-value">${escapeHtml(booking.serviceName)}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Category</div>
+                                <div class="info-value">${escapeHtml(booking.category)}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Type</div>
+                                <div class="info-value">${escapeHtml(booking.type || 'N/A')}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Duration</div>
+                                <div class="info-value">${escapeHtml(booking.duration || 'N/A')}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                if (booking.imageUrls && booking.imageUrls.length > 0) {
+                    content += `
+                        <div class="section">
+                            <h3>🖼️ Service Images</h3>
+                            <div class="image-gallery">
+                                ${booking.imageUrls.map(img => `
+                                    <img src="${img}" class="gallery-image" onclick="window.open('${img}', '_blank')" onerror="this.style.display='none'">
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const bookingAmount = booking.estimatedSubtotal || booking.selectedPricing?.price || booking.amount || 0;
+
+                content += `
+                    <div class="section">
+                        <h3>📅 Booking Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">Booking ID</div>
+                                <div class="info-value">${escapeHtml(data.bookingId || booking.bookingId)}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Date</div>
+                                <div class="info-value">${escapeHtml(booking.selectedDate || 'N/A')}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Time</div>
+                                <div class="info-value">${escapeHtml(booking.selectedTime || 'N/A')}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Location</div>
+                                <div class="info-value">${escapeHtml(booking.location || 'N/A')}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Booking Amount</div>
+                                <div class="info-value">₹${bookingAmount.toLocaleString('en-IN')}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Status</div>
+                                <div class="info-value">${escapeHtml(booking.status || 'N/A')}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Payment Method</div>
+                                <div class="info-value">${escapeHtml(booking.paymentMethod || 'N/A')}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Payment Status</div>
+                                <div class="info-value">
+                                    <span class="payment-status ${booking.paymentConfirmed ? 'payment-confirmed' : 'payment-pending'}">
+                                        ${booking.paymentConfirmed ? '✓ Confirmed' : '⏳ Pending'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (customer) {
+                const customerName = customer.fullName || `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || booking?.customerName || 'Unknown Customer';
+                content += `
+                    <div class="section">
+                        <h3>👤 Customer Information</h3>
+                        <div class="user-card">
+                            ${customer.profilePhoto ? 
+                                `<img src="${customer.profilePhoto}" class="user-avatar" onerror="this.outerHTML='<div class=\\'user-avatar-placeholder\\'>${getInitials(customer.firstName, customer.lastName)}</div>'">` :
+                                `<div class="user-avatar-placeholder">${getInitials(customer.firstName, customer.lastName)}</div>`
+                            }
+                            <div class="user-details">
+                                <h4>${escapeHtml(customerName)}</h4>
+                                <p>📧 ${escapeHtml(customer.email || customer.identity?.email || 'N/A')}</p>
+                                <p>📞 ${escapeHtml(customer.phone || customer.identity?.phone || booking?.customerPhone || 'N/A')}</p>
+                                <p>👤 @${escapeHtml(customer.username || 'N/A')} • Status: ${escapeHtml(customer.status || 'N/A')}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (provider) {
+                const providerName = provider.fullName || `${provider.firstName || ''} ${provider.lastName || ''}`.trim() || booking?.providerName || 'Unknown Provider';
+                const tierClass = `tier-${(provider.tier || 'bronze').toLowerCase()}`;
+                content += `
+                    <div class="section">
+                        <h3>🏢 Provider Information</h3>
+                        <div class="user-card">
+                            ${provider.profilePhoto ? 
+                                `<img src="${provider.profilePhoto}" class="user-avatar" onerror="this.outerHTML='<div class=\\'user-avatar-placeholder\\'>${getInitials(provider.firstName, provider.lastName)}</div>'">` :
+                                `<div class="user-avatar-placeholder">${getInitials(provider.firstName, provider.lastName)}</div>`
+                            }
+                            <div class="user-details">
+                                <h4>${escapeHtml(providerName)} ${provider.tier ? `<span class="tier-badge ${tierClass}">${provider.tier}</span>` : ''}</h4>
+                                <p>📧 ${escapeHtml(provider.email || provider.identity?.email || 'N/A')}</p>
+                                <p>📞 ${escapeHtml(provider.phone || provider.identity?.phone || booking?.providerPhone || 'N/A')}</p>
+                                <p>👤 @${escapeHtml(provider.username || 'N/A')} • Status: ${escapeHtml(provider.status || 'N/A')}</p>
+                                ${provider.profile ? `
+                                    <p>🎯 ${escapeHtml(provider.profile.primaryDomain || 'N/A')} • Experience: ${provider.profile.experience || 0} years</p>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            content += `
+                <div class="reason-box">
+                    <h4>📝 Cancellation Reason</h4>
+                    <p>${escapeHtml(data.reason || 'No reason provided')}</p>
+                </div>
+            `;
+
+            if (data.evidenceUrls && data.evidenceUrls.length > 0) {
+                content += `
+                    <div class="evidence-section">
+                        <h3>📎 Evidence Attached</h3>
+                        <div class="image-gallery">
+                            ${data.evidenceUrls.map(url => `
+                                <img src="${url}" class="gallery-image" onclick="window.open('${url}', '_blank')" onerror="this.style.display='none'">
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            const bookingAmount = booking?.estimatedSubtotal || booking?.selectedPricing?.price || booking?.amount || 0;
+
+            content += `
+                <div class="section">
+                    <h3>ℹ️ Request Details</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Requested By</div>
+                            <div class="info-value">${escapeHtml(data.who || data.cancelledBy || 'Unknown')}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Request Date</div>
+                            <div class="info-value">${formatDate(data.when)}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Status</div>
+                            <div class="info-value">${escapeHtml(data.status || 'pending')}</div>
+                        </div>
+                        ${data.refundPercent !== undefined ? `
+                            <div class="info-item">
+                                <div class="info-label">Refund Percentage</div>
+                                <div class="info-value">${data.refundPercent}%</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Refund Amount</div>
+                                <div class="info-value" style="color: #28a745; font-weight: 600; font-size: 18px;">₹${(data.refundAmount || calculateRefund(getAdvancePaid(booking), data.refundPercent)).toLocaleString('en-IN')}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Booking Amount</div>
+                                <div class="info-value">₹${(data.bookingAmount || bookingAmount).toLocaleString('en-IN')}</div>
+                            </div>
+                        ` : ''}
+                        ${data.decidedAt ? `
+                            <div class="info-item">
+                                <div class="info-label">Decided At</div>
+                                <div class="info-value">${formatDate(data.decidedAt)}</div>
+                            </div>
+                        ` : ''}
+                        ${data.adminNote ? `
+                            <div class="info-item" style="grid-column: 1/-1;">
+                                <div class="info-label">Admin Note</div>
+                                <div class="info-value">${escapeHtml(data.adminNote)}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modal-body').innerHTML = content;
+
+            const actionsEl = document.getElementById('modal-actions');
+            const status = (data.status || 'pending').toLowerCase();
+            
+            if (status === 'pending') {
+                actionsEl.innerHTML = `
+                    <button class="btn btn-deny" onclick="denyRequest()">❌ Deny Request</button>
+                    <button class="btn btn-approve" onclick="approveRequest()">✅ Approve & Refund</button>
+                `;
+            } else {
+                actionsEl.innerHTML = `
+                    <button class="btn btn-cancel" onclick="closeModal()">Close</button>
+                `;
+            }
+
+            document.getElementById('detail-modal').classList.add('active');
+        }
+
+        async function approveRequest() {
+            if (!currentRequest) return;
+
+            const refund = prompt('Enter refund percentage (0-100):', '100');
+            if (refund === null) return;
+
+            const refundPercent = parseFloat(refund);
+            if (isNaN(refundPercent) || refundPercent < 0 || refundPercent > 100) {
+                alert('Invalid refund percentage');
+                return;
+            }
+
+            const note = prompt('Add an admin note (optional):');
+
+            // Get booking amount and calculate refund
+            const booking = await getBooking(currentRequest.bookingId);
+            const bookingAmount = booking?.estimatedSubtotal || booking?.selectedPricing?.price || booking?.amount || 0;
+            // ✅ Refund is always from the ADVANCE PAID (10%), not the full booking value
+            const advancePaid = getAdvancePaid(booking);
+            const refundAmount = calculateRefund(advancePaid, refundPercent);
+
+            console.log('💰 Refund Calculation:', {
+                bookingId: currentRequest.bookingId,
+                totalBookingAmount: bookingAmount,
+                advancePaid,
+                refundPercent,
+                calculatedRefundAmount: refundAmount,
+                note: 'Refund is from advance paid only'
+            });
+
+            try {
+                // ✅ 1. UPDATE CANCELLATION_REQUESTS COLLECTION
+                await db.collection('cancellation_requests').doc(currentRequest.id).update({
+                    status: 'approved',
+                    refundPercent: refundPercent,
+                    refundAmount: refundAmount,
+                    advancePaid: advancePaid,
+                    bookingAmount: bookingAmount,
+                    decidedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    adminNote: note || '',
+                    approvedBy: 'admin',
+                    processedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                console.log('✅ Updated cancellation_requests collection');
+
+                // ✅ 2. UPDATE BOOKINGS COLLECTION
+                if (currentRequest.bookingId) {
+                    const bookingRef = db.collection('bookings').doc(currentRequest.bookingId);
+
+                    await bookingRef.update({
+                        'cancelRequest.status': 'approved',
+                        'cancelRequest.refundPercent': refundPercent,
+                        'cancelRequest.refundAmount': refundAmount,
+                        'cancelRequest.finalRefundAmount': refundAmount,
+                        'cancelRequest.approvedRefundAmount': refundAmount,
+                        'cancelRequest.advancePaid': advancePaid,
+                        'cancelRequest.by': currentRequest.who || 'customer',
+                        'cancelRequest.userChoice': currentRequest.userChoice || 'refund',
+                        'cancelRequest.reason': currentRequest.reason || '',
+                        'cancelRequest.prevStatus': booking?.status || 'Pending',
+                        'cancelRequest.approvedAt': firebase.firestore.FieldValue.serverTimestamp(),
+                        'cancelRequest.adminNote': note || '',
+                        'status': 'Cancelled',
+                        'refundStatus': {
+                            status: 'completed',
+                            amount: refundAmount,
+                            percent: refundPercent,
+                            advancePaid: advancePaid,
+                            processedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            processedBy: 'admin'
+                        },
+                        'refundInitiated': true,
+                        'updatedAt': firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    console.log('✅ Updated bookings collection with refund data');
+                }
+
+                alert(`✅ Request approved successfully!\n\nRefund: ${refundPercent}%\nAmount: ₹${refundAmount.toLocaleString('en-IN')}`);
+                closeModal();
+                loadAllRequests();
+            } catch (error) {
+                console.error('❌ Error approving request:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function denyRequest() {
+            if (!currentRequest) return;
+
+            const note = prompt('Add a reason for denial:');
+            if (note === null) return;
+
+            try {
+                // ✅ 1. UPDATE CANCELLATION_REQUESTS COLLECTION
+                await db.collection('cancellation_requests').doc(currentRequest.id).update({
+                    status: 'denied',
+                    decidedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    adminNote: note || 'Request denied by admin',
+                    deniedBy: 'admin',
+                    processedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                console.log('✅ Updated cancellation_requests collection - DENIED');
+
+                // ✅ 2. UPDATE BOOKINGS COLLECTION
+                if (currentRequest.bookingId) {
+                    const booking = await getBooking(currentRequest.bookingId);
+                    const bookingRef = db.collection('bookings').doc(currentRequest.bookingId);
+
+                    await bookingRef.update({
+                        'cancelRequest.status': 'denied',
+                        'cancelRequest.by': currentRequest.who || 'customer',
+                        'cancelRequest.reason': currentRequest.reason || '',
+                        'cancelRequest.deniedAt': firebase.firestore.FieldValue.serverTimestamp(),
+                        'cancelRequest.adminNote': note || 'Request denied by admin',
+                        'cancelRequest.prevStatus': booking?.status || 'Pending',
+                        'status': booking?.cancelRequest?.prevStatus || booking?.status || 'Pending',
+                        'updatedAt': firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    console.log('✅ Updated bookings collection - DENIED, status restored');
+                }
+
+                alert('❌ Request denied');
+                closeModal();
+                loadAllRequests();
+            } catch (error) {
+                console.error('❌ Error denying request:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('detail-modal').classList.remove('active');
+            currentRequest = null;
+        }
+
+        async function getBooking(bookingId) {
+            if (!bookingId) return null;
+            if (cache.bookings[bookingId]) return cache.bookings[bookingId];
+
+            try {
+                const doc = await db.collection('bookings').doc(bookingId).get();
+                if (doc.exists) {
+                    cache.bookings[bookingId] = doc.data();
+                    return doc.data();
+                }
+            } catch (error) {
+                console.error('Error fetching booking:', error);
+                return null;
+            }
+        }
+
+        async function getUser(userId) {
+            if (!userId) return null;
+            if (cache.users[userId]) return cache.users[userId];
+
+            try {
+                const doc = await db.collection('users').doc(userId).get();
+                if (doc.exists) {
+                    cache.users[userId] = doc.data();
+                    return doc.data();
+                }
+            } catch (error) {
+                console.error('Error fetching user:', error);
+                return null;
+            }
+        }
+
+        async function getProvider(providerId) {
+            if (!providerId) return null;
+            if (cache.providers[providerId]) return cache.providers[providerId];
+
+            try {
+                const doc = await db.collection('providers').doc(providerId).get();
+                if (doc.exists) {
+                    cache.providers[providerId] = doc.data();
+                    return doc.data();
+                }
+            } catch (error) {
+                console.error('Error fetching provider:', error);
+                return null;
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(timestamp) {
+            if (!timestamp) return 'N/A';
+            try {
+                let date;
+                if (typeof timestamp === 'string') {
+                    date = new Date(timestamp);
+                } else if (timestamp.toDate) {
+                    date = timestamp.toDate();
+                } else {
+                    date = new Date(timestamp);
+                }
+                return date.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch {
+                return 'Invalid Date';
+            }
+        }
+
+        function getInitials(firstName, lastName) {
+            if (!firstName && !lastName) return '?';
+            const first = firstName ? firstName[0] : '';
+            const last = lastName ? lastName[0] : '';
+            return (first + last).toUpperCase();
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('detail-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'detail-modal') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

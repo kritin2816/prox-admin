@@ -1,0 +1,4872 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro X - Provider Management</title>
+
+    <!-- Firebase SDK v8 CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
+
+    <style>
+        /* ============================================
+   CSS VARIABLES - THEME SYSTEM
+   ============================================ */
+        :root {
+            /* Light Mode (Default) */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #f1f3f5;
+            --bg-gradient-1: #667eea;
+            --bg-gradient-2: #764ba2;
+
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+
+            --border-color: #e0e0e0;
+            --border-light: rgba(0, 0, 0, 0.05);
+
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
+            --accent-light: rgba(102, 126, 234, 0.1);
+
+            --success: #28a745;
+            --warning: #ff9800;
+            --danger: #dc3545;
+
+            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Dark Mode */
+        html.dark-mode {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: rgba(30, 41, 59, 0.8);
+            --bg-gradient-1: #1e293b;
+            --bg-gradient-2: #0f172a;
+
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+
+            --border-color: rgba(148, 163, 184, 0.2);
+            --border-light: rgba(148, 163, 184, 0.1);
+
+            --accent-primary: #60a5fa;
+            --accent-secondary: #3b82f6;
+            --accent-light: rgba(96, 165, 250, 0.1);
+
+            --success: #22c55e;
+            --warning: #f97316;
+            --danger: #ef4444;
+
+            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ============================================
+   RESET & BASE STYLES
+   ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        /* ============================================
+   THEME TOGGLE BUTTON
+   ============================================ */
+        .theme-toggle-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .theme-toggle-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .theme-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        .theme-toggle-btn svg {
+            width: 24px;
+            height: 24px;
+            position: absolute;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .sun-icon {
+            opacity: 1;
+            transform: rotate(0deg);
+        }
+
+        .moon-icon {
+            opacity: 0;
+            transform: rotate(-180deg);
+        }
+
+        html.dark-mode .sun-icon {
+            opacity: 0;
+            transform: rotate(180deg);
+        }
+
+        html.dark-mode .moon-icon {
+            opacity: 1;
+            transform: rotate(0deg);
+        }
+
+        /* ============================================
+   CONTAINER & LAYOUT
+   ============================================ */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--bg-primary);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* ============================================
+   HEADER
+   ============================================ */
+        .header {
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header-left h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .header-left .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .admin-welcome {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* ============================================
+   STATS CARDS
+   ============================================ */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: var(--bg-secondary);
+            transition: background 0.3s ease;
+        }
+
+        .stat-card {
+            background: var(--bg-primary);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+            border: 1px solid var(--border-light);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-color);
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        /* ============================================
+   CONTROLS SECTION
+   ============================================ */
+        .controls {
+            padding: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-light);
+            background: var(--bg-primary);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .filter-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .filter-btn.active {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            border-color: var(--accent-primary);
+        }
+
+        /* ============================================
+   PROVIDERS TABLE
+   ============================================ */
+        .providers-section {
+            padding: 30px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background: var(--bg-primary);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+            color: white;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border-light);
+            transition: background 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        td {
+            padding: 15px;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .info-item value a {
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .info-item value a:hover {
+            text-decoration: underline;
+        }
+
+        /* ============================================
+   STATUS BADGES
+   ============================================ */
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        html:not(.dark-mode) .badge.approved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        html.dark-mode .badge.approved {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+        }
+
+        html:not(.dark-mode) .badge.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        html.dark-mode .badge.pending {
+            background: rgba(234, 179, 8, 0.2);
+            color: #fbbf24;
+        }
+
+        html:not(.dark-mode) .badge.rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        html.dark-mode .badge.rejected {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+
+        html:not(.dark-mode) .badge.needs_changes {
+            background: #fde7e7;
+            color: #c53030;
+        }
+
+        html.dark-mode .badge.needs_changes {
+            background: rgba(251, 146, 60, 0.2);
+            color: #fed7aa;
+        }
+
+        /* ============================================
+   TIER BADGES
+   ============================================ */
+        .tier-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        html:not(.dark-mode) .tier-silver {
+            background: #e8e8e8;
+            color: #666;
+        }
+
+        html.dark-mode .tier-silver {
+            background: rgba(107, 114, 128, 0.2);
+            color: #d1d5db;
+        }
+
+        html:not(.dark-mode) .tier-gold {
+            background: #ffd700;
+            color: #8b6914;
+        }
+
+        html.dark-mode .tier-gold {
+            background: rgba(234, 179, 8, 0.2);
+            color: #fbbf24;
+        }
+
+        html:not(.dark-mode) .tier-platinum {
+            background: #e5e4e2;
+            color: #434343;
+        }
+
+        html.dark-mode .tier-platinum {
+            background: rgba(148, 163, 184, 0.2);
+            color: #cbd5e1;
+        }
+
+        /* ============================================
+   ACTION BUTTONS
+   ============================================ */
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn.primary {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+        }
+
+        .action-btn.primary:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-2px);
+        }
+
+        .action-btn.success {
+            background: var(--success);
+            color: white;
+        }
+
+        .action-btn.success:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .action-btn.danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .action-btn.danger:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        /* ============================================
+   MODALS
+   ============================================ */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--bg-primary);
+            border-radius: 20px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            animation: modalSlideIn 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .info-section {
+            margin-bottom: 25px;
+        }
+
+        .info-section h3 {
+            font-size: 18px;
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-item label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .info-item value {
+            font-size: 14px;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            border-radius: 0 0 20px 20px;
+        }
+
+        /* ============================================
+   CHANGE REQUEST CHIPS
+   ============================================ */
+        .chip {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        html:not(.dark-mode) .chip-warn {
+            background: #fff5e6;
+            border: 1px solid #f7c87a;
+            color: #8b5a00;
+        }
+
+        html.dark-mode .chip-warn {
+            background: rgba(251, 146, 60, 0.2);
+            border: 1px solid rgba(251, 146, 60, 0.4);
+            color: #fed7aa;
+        }
+
+        html:not(.dark-mode) .chip-danger {
+            background: #fde7e7;
+            border: 1px solid #e88888;
+            color: #c53030;
+            animation: pulse 2s infinite;
+        }
+
+        html.dark-mode .chip-danger {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+            animation: pulse 2s infinite;
+        }
+
+        .chip:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        /* ============================================
+   FEEDBACK SECTION
+   ============================================ */
+        .feedback-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            transition: background 0.3s ease;
+        }
+
+        .feedback-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .feedback-item {
+            background: var(--bg-primary);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid var(--accent-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .feedback-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .feedback-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .field-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+        }
+
+        .field-label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .field-status {
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        html:not(.dark-mode) .field-status.verified {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        html.dark-mode .field-status.verified {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+        }
+
+        html:not(.dark-mode) .field-status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        html.dark-mode .field-status.pending {
+            background: rgba(234, 179, 8, 0.2);
+            color: #fbbf24;
+        }
+
+        /* ============================================
+   LOADING & EMPTY STATES
+   ============================================ */
+        .loading-state,
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
+        }
+
+        .loading-state p,
+        .empty-state p {
+            font-size: 16px;
+            margin-top: 15px;
+        }
+
+        /* ============================================
+   SUCCESS MESSAGE
+   ============================================ */
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            z-index: 2000;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                min-width: 100%;
+            }
+
+            .filter-group {
+                justify-content: center;
+            }
+
+            .table-container {
+                overflow-x: scroll;
+            }
+
+            table {
+                min-width: 800px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Request Changes Section */
+        .rc-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            transition: background 0.3s ease;
+        }
+
+        .rc-section h4 {
+            margin-bottom: 15px;
+            color: var(--accent-primary);
+        }
+
+        .request-changes-btn {
+            background: var(--warning);
+            color: var(--bg-primary);
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .request-changes-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .rc-fields-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .rc-group {
+            margin-bottom: 20px;
+        }
+
+        .rc-group-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .rc-field-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: var(--bg-primary);
+            margin-bottom: 5px;
+            border-radius: 6px;
+        }
+
+        .rc-field-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .rc-reason-box {
+            margin-bottom: 15px;
+        }
+
+        .rc-reason-box textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .rc-reason-box textarea::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .rc-blocking-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .confirm-section {
+            padding: 20px;
+            background: rgba(251, 146, 60, 0.1);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(251, 146, 60, 0.2);
+        }
+
+        .provider-link-btn {
+            background: #17a2b8;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .provider-link-btn:hover {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+
+        /* ── Subscription section ── */
+        .sub-info-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .sub-plan-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        html:not(.dark-mode) .sub-plan-badge {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        html.dark-mode .sub-plan-badge {
+            background: rgba(96, 165, 250, 0.15);
+            color: #93c5fd;
+        }
+
+        html:not(.dark-mode) .sub-status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        html.dark-mode .sub-status-active {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+        }
+
+        html:not(.dark-mode) .sub-status-paused {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        html.dark-mode .sub-status-paused {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
+
+        html:not(.dark-mode) .sub-status-none {
+            background: #f1f3f5;
+            color: #6c757d;
+        }
+
+        html.dark-mode .sub-status-none {
+            background: rgba(148, 163, 184, 0.15);
+            color: #94a3b8;
+        }
+
+        .sub-stopped-reason {
+            margin-top: 8px;
+            padding: 10px 12px;
+            background: rgba(255, 152, 0, 0.08);
+            border-left: 3px solid var(--warning);
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .sub-stopped-reason strong {
+            color: var(--warning);
+            margin-right: 6px;
+        }
+
+        .sub-manage-btn {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 9px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            margin-top: 12px;
+        }
+
+        .sub-manage-btn:hover {
+            background: #4f46e5;
+            transform: translateY(-2px);
+        }
+
+        /* subscription modal layout helpers */
+        .sub-modal-provider-name {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 18px;
+            color: var(--accent-primary);
+        }
+
+        .sub-modal-section {
+            margin-bottom: 20px;
+        }
+
+        .sub-modal-section-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 10px;
+        }
+
+        .sub-modal-btn-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .sub-note-area {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        /* plan selector buttons inside subscription modal */
+        .plan-option-btn {
+            padding: 10px 18px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .plan-option-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .plan-option-btn.selected {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+
+        /* ── Subscription status pill (table) ── */
+        .sub-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        html:not(.dark-mode) .sub-pill-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        html.dark-mode .sub-pill-active {
+            background: rgba(34, 197, 94, 0.18);
+            color: #86efac;
+        }
+
+        html:not(.dark-mode) .sub-pill-paused {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        html.dark-mode .sub-pill-paused {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
+
+        html:not(.dark-mode) .sub-pill-none {
+            background: #f1f3f5;
+            color: #6c757d;
+        }
+
+        html.dark-mode .sub-pill-none {
+            background: rgba(148, 163, 184, 0.12);
+            color: #94a3b8;
+        }
+
+        /* ── Subscription modal banner ── */
+        .sub-status-banner {
+            margin-bottom: 18px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sub-status-banner-icon {
+            font-size: 1.1rem;
+        }
+
+        .sub-status-banner-plan {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .sub-status-banner-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .sub-pause-required {
+            color: var(--danger);
+        }
+
+        .sub-platinum-note {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            border-radius: 8px;
+            font-size: 12px;
+            color: #a855f7;
+            display: none;
+        }
+
+        .sub-platinum-note.visible {
+            display: block;
+        }
+
+        /* ============================================
+   TAB NAVIGATION
+   ============================================ */
+        .tab-nav {
+            display: flex;
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--border-color);
+            padding: 0 30px;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .tab-btn {
+            padding: 15px 25px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            margin-bottom: -2px;
+        }
+
+        .tab-btn.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-btn:hover {
+            color: var(--accent-primary);
+        }
+
+        /* ============================================
+   SUBSCRIPTION UPGRADE STYLES
+   ============================================ */
+        .sub-hero {
+            background: linear-gradient(135deg, #512DA8, #7B1FA2);
+            color: white;
+            padding: 2rem 30px;
+        }
+
+        .sub-hero h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+
+        .sub-hero p {
+            font-size: 0.9rem;
+            opacity: 0.85;
+            margin-bottom: 1.25rem;
+        }
+
+        .sub-hero-stats {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .sub-stat-val {
+            font-size: 1.75rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .sub-stat-lbl {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-top: 0.2rem;
+        }
+
+        .rules-banner {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            padding: 1.5rem 30px;
+            background: var(--bg-secondary);
+            transition: background 0.3s ease;
+        }
+
+        .rule-card {
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            transition: background 0.3s ease;
+        }
+
+        .rule-icon {
+            font-size: 1.75rem;
+            flex-shrink: 0;
+        }
+
+        .rule-title {
+            font-weight: 700;
+            font-size: 0.9375rem;
+        }
+
+        .rule-desc {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+        }
+
+        .sub-filter-bar {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            padding: 1.5rem 30px 0;
+        }
+
+        .sub-filter-btn {
+            padding: 0.5rem 1.25rem;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 2px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sub-filter-btn.active-all {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: white;
+        }
+
+        .sub-filter-btn.active-gold {
+            background: #f59e0b;
+            border-color: #f59e0b;
+            color: white;
+        }
+
+        .sub-filter-btn.active-plat {
+            background: #a855f7;
+            border-color: #a855f7;
+            color: white;
+        }
+
+        .sub-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            padding: 1.5rem 30px 2.5rem;
+        }
+
+        .sub-card {
+            background: var(--bg-primary);
+            border-radius: 18px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
+        }
+
+        .sub-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Glow effects for eligible providers */
+        .sub-card.gold-glow {
+            border-color: #f59e0b;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+        }
+
+        .sub-card.platinum-glow {
+            border-color: #a855f7;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.25);
+        }
+
+        html.dark-mode .sub-card.gold-glow {
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.35);
+        }
+
+        html.dark-mode .sub-card.platinum-glow {
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.35);
+        }
+
+        .card-ribbon {
+            height: 5px;
+            width: 100%;
+        }
+
+        .card-ribbon.gold {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+
+        .card-ribbon.platinum {
+            background: linear-gradient(90deg, #a855f7, #ec4899);
+        }
+
+        .card-ribbon.silver {
+            background: #cbd5e1;
+        }
+
+        .card-body-sub {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            flex: 1;
+        }
+
+        .prov-row-sub {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .sub-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 800;
+            flex-shrink: 0;
+            color: white;
+        }
+
+        .sub-avatar.gold {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        }
+
+        .sub-avatar.platinum {
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+        }
+
+        .sub-avatar.silver {
+            background: #94a3b8;
+        }
+
+        .sub-prov-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .sub-prov-email {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .sub-prov-domain {
+            font-size: 0.78rem;
+            color: var(--text-tertiary);
+            margin-top: 1px;
+        }
+
+        .elig-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            width: fit-content;
+        }
+
+        .elig-tag.gold {
+            background: rgba(245, 158, 11, 0.12);
+            color: #f59e0b;
+        }
+
+        .elig-tag.platinum {
+            background: rgba(168, 85, 247, 0.12);
+            color: #a855f7;
+        }
+
+        .elig-tag.none {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        html.dark-mode .elig-tag.none {
+            background: rgba(148, 163, 184, 0.15);
+            color: #94a3b8;
+        }
+
+        .mini-stats-sub {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.75rem;
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 12px;
+            transition: background 0.3s;
+        }
+
+        .ms-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .ms-lbl {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .ms-val {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .sub-tier-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.3rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sub-tier-pill.silver {
+            background: rgba(148, 163, 184, 0.15);
+            color: #64748b;
+        }
+
+        .sub-tier-pill.gold {
+            background: rgba(245, 158, 11, 0.12);
+            color: #f59e0b;
+        }
+
+        .sub-tier-pill.platinum {
+            background: rgba(168, 85, 247, 0.12);
+            color: #a855f7;
+        }
+
+        .card-footer-sub {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            background: var(--bg-secondary);
+            transition: background 0.3s;
+        }
+
+        .btn-upgrade {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.65rem 1.4rem;
+            border-radius: 10px;
+            border: none;
+            font-size: 0.875rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s;
+            color: white;
+        }
+
+        .btn-upgrade.gold {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        }
+
+        .btn-upgrade.platinum {
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+        }
+
+        .btn-upgrade.force {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-upgrade:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-upgrade:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .sub-state-box {
+            text-align: center;
+            padding: 4rem 2rem;
+            grid-column: 1/-1;
+            color: var(--text-tertiary);
+        }
+
+        .sub-spinner {
+            width: 44px;
+            height: 44px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            margin: 0 auto 1.25rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #sub-toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.875rem 1.5rem;
+            border-radius: 12px;
+            background: #1e293b;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: var(--shadow-md);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.35s ease;
+            z-index: 999;
+        }
+
+        #sub-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        #sub-toast.success {
+            background: #065f46;
+        }
+
+        #sub-toast.error {
+            background: #991b1b;
+        }
+
+        /* Progress bar inside cards */
+        .sub-progress-wrap {
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 999px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .sub-progress-bar {
+            height: 4px;
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+
+        /* View Details button in card footer */
+        .sub-view-btn {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+            background: none;
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.85rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sub-view-btn:hover {
+            background: var(--accent-light);
+            border-color: var(--accent-primary);
+        }
+
+        /* Search in subscription tab */
+        .sub-search-wrap {
+            padding: 1.25rem 30px 0;
+        }
+
+        .sub-search-wrap input {
+            width: 100%;
+            max-width: 380px;
+            padding: 10px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 14px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .sub-search-wrap input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .sub-search-wrap input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-light);
+            background: var(--bg-primary);
+        }
+
+        @media (max-width: 600px) {
+            .rules-banner {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Tier distribution row in hero */
+        .sub-tier-dist {
+            display: flex;
+            gap: 1.25rem;
+            flex-wrap: wrap;
+            margin-top: 1.25rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .sub-tier-dist-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            opacity: 0.92;
+        }
+
+        .sub-tier-dist-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .sub-tier-dist-dot.silver {
+            background: #cbd5e1;
+        }
+
+        .sub-tier-dist-dot.gold {
+            background: #fbbf24;
+        }
+
+        .sub-tier-dist-dot.platinum {
+            background: #a855f7;
+        }
+
+        /* Sort + search row */
+        .sub-controls-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 1.25rem 30px 0;
+        }
+
+        .sub-controls-row .sub-search-wrap {
+            padding: 0;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .sub-sort-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sub-sort-wrap label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .sub-sort-select {
+            padding: 9px 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .sub-sort-select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        /* Near threshold filter */
+        .sub-filter-btn.active-near {
+            background: #0ea5e9;
+            border-color: #0ea5e9;
+            color: white;
+        }
+
+        /* "N more needed" hint */
+        .sub-need-hint {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+            margin-top: 0.3rem;
+            font-style: italic;
+        }
+
+        .sub-need-hint.close {
+            color: #f59e0b;
+            font-weight: 600;
+            font-style: normal;
+        }
+
+        /* Recent upgrades panel */
+        .sub-history-panel {
+            margin: 0 30px 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            overflow: hidden;
+            background: var(--bg-primary);
+        }
+
+        .sub-history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.9rem 1.25rem;
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+            background: var(--bg-secondary);
+            transition: background 0.2s;
+        }
+
+        .sub-history-header:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .sub-history-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sub-history-toggle {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            transition: transform 0.2s;
+        }
+
+        .sub-history-toggle.open {
+            transform: rotate(180deg);
+        }
+
+        .sub-history-body {
+            display: none;
+        }
+
+        .sub-history-body.open {
+            display: block;
+        }
+
+        .sub-history-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.25rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.83rem;
+        }
+
+        .sub-history-row:first-child {
+            border-top: none;
+        }
+
+        .sub-history-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .sub-history-avatar.gold {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        }
+
+        .sub-history-avatar.platinum {
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+        }
+
+        .sub-history-avatar.silver {
+            background: #94a3b8;
+        }
+
+        .sub-history-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sub-history-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+        .sub-history-badge.gold {
+            background: rgba(245, 158, 11, 0.12);
+            color: #f59e0b;
+        }
+
+        .sub-history-badge.platinum {
+            background: rgba(168, 85, 247, 0.12);
+            color: #a855f7;
+        }
+
+        .sub-history-date {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            white-space: nowrap;
+        }
+
+        .sub-history-forced {
+            font-size: 0.7rem;
+            color: #ef4444;
+            font-weight: 600;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+        }
+
+        .sub-history-empty {
+            padding: 1.5rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+        }
+
+        /* Upgrade confirmation modal */
+        .sub-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 1200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .sub-modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .sub-modal-box {
+            background: var(--bg-primary);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 460px;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
+            transform: translateY(16px) scale(0.97);
+            transition: transform 0.25s, opacity 0.25s;
+            opacity: 0;
+        }
+
+        .sub-modal-overlay.open .sub-modal-box {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        .sub-modal-head {
+            padding: 1.5rem 1.5rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .sub-modal-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .sub-modal-icon.gold {
+            background: rgba(245, 158, 11, 0.12);
+        }
+
+        .sub-modal-icon.platinum {
+            background: rgba(168, 85, 247, 0.12);
+        }
+
+        .sub-modal-icon.force {
+            background: rgba(239, 68, 68, 0.10);
+        }
+
+        .sub-modal-icon.downgrade {
+            background: rgba(100, 116, 139, 0.12);
+        }
+
+        .sub-modal-htxt h3 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin: 0 0 0.25rem;
+        }
+
+        .sub-modal-htxt p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .sub-modal-stats {
+            margin: 1.25rem 1.5rem 0;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .sub-modal-stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .sub-modal-stat-lbl {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+        }
+
+        .sub-modal-stat-val {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .sub-modal-warn {
+            margin: 1rem 1.5rem 0;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 0.8rem;
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .sub-modal-opt {
+            margin: 1rem 1.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .sub-modal-opt input[type=checkbox] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-primary);
+            cursor: pointer;
+        }
+
+        .sub-modal-tier-select {
+            margin: 1rem 1.5rem 0;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .sub-modal-tier-btn {
+            flex: 1;
+            padding: 0.6rem;
+            border-radius: 10px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: center;
+        }
+
+        .sub-modal-tier-btn:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .sub-modal-tier-btn.selected.silver {
+            border-color: #94a3b8;
+            background: rgba(148, 163, 184, 0.12);
+            color: #64748b;
+        }
+
+        .sub-modal-tier-btn.selected.gold {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.12);
+            color: #f59e0b;
+        }
+
+        .sub-modal-tier-btn.selected.platinum {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.12);
+            color: #a855f7;
+        }
+
+        .sub-modal-foot {
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .sub-modal-cancel {
+            padding: 0.6rem 1.25rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: none;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .sub-modal-cancel:hover {
+            background: var(--bg-secondary);
+        }
+
+        .sub-modal-confirm {
+            padding: 0.65rem 1.5rem;
+            border-radius: 10px;
+            border: none;
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+        }
+
+        .sub-modal-confirm:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .sub-modal-confirm.gold {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        }
+
+        .sub-modal-confirm.platinum {
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+        }
+
+        .sub-modal-confirm.force {
+            background: #ef4444;
+        }
+
+        .sub-modal-confirm.downgrade {
+            background: #475569;
+        }
+
+        .sub-modal-confirm:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Card upgrade flash animation — transform+opacity only (GPU compositor, no paint) */
+        @keyframes subCardFlash {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            25% {
+                transform: scale(1.03);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
+        }
+
+        .sub-card.upgraded {
+            animation: subCardFlash 0.9s ease forwards;
+            pointer-events: none;
+        }
+
+        @media (max-width: 600px) {
+            .sub-controls-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .sub-history-panel {
+                margin: 0 1rem 1.5rem;
+            }
+
+            .sub-modal-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* ── Approve-flow tier picker ── */
+        .approve-tier-btn {
+            padding: 10px 18px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            transition: all 0.25s ease;
+        }
+
+        .approve-tier-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .approve-tier-btn.selected[data-tier="none"] {
+            border-color: #94a3b8;
+            background: rgba(148, 163, 184, 0.12);
+            color: #475569;
+        }
+
+        .approve-tier-btn.selected[data-tier="gold"] {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.12);
+            color: #d97706;
+        }
+
+        .approve-tier-btn.selected[data-tier="platinum"] {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.12);
+            color: #9333ea;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1>Provider Management</h1>
+                <div class="subtitle">Manage and review service providers</div>
+            </div>
+            <div class="header-right">
+                <span class="admin-welcome">Welcome, Admin</span>
+                <button class="logout-btn" onclick="dashboard.handleLogout()">Logout</button>
+            </div>
+            <div class="theme-toggle-container">
+                <button class="theme-toggle-btn" id="themeToggle" aria-label="Toggle Theme">
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" id="tab-providers-btn" onclick="switchTab('providers')">👥 Provider
+                Management</button>
+        </div>
+
+        <div id="tab-providers" class="tab-content">
+
+            <!-- Stats Container -->
+            <div class="stats-container" id="provider-stats">
+                <div class="stat-card">
+                    <div class="label">Total Providers</div>
+                    <div class="value" id="stat-total">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Pending Review</div>
+                    <div class="value" id="stat-pending">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Approved</div>
+                    <div class="value" id="stat-approved">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Needs Changes</div>
+                    <div class="value" id="stat-needs-changes">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Rejected</div>
+                    <div class="value" id="stat-rejected">0</div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <div class="search-box">
+                    <input type="text" id="provider-search" placeholder="Search by name, email, city..."
+                        oninput="dashboard.handleSearch(this.value)">
+                </div>
+                <div class="filter-group">
+                    <button class="filter-btn active" data-filter="all" onclick="dashboard.filterProviders('all')">
+                        All
+                    </button>
+                    <button class="filter-btn" data-filter="pending" onclick="dashboard.filterProviders('pending')">
+                        Pending
+                    </button>
+                    <button class="filter-btn" data-filter="approved" onclick="dashboard.filterProviders('approved')">
+                        Approved
+                    </button>
+                    <button class="filter-btn" data-filter="needs_changes"
+                        onclick="dashboard.filterProviders('needs_changes')">
+                        Needs Changes
+                    </button>
+                    <button class="filter-btn" data-filter="rejected" onclick="dashboard.filterProviders('rejected')">
+                        Rejected
+                    </button>
+                </div>
+            </div>
+
+            <!-- Providers Section -->
+            <div class="providers-section">
+                <div id="providers-loading-state" class="loading-state" style="display: none;">
+                    <p>Loading providers from Firebase...</p>
+                </div>
+
+                <div id="providers-empty-state" class="empty-state" style="display: none;">
+                    <p>No providers found matching your criteria.</p>
+                </div>
+
+                <div class="table-container" id="providers-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>City</th>
+                                <th>Domain</th>
+                                <th>Status</th>
+                                <th>Tier</th>
+                                <th>Subscription</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="providers-table-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div><!-- end tab-providers -->
+
+        <!-- Subscription Upgrades Tab -->
+        <div id="tab-subscriptions" class="tab-content" style="display:none;">
+
+            <!-- Hero -->
+            <div class="sub-hero">
+
+                <p>Providers eligible for Gold or Platinum based on completed bookings &amp; average rating</p>
+                <div class="sub-hero-stats">
+                    <div>
+                        <div class="sub-stat-val" id="sub-stat-total">–</div>
+                        <div class="sub-stat-lbl">Eligible Now</div>
+                    </div>
+                    <div>
+                        <div class="sub-stat-val" id="sub-stat-gold">–</div>
+                        <div class="sub-stat-lbl">Gold Eligible</div>
+                    </div>
+                    <div>
+                        <div class="sub-stat-val" id="sub-stat-plat">–</div>
+                        <div class="sub-stat-lbl">Platinum Eligible</div>
+                    </div>
+                    <div>
+                        <div class="sub-stat-val" id="sub-stat-near">–</div>
+                        <div class="sub-stat-lbl">Almost There</div>
+                    </div>
+                </div>
+                <div class="sub-tier-dist">
+                    <div class="sub-tier-dist-item"><span class="sub-tier-dist-dot silver"></span><span
+                            id="sub-dist-silver">– Silver</span></div>
+                    <div class="sub-tier-dist-item"><span class="sub-tier-dist-dot gold"></span><span
+                            id="sub-dist-gold">– Gold</span></div>
+                    <div class="sub-tier-dist-item"><span class="sub-tier-dist-dot platinum"></span><span
+                            id="sub-dist-platinum">– Platinum</span></div>
+                </div>
+            </div>
+
+            <!-- Eligibility Rules -->
+            <div class="rules-banner">
+                <div class="rule-card">
+                    <div class="rule-icon">⭐</div>
+                    <div>
+                        <div class="rule-title" style="color:#f59e0b;">Gold Eligibility</div>
+                        <div class="rule-desc">Silver tier · 10+ completed bookings · 4.0+ avg rating</div>
+                    </div>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-icon">💎</div>
+                    <div>
+                        <div class="rule-title" style="color:#a855f7;">Platinum Eligibility</div>
+                        <div class="rule-desc">Gold tier · 20+ completed bookings · 4.0+ avg rating</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search + Sort row -->
+            <div class="sub-controls-row">
+                <div class="sub-search-wrap">
+                    <input type="text" id="sub-search-input" placeholder="Search by name, email or domain…"
+                        oninput="handleSubSearch(this.value)">
+                </div>
+                <div class="sub-sort-wrap">
+                    <label for="sub-sort-select">Sort:</label>
+                    <select id="sub-sort-select" class="sub-sort-select" onchange="handleSubSort(this.value)">
+                        <option value="eligible-first">Eligible first</option>
+                        <option value="closest">Closest to eligible</option>
+                        <option value="bookings-desc">Most bookings</option>
+                        <option value="rating-desc">Highest rating</option>
+                        <option value="name-asc">Name A–Z</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="sub-filter-bar">
+                <button type="button" class="sub-filter-btn active-all"
+                    onclick="applySubFilter('all', this)">All</button>
+                <button type="button" class="sub-filter-btn" onclick="applySubFilter('gold', this)">⭐ Gold
+                    Eligible</button>
+                <button type="button" class="sub-filter-btn" onclick="applySubFilter('platinum', this)">💎 Platinum
+                    Eligible</button>
+                <button type="button" class="sub-filter-btn" onclick="applySubFilter('near', this)">🔥 Almost
+                    Eligible</button>
+            </div>
+
+            <!-- Recent Upgrades Panel -->
+            <div class="sub-history-panel" id="sub-history-panel">
+                <div class="sub-history-header" onclick="toggleSubHistory()">
+                    <span class="sub-history-title">🕐 Recent Upgrades</span>
+                    <span class="sub-history-toggle" id="sub-history-toggle">▼</span>
+                </div>
+                <div class="sub-history-body" id="sub-history-body">
+                    <div class="sub-history-empty">Loading upgrade history…</div>
+                </div>
+            </div>
+
+            <!-- Cards -->
+            <div class="sub-grid" id="sub-cards-grid">
+                <div class="sub-state-box">
+                    <div class="sub-spinner"></div>
+                    <p>Open this tab to load providers…</p>
+                </div>
+            </div>
+
+        </div><!-- end tab-subscriptions -->
+
+        <!-- Upgrade / Downgrade Confirmation Modal -->
+        <div class="sub-modal-overlay" id="sub-upgrade-modal" role="dialog" aria-modal="true"
+            aria-labelledby="sub-modal-title">
+            <div class="sub-modal-box">
+                <div class="sub-modal-head">
+                    <div class="sub-modal-icon" id="sub-modal-icon">⬆️</div>
+                    <div class="sub-modal-htxt">
+                        <h3 id="sub-modal-title">Upgrade Provider</h3>
+                        <p id="sub-modal-subtitle">Review before confirming.</p>
+                    </div>
+                </div>
+                <div class="sub-modal-stats" id="sub-modal-stats"></div>
+                <div class="sub-modal-warn" id="sub-modal-warn" style="display:none;"></div>
+                <!-- Tier picker shown only for downgrade flow -->
+                <div class="sub-modal-tier-select" id="sub-modal-tier-select" style="display:none;">
+                    <button type="button" class="sub-modal-tier-btn silver" data-tier="silver"
+                        onclick="selectDowngradeTier(this)">🥈 Silver</button>
+                    <button type="button" class="sub-modal-tier-btn gold" data-tier="gold"
+                        onclick="selectDowngradeTier(this)">🥇 Gold</button>
+                    <button type="button" class="sub-modal-tier-btn platinum" data-tier="platinum"
+                        onclick="selectDowngradeTier(this)">💎 Platinum</button>
+                </div>
+                <label class="sub-modal-opt" id="sub-modal-notify-wrap">
+                    <input type="checkbox" id="sub-modal-notify" checked>
+                    Notify provider via in-app notification
+                </label>
+                <div class="sub-modal-foot">
+                    <button type="button" class="sub-modal-cancel" onclick="closeSubModal()">Cancel</button>
+                    <button type="button" class="sub-modal-confirm gold" id="sub-modal-confirm"
+                        onclick="confirmSubModal()">Confirm Upgrade</button>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- end container -->
+
+    <div id="sub-toast"></div>
+
+    <!-- Provider Detail Modal -->
+    <div id="provider-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="provider-modal-title">Provider Details</h2>
+                <button class="close-btn" onclick="dashboard.closeModal('provider-modal')">&times;</button>
+            </div>
+            <div class="modal-body" id="provider-modal-body">
+                <!-- Populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn primary" onclick="dashboard.closeModal('provider-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Approve / Reject / Reset Modal -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content" style="max-width:520px;">
+            <div class="modal-header">
+                <h2 id="confirm-modal-title">Confirm Action</h2>
+                <button class="close-btn" onclick="dashboard.closeModal('confirm-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-modal-message">Are you sure you want to perform this action?</p>
+
+                <!-- Shown only during Approve flow -->
+                <div id="approve-tier-section" style="display:none; margin-top:20px;">
+                    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+                        ⓘ The provider will default to <strong>Silver</strong> after approval.<br>
+                        Optionally pre-grant <strong>Gold</strong> or <strong>Platinum</strong> access — the
+                        provider still needs to select and pay before it activates.
+                    </p>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+                        <button class="approve-tier-btn" data-tier="none" onclick="dashboard.selectApproveTier(this)">
+                            🥈 Default Silver
+                        </button>
+                        <button class="approve-tier-btn" data-tier="gold" onclick="dashboard.selectApproveTier(this)">
+                            🥇 Pre-grant Gold
+                        </button>
+                        <button class="approve-tier-btn" data-tier="platinum"
+                            onclick="dashboard.selectApproveTier(this)">
+                            💎 Pre-grant Platinum
+                        </button>
+                    </div>
+                    <p id="approve-tier-note"
+                        style="margin-top:12px;font-size:12px;color:var(--text-tertiary);text-align:center;min-height:18px;">
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn" onclick="dashboard.closeModal('confirm-modal')">Cancel</button>
+                <button class="action-btn success" id="confirm-action-btn" onclick="dashboard.executeAction()">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Request Changes Modal -->
+    <div id="request-changes-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Request Changes</h2>
+                <button class="close-btn" onclick="dashboard.closeModal('request-changes-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="rc-section">
+                    <h4>Select Fields to Change</h4>
+                    <div id="rc-fields-list" class="rc-fields-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+
+                    <div class="rc-reason-box">
+                        <label><strong>Reason for Changes:</strong></label>
+                        <textarea id="rc-reason" placeholder="Explain why these changes are needed..."></textarea>
+                    </div>
+
+                    <div class="rc-blocking-toggle">
+                        <input type="checkbox" id="rc-blocking">
+                        <label for="rc-blocking"><strong>Block provider until changes are made</strong></label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn" onclick="dashboard.closeModal('request-changes-modal')">Cancel</button>
+                <button class="action-btn danger" onclick="dashboard.submitChangeRequest()">
+                    Submit Request
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscription Management Modal -->
+    <div id="subscription-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔑 Subscription Access</h2>
+                <button type="button" class="close-btn"
+                    onclick="dashboard.closeModal('subscription-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Provider name -->
+                <div id="sub-provider-name" class="sub-modal-provider-name"></div>
+
+                <!-- Current status banner -->
+                <div class="sub-status-banner">
+                    <span class="sub-status-banner-icon" id="sub-banner-icon">📋</span>
+                    <div>
+                        <div class="sub-status-banner-plan" id="sub-banner-plan">No active plan</div>
+                        <div class="sub-status-banner-status" id="sub-banner-status">Not subscribed</div>
+                    </div>
+                </div>
+
+                <!-- ── SECTION 1: Grant Tier Access ── -->
+                <div class="sub-modal-section">
+                    <p class="sub-modal-section-label">Grant Plan Access</p>
+                    <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:10px;">
+                        Provider stays on Silver by default. Granting Gold or Platinum lets them choose it themselves.
+                        Platinum automatically includes Gold access.
+                    </p>
+                    <div class="sub-modal-btn-row" id="sub-grant-btns">
+                        <button type="button" class="plan-option-btn" id="grant-btn-none" data-grant="none"
+                            onclick="dashboard.selectGrant(this)">🚫 No Upgrade</button>
+                        <button type="button" class="plan-option-btn" id="grant-btn-gold" data-grant="gold"
+                            onclick="dashboard.selectGrant(this)">🥇 Allow Gold</button>
+                        <button type="button" class="plan-option-btn" id="grant-btn-platinum" data-grant="platinum"
+                            onclick="dashboard.selectGrant(this)">💎 Allow Platinum</button>
+                    </div>
+                    <!-- Info chip shown when platinum is selected -->
+                    <div id="sub-platinum-note" class="sub-platinum-note">
+                        💎 Platinum access includes Gold — provider can choose either plan.
+                    </div>
+                </div>
+
+                <!-- ── SECTION 2: Subscription Status ── -->
+                <div class="sub-modal-section">
+                    <p class="sub-modal-section-label">Subscription Status</p>
+                    <div class="sub-modal-btn-row">
+                        <button type="button" class="plan-option-btn" id="sub-status-active-btn"
+                            onclick="dashboard.selectSubStatus('active')">▶ Active</button>
+                        <button type="button" class="plan-option-btn" id="sub-status-paused-btn"
+                            onclick="dashboard.selectSubStatus('paused')">⏸ Paused</button>
+                    </div>
+                </div>
+
+                <!-- Pause reason (shown only when Paused is selected) -->
+                <div class="sub-modal-section" id="sub-pause-reason-section" style="display:none;">
+                    <p class="sub-modal-section-label">Pause Reason <span class="sub-pause-required">*</span></p>
+                    <textarea id="sub-pause-reason" class="sub-note-area" rows="2"
+                        placeholder="Reason for pausing this subscription (required)..."></textarea>
+                </div>
+
+                <!-- ── SECTION 3: Admin Note ── -->
+                <div class="sub-modal-section">
+                    <p class="sub-modal-section-label">Admin Note (optional)</p>
+                    <textarea id="sub-admin-note" class="sub-note-area" rows="2"
+                        placeholder="Internal note visible only to admins..."></textarea>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="action-btn"
+                    onclick="dashboard.closeModal('subscription-modal')">Cancel</button>
+                <button type="button" class="action-btn success" onclick="dashboard.saveSubscriptionChanges()">Save
+                    Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme Toggle Handler
+        const themeToggle = document.getElementById('themeToggle');
+        const htmlElement = document.documentElement;
+
+        // Initialize theme from localStorage
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme');
+
+            if (savedTheme === 'dark') {
+                htmlElement.classList.add('dark-mode');
+            } else if (savedTheme === 'light') {
+                htmlElement.classList.remove('dark-mode');
+            } else {
+                // Check system preference if no saved preference
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    htmlElement.classList.add('dark-mode');
+                }
+            }
+        }
+
+        // Toggle theme on button click
+        themeToggle.addEventListener('click', () => {
+            htmlElement.classList.toggle('dark-mode');
+            const currentTheme = htmlElement.classList.contains('dark-mode') ? 'dark' : 'light';
+            localStorage.setItem('theme', currentTheme);
+        });
+
+        // Initialize on page load
+        initializeTheme();
+    </script>
+
+    <script>
+        // ============================================
+        // FIREBASE CONFIGURATION
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+            authDomain: "phototester555.firebaseapp.com",
+            projectId: "phototester555",
+            storageBucket: "phototester555.firebasestorage.app",
+            messagingSenderId: "953997763616",
+            appId: "1:953997763616:web:4ac177ad8e79c5f38b8845",
+            measurementId: "G-6VS0G0NQ7K"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ============================================
+        // HELPER FUNCTIONS
+        // ============================================
+        function get(obj, path, fallback = undefined) {
+            if (!obj) return fallback;
+            try {
+                const val = path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
+                return val !== undefined ? val : fallback;
+            } catch { return fallback; }
+        }
+
+        const toArray = (v) => Array.isArray(v) ? v : (v ? [v] : []);
+        const toString = (v) => (v == null ? '' : String(v));
+
+        function normalizeUrl(url) {
+            if (!url || typeof url !== 'string') return '';
+            const trimmed = url.trim();
+            if (!trimmed || trimmed === '#') return '';
+            if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//i.test(trimmed)) {
+                return trimmed;
+            }
+            if (trimmed.startsWith('//')) {
+                return 'https:' + trimmed;
+            }
+            if (/^(mailto|tel):/i.test(trimmed)) {
+                return trimmed;
+            }
+            return 'https://' + trimmed;
+        }
+
+        // ============================================
+        // CANONICAL FIELDS FOR CHANGE REQUESTS
+        // ============================================
+        const RC_CANONICAL_FIELDS = [
+            { id: 'identity.fullName', label: 'Full legal name' },
+            { id: 'identity.phone', label: 'Phone (E.164)' },
+            { id: 'identity.email', label: 'Email' },
+            { id: 'identity.city', label: 'City' },
+            { id: 'kyc.idFilesUrls', label: 'Government ID uploads' },
+            { id: 'profile.experience', label: 'Experience (years)' },
+            { id: 'profile.primaryDomain', label: 'Primary domain' },
+            { id: 'profile.specialisations', label: 'Specialisation tags' },
+            { id: 'profile.mediaSpecialization', label: 'Media focus' },
+            { id: 'profile.mediaSubSkills', label: 'Media styles / specialties' },
+            { id: 'profile.techSpecialization', label: 'Tech focus' },
+            { id: 'profile.techStack', label: 'Tech stack' },
+            { id: 'profile.toolsSkills', label: 'Tools & skills' },
+            { id: 'profile.equipment', label: 'Equipment list' },
+            { id: 'work.portfolio', label: 'Portfolio / Work showcase' },
+            { id: 'work.cvUrl', label: 'CV / Résumé' },
+            { id: 'work.links', label: 'Top work links' },
+            { id: 'work.mediaPortfolioUrl', label: 'Media portfolio URL (legacy)' },
+            { id: 'work.techPortfolioUrl', label: 'Tech portfolio URL (legacy)' },
+            { id: 'payout.india.acctName', label: 'IN: Account holder name' },
+            { id: 'payout.india.bankName', label: 'IN: Bank name' },
+            { id: 'payout.india.acctNumber', label: 'IN: Account number' },
+            { id: 'payout.india.ifsc', label: 'IN: IFSC' },
+            { id: 'payout.india.pan', label: 'IN: PAN' },
+            { id: 'payout.international.intlAcctName', label: 'INTL: Account holder name' },
+            { id: 'payout.international.iban', label: 'INTL: IBAN' },
+            { id: 'payout.international.swift', label: 'INTL: SWIFT/BIC' },
+            { id: 'payout.international.routing', label: 'US: Routing/ABA' },
+            { id: 'payout.international.intlAcctNumber', label: 'INTL: Account number' },
+            { id: 'payout.international.altPayoutType', label: 'Alt payout method' },
+            { id: 'payout.international.altPayoutId', label: 'Alt payout account' }
+        ];
+
+        const RC_LABEL = Object.fromEntries(RC_CANONICAL_FIELDS.map(f => [f.id, f.label]));
+
+        function rcGetGroupedFieldCatalog() {
+            const groups = [
+                {
+                    title: 'Identity & Contact',
+                    fields: ['identity.fullName', 'identity.phone', 'identity.email', 'identity.city']
+                },
+                {
+                    title: 'KYC & Verification',
+                    fields: ['kyc.idFilesUrls']
+                },
+                {
+                    title: 'Profile & Skills',
+                    fields: ['profile.primaryDomain', 'profile.experience', 'profile.specialisations',
+                        'profile.mediaSpecialization', 'profile.mediaSubSkills', 'profile.techSpecialization',
+                        'profile.techStack', 'profile.toolsSkills', 'profile.equipment']
+                },
+                {
+                    title: 'Work Evidence & Portfolio',
+                    fields: ['work.portfolio', 'work.cvUrl', 'work.links', 'work.mediaPortfolioUrl', 'work.techPortfolioUrl']
+                },
+                {
+                    title: 'Payout (India)',
+                    fields: ['payout.india.acctName', 'payout.india.bankName', 'payout.india.acctNumber',
+                        'payout.india.ifsc', 'payout.india.pan']
+                },
+                {
+                    title: 'Payout (International)',
+                    fields: ['payout.international.intlAcctName', 'payout.international.iban',
+                        'payout.international.swift', 'payout.international.routing',
+                        'payout.international.intlAcctNumber', 'payout.international.altPayoutType',
+                        'payout.international.altPayoutId']
+                }
+            ];
+
+            return groups.map(g => ({
+                title: g.title,
+                items: g.fields
+                    .filter(id => RC_LABEL[id])
+                    .map(id => ({ id, label: RC_LABEL[id] }))
+            }));
+        }
+
+        function rcRead(obj, path) {
+            if (!obj || !path) return null;
+            try {
+                const val = path.split('.').reduce((o, k) => (o != null && o[k] !== undefined ? o[k] : undefined), obj);
+                return val !== undefined ? val : null;
+            } catch { return null; }
+        }
+
+        // ============================================
+        // DASHBOARD CLASS
+        // ============================================
+        class ProviderDashboard {
+            constructor() {
+                this.providers = [];
+                this.currentFilter = 'all';
+                this.currentProvider = null;
+                this.searchTerm = '';
+                this.selectedTier = null;
+                this.tierSelectionAction = null;
+                this.currentAdmin = null;
+                this.currentAction = null;
+                this.selectedFields = [];
+                this.init();
+            }
+
+            init() {
+                console.log('Initializing Provider Management...');
+                this.checkAuthAndInit();
+            }
+
+            async checkAuthAndInit() {
+                firebase.auth().onAuthStateChanged(async (user) => {
+                    if (!user) {
+                        console.log('No user logged in, redirecting to login');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+
+                    const adminData = await this.verifyAdminAccess(user);
+                    if (!adminData) {
+                        console.log('User is not an admin, signing out and redirecting');
+                        await firebase.auth().signOut();
+                        window.location.href = 'index.html';
+                        return;
+                    }
+
+                    this.currentAdmin = {
+                        uid: user.uid,
+                        email: user.email,
+                        ...adminData
+                    };
+                    console.log('Admin authenticated successfully:', this.currentAdmin);
+
+                    this.updateAdminWelcome();
+                    await this.loadProvidersFromFirebase();
+                    this.renderProviders();
+                    this.updateStats();
+                });
+            }
+
+            async verifyAdminAccess(user) {
+                try {
+                    const adminDoc = await db.collection('admin_users').doc(user.uid).get();
+                    if (!adminDoc.exists) {
+                        console.log('User not found in admin_users collection');
+                        return null;
+                    }
+
+                    const adminData = adminDoc.data();
+                    if (!adminData.isActive) {
+                        console.log('Admin account is inactive');
+                        return null;
+                    }
+
+                    return adminData;
+                } catch (error) {
+                    console.error('Error verifying admin access:', error);
+                    return null;
+                }
+            }
+
+            updateAdminWelcome() {
+                const welcomeElement = document.querySelector('.admin-welcome');
+                if (welcomeElement && this.currentAdmin) {
+                    welcomeElement.textContent = `Welcome, ${this.currentAdmin.name || this.currentAdmin.email}`;
+                }
+            }
+
+            async loadProvidersFromFirebase() {
+                const loadingState = document.getElementById('providers-loading-state');
+                if (loadingState) loadingState.style.display = 'block';
+
+                try {
+                    const qs = await db.collection("providers").get();
+                    this.providers = [];
+
+                    const _parseTs = (ts) => {
+                        if (!ts) return null;
+                        if (ts instanceof Date) return ts;
+                        if (typeof ts?.toDate === 'function') return ts.toDate();
+                        if (typeof ts === 'number') return new Date(ts);
+                        if (typeof ts === 'string') { const d = new Date(ts); return isNaN(d) ? null : d; }
+                        if (ts?.seconds != null) return new Date(ts.seconds * 1000 + (ts.nanoseconds || 0) / 1e6);
+                        return null;
+                    };
+
+                    qs.forEach(docSnap => {
+                        const data = docSnap.data() || {};
+
+                        const fullName = get(data, 'identity.fullName', data.fullName);
+                        const email = get(data, 'identity.email', data.email);
+                        const phone = get(data, 'identity.phone', data.phone);
+                        const city = get(data, 'identity.city', data.city);
+                        const primaryDomain = get(data, 'profile.primaryDomain', data.primaryDomain);
+
+                        const statusRaw = data.status || get(data, 'onboarding.status', 'waiting');
+                        const createdAt = _parseTs(data.createdAt) || _parseTs(data.onboarding?.submittedAt) || _parseTs(data.updatedAt) || new Date(0);
+                        const updatedAt = _parseTs(data.updatedAt) || createdAt || new Date(0);
+
+                        const provider = {
+                            id: docSnap.id,
+                            fullName: toString(fullName),
+                            email: toString(email),
+                            phone: toString(phone),
+                            city: toString(city),
+                            primaryDomain: toString(primaryDomain),
+                            name: toString(fullName || data.username || 'Unknown'),
+                            approvalStatus: this.mapStatusForUI(statusRaw),
+                            originalStatus: statusRaw,
+                            tier: data.tier || null,
+                            createdAt,
+                            updatedAt,
+                            pendingFeedbackCount: data.pendingFeedbackCount || 0,
+                            lastFeedback: data.lastFeedback || null,
+                            // Store full data for modal display
+                            _fullData: data
+                        };
+
+                        this.providers.push(provider);
+                    });
+
+                    this.providers.sort((a, b) => (b.createdAt?.getTime?.() ?? 0) - (a.createdAt?.getTime?.() ?? 0));
+                    console.log(`Loaded ${this.providers.length} providers`);
+
+                } catch (err) {
+                    console.error('Error loading providers:', err);
+                    alert('Error loading provider data. Please try again.');
+                    this.providers = [];
+                } finally {
+                    if (loadingState) loadingState.style.display = 'none';
+                }
+            }
+
+            mapStatusForUI(firebaseStatus) {
+                switch (firebaseStatus) {
+                    case 'waiting':
+                    case 'processing':
+                        return 'pending';
+                    case 'needs_changes':
+                    case 'retry':
+                        return 'needs_changes';
+                    case 'approved':
+                        return 'approved';
+                    case 'rejected':
+                        return 'rejected';
+                    default:
+                        return 'pending';
+                }
+            }
+
+            updateStats() {
+                const total = this.providers.length;
+                const pending = this.providers.filter(p => p.approvalStatus === 'pending').length;
+                const approved = this.providers.filter(p => p.approvalStatus === 'approved').length;
+                const needsChanges = this.providers.filter(p => p.approvalStatus === 'needs_changes').length;
+                const rejected = this.providers.filter(p => p.approvalStatus === 'rejected').length;
+
+                document.getElementById('stat-total').textContent = total;
+                document.getElementById('stat-pending').textContent = pending;
+                document.getElementById('stat-approved').textContent = approved;
+                document.getElementById('stat-needs-changes').textContent = needsChanges;
+                document.getElementById('stat-rejected').textContent = rejected;
+            }
+
+            filterProviders(filter) {
+                this.currentFilter = filter;
+
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+
+                this.renderProviders();
+            }
+
+            handleSearch(term) {
+                this.searchTerm = term.toLowerCase();
+                this.renderProviders();
+            }
+
+            getFilteredProviders() {
+                let filtered = this.providers;
+
+                if (this.currentFilter !== 'all') {
+                    filtered = filtered.filter(p => p.approvalStatus === this.currentFilter);
+                }
+
+                if (this.searchTerm) {
+                    filtered = filtered.filter(p =>
+                        p.name.toLowerCase().includes(this.searchTerm) ||
+                        p.email.toLowerCase().includes(this.searchTerm) ||
+                        p.city.toLowerCase().includes(this.searchTerm) ||
+                        p.primaryDomain.toLowerCase().includes(this.searchTerm)
+                    );
+                }
+
+                return filtered;
+            }
+
+            renderProviders() {
+                const tbody = document.getElementById('providers-table-body');
+                const emptyState = document.getElementById('providers-empty-state');
+                const tableContainer = document.getElementById('providers-table-container');
+
+                const filtered = this.getFilteredProviders();
+
+                if (filtered.length === 0) {
+                    emptyState.style.display = 'block';
+                    tableContainer.style.display = 'none';
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+                tableContainer.style.display = 'block';
+
+                tbody.innerHTML = filtered.map(provider => {
+                    const sub = (provider._fullData || {}).subscription || {};
+                    const subStatus = sub.status || 'none';
+                    const subPlan = sub.plan || '';
+                    const subPillClass = subStatus === 'active' ? 'sub-pill-active'
+                        : subStatus === 'paused' ? 'sub-pill-paused'
+                            : 'sub-pill-none';
+                    const subIcon = subStatus === 'active' ? '●' : subStatus === 'paused' ? '⏸' : '—';
+                    const subLabel = subStatus === 'active' ? (subPlan || 'Active')
+                        : subStatus === 'paused' ? 'Paused'
+                            : 'None';
+                    return `
+                    <tr>
+                        <td>
+                            ${provider.name}
+                            ${provider.pendingFeedbackCount > 0 ?
+                            `<span class="chip chip-${provider.lastFeedback?.blocking ? 'danger' : 'warn'}">
+                                    ${provider.pendingFeedbackCount} pending
+                                </span>` : ''}
+                        </td>
+                        <td>${provider.email}</td>
+                        <td>${provider.city || 'N/A'}</td>
+                        <td>${provider.primaryDomain || 'N/A'}</td>
+                        <td>
+                            <span class="badge ${provider.approvalStatus}">
+                                ${this.getStatusBadgeText(provider)}
+                            </span>
+                        </td>
+                        <td>${this.createTierBadge(provider.tier, true)}</td>
+                        <td><span class="sub-pill ${subPillClass}">${subIcon} ${subLabel}</span></td>
+                        <td>${this.formatDate(provider.createdAt)}</td>
+                        <td>
+                            <button class="action-btn primary" onclick="dashboard.showProviderModal(dashboard.providers.find(p => p.id === '${provider.id}'))">
+                                View
+                            </button>
+                        </td>
+                    </tr>`;
+                }).join('');
+            }
+
+            getStatusBadgeText(provider) {
+                const s = provider.originalStatus;
+                if (s === 'needs_changes') return 'Needs Changes';
+                if (s === 'waiting') return 'Pending Review';
+                if (s === 'approved') return 'Approved';
+                if (s === 'rejected') return 'Rejected';
+                return 'Pending Review';
+            }
+
+            createTierBadge(tier, includeIcon = false) {
+                if (!tier) return '<span style="color: #999;">No tier</span>';
+                const tierClass = `tier-badge tier-${tier.toLowerCase()}`;
+                const tierIcon = includeIcon ? this.getTierIcon(tier) : '';
+                return `<span class="${tierClass}">${tierIcon}${tier}</span>`;
+            }
+
+            getTierIcon(tier) {
+                const icons = {
+                    'Silver': '🥈 ',
+                    'Gold': '🥇 ',
+                    'Platinum': '💎 '
+                };
+                return icons[tier] || '';
+            }
+
+            formatDate(date) {
+                if (!date) return 'N/A';
+                const d = new Date(date);
+                return d.toLocaleDateString('en-IN', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            }
+
+            async showProviderModal(provider) {
+                this.currentProvider = provider;
+                const modal = document.getElementById('provider-modal');
+                const body = document.getElementById('provider-modal-body');
+
+                const data = provider._fullData || {};
+
+                const isIdVerified = Boolean(get(data, 'kyc.idVerified') || data.idVerified || (data.kyc && data.kyc.verified));
+                const idFiles = toArray(get(data, 'kyc.idFilesUrls') || data.idFilesUrls || (data.kyc && data.kyc.idUrls) || []);
+                const portfolioUrl = get(data, 'work.portfolio') || get(data, 'work.portfolioUrl') || get(data, 'work.mediaPortfolioUrl') || get(data, 'work.techPortfolioUrl') || data.portfolioUrl || data.mediaPortfolioUrl || data.techPortfolioUrl || data.portfolio || null;
+                const cvUrl = get(data, 'work.cvUrl') || get(data, 'work.resumeUrl') || data.cvUrl || data.resumeUrl || null;
+                const workLinks = toArray(get(data, 'work.links') || data.links || [data.workLink1, data.workLink2, data.workLink3].filter(Boolean));
+                const equipmentList = toArray(get(data, 'profile.equipment') || get(data, 'media.equipment') || data.equipment || []).filter(Boolean);
+
+                body.innerHTML = `
+                    <div class="info-section">
+                        <h3>Identity & Contact</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Full Name</label>
+                                <value>${provider.name}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Email</label>
+                                <value>${provider.email}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Phone</label>
+                                <value>${provider.phone || 'N/A'}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>City</label>
+                                <value>${provider.city || 'N/A'}</value>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <h3>Profile</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Primary Domain</label>
+                                <value>${provider.primaryDomain || 'N/A'}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Experience</label>
+                                <value>${get(data, 'profile.experience', data.experience || 'N/A')} years</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Status</label>
+                                <value>${this.getStatusBadgeText(provider)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Tier</label>
+                                <value>${this.createTierBadge(provider.tier, true)}</value>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <h3>KYC & Verification</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Government ID Status</label>
+                                <value>${isIdVerified ? '✅ Verified' : '❌ Not Verified'}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Government ID Documents</label>
+                                <value>
+                                    ${idFiles.length > 0 ?
+                                        `<div style="display: flex; flex-direction: column; gap: 8px;">
+                                            ${idFiles.map((url, idx) =>
+                                                `<a href="${normalizeUrl(url)}" target="_blank" rel="noopener noreferrer" style="color: #667eea; font-weight: 600; word-break: break-all;">
+                                                    📄 ID Document ${idx + 1} ↗
+                                                </a>`
+                                            ).join('')}
+                                        </div>`
+                                        : '<span style="color: #999;">No documents uploaded</span>'}
+                                </value>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <h3>Specializations & Skills</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Specialisation Tags</label>
+                                <value>${toArray(get(data, 'profile.specialisations') || data.specialisations || []).join(', ') || 'N/A'}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Media Specialization</label>
+                                <value>${get(data, 'profile.mediaSpecialization', data.mediaSpecialization || 'N/A')}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Media Sub-Skills</label>
+                                <value>${toArray(get(data, 'profile.mediaSubSkills') || data.mediaSubSkills || []).join(', ') || 'N/A'}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Tech Specialization</label>
+                                <value>${get(data, 'profile.techSpecialization', data.techSpecialization || 'N/A')}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Tech Stack</label>
+                                <value>${toArray(get(data, 'profile.techStack') || data.techStack || []).join(', ') || 'N/A'}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Tools & Skills</label>
+                                <value>${toArray(get(data, 'profile.toolsSkills') || data.toolsSkills || []).join(', ') || 'N/A'}</value>
+                            </div>
+                            ${equipmentList.length > 0 ? `
+                            <div class="info-item" style="grid-column: 1/-1;">
+                                <label>Equipment Details</label>
+                                <value>${equipmentList.join(', ')}</value>
+                            </div>` : ''}
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <h3>Work Evidence & Portfolio</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Portfolio/Work Showcase</label>
+                                <value>${portfolioUrl ? '🔗 <a href="' + normalizeUrl(portfolioUrl) + '" target="_blank" rel="noopener noreferrer" style="word-break: break-all; color: #667eea; font-weight: 600;">View Portfolio ↗</a>' : '<span style="color: #999;">No portfolio provided</span>'}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>CV / Résumé</label>
+                                <value>${cvUrl ? '📄 <a href="' + normalizeUrl(cvUrl) + '" target="_blank" rel="noopener noreferrer" style="color: #667eea; font-weight: 600;">Download CV ↗</a>' : '<span style="color: #999;">No CV uploaded</span>'}</value>
+                            </div>
+                            ${workLinks.length > 0 ? `
+                            <div class="info-item" style="grid-column: 1/-1;">
+                                <label>Top Work Links</label>
+                                <value>
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                                        ${workLinks.map((link, idx) =>
+                                            `<a href="${normalizeUrl(link)}" target="_blank" rel="noopener noreferrer" style="color: #667eea; font-weight: 600; word-break: break-all;">
+                                                🔗 Sample ${idx + 1} ↗
+                                            </a>`
+                                        ).join('')}
+                                    </div>
+                                </value>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+
+
+
+
+
+<div class="info-section">
+    <h3>Payout Information - India</h3>
+    <div class="info-grid">
+        <div class="info-item">
+            <label>Account Holder</label>
+            <value>${get(data, 'payout.india.acctName', 'N/A')}</value>
+        </div>
+        <div class="info-item">
+            <label>Bank Name</label>
+            <value>${get(data, 'payout.india.bankName', 'N/A')}</value>
+        </div>
+        <div class="info-item">
+    <label>Account Number</label>
+    <value style="font-family: monospace; font-weight: 600; color: #dc3545;">${get(data, 'payout.india.acctNumber', 'N/A')}</value>
+</div>
+        <div class="info-item">
+            <label>IFSC Code</label>
+            <value>${get(data, 'payout.india.ifsc', 'N/A')}</value>
+        </div>
+        <div class="info-item">
+            <label>PAN</label>
+            <value>${get(data, 'payout.india.pan', 'N/A')}</value>
+        </div>
+    </div>
+</div>
+
+
+<div class="info-section">
+    <h3>Payout Information - International</h3>
+    <div class="info-grid">
+        <div class="info-item">
+            <label>Account Holder</label>
+            <value>${get(data, 'payout.international.intlAcctName', 'N/A')}</value>
+        </div>
+        <div class="info-item">
+            <label>IBAN</label>
+            <value>${get(data, 'payout.international.iban', 'N/A')}</value>
+        </div>
+        <div class="info-item">
+            <label>SWIFT/BIC</label>
+            <value>${get(data, 'payout.international.swift', 'N/A')}</value>
+        </div>
+        <div class="info-item">
+            <label>Routing/ABA</label>
+            <value>${get(data, 'payout.international.routing', 'N/A')}</value>
+        </div>
+        <div class="info-item">
+    <label>Account Number</label>
+    <value style="font-family: monospace; font-weight: 600; color: #dc3545;">${get(data, 'payout.international.intlAcctNumber', 'N/A')}</value>
+</div>
+        <div class="info-item">
+            <label>Alt Payout Method</label>
+            <value>${get(data, 'payout.international.altPayoutType', 'N/A')}</value>
+        </div>
+        <div class="info-item">
+            <label>Alt Payout Account</label>
+            <value>${get(data, 'payout.international.altPayoutId', 'N/A')}</value>
+        </div>
+    </div>
+</div>
+
+
+
+
+<div class="info-section">
+    <h3>Account Information</h3>
+    <div class="info-grid">
+        <div class="info-item">
+            <label>Account Created</label>
+            <value>${this.formatDate(data.createdAt)}</value>
+        </div>
+        <div class="info-item">
+            <label>Last Updated</label>
+            <value>${this.formatDate(data.updatedAt)}</value>
+        </div>
+        <div class="info-item">
+            <label>Provider ID</label>
+            <value style="font-family: monospace; font-size: 12px;">${provider.id}</value>
+        </div>
+    </div>
+</div>
+
+                    <div class="info-section">
+                        <h3>Subscription</h3>
+                        ${(() => {
+                        const sub = data.subscription || {};
+                        const plan = sub.plan || null;
+                        const price = sub.price || '';
+                        const status = sub.status || 'none';
+                        const grantedTier = sub.grantedTier || 'none';
+                        const stoppedBy = sub.stoppedByAdmin ? 'Admin' : (sub.stoppedByProvider ? 'Provider' : 'Unknown');
+                        const statusClass = status === 'active' ? 'sub-status-active'
+                            : status === 'paused' ? 'sub-status-paused'
+                                : 'sub-status-none';
+                        const statusText = status === 'active' ? '● Active'
+                            : status === 'paused' ? '⏸ Paused'
+                                : '— Not subscribed';
+
+                        const planTierClass = plan
+                            ? (plan.toLowerCase() === 'gold' ? 'tier-gold'
+                                : plan.toLowerCase() === 'platinum' ? 'tier-platinum'
+                                    : 'tier-silver')
+                            : '';
+
+                        const grantLabel = grantedTier === 'platinum' ? '💎 Platinum (+ Gold)'
+                            : grantedTier === 'gold' ? '🥇 Gold'
+                                : '🚫 No upgrade granted';
+                        const grantClass = grantedTier === 'platinum' ? 'tier-platinum'
+                            : grantedTier === 'gold' ? 'tier-gold'
+                                : '';
+
+                        const _fmtTs = (ts) => {
+                            if (!ts) return null;
+                            try {
+                                const d = typeof ts.toDate === 'function' ? ts.toDate()
+                                    : (ts.seconds ? new Date(ts.seconds * 1000) : new Date(ts));
+                                return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                            } catch { return null; }
+                        };
+
+                        return `
+                                <div class="info-grid" style="margin-bottom:12px;">
+                                    <div class="info-item">
+                                        <label>Plan</label>
+                                        <value>
+                                            ${plan
+                                ? `<span class="tier-badge ${planTierClass}" style="margin-right:6px;">${plan}</span><span style="color:var(--text-tertiary);font-size:12px;">${price}</span>`
+                                : '<span style="color:var(--text-tertiary);">No active plan</span>'}
+                                        </value>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Access Granted</label>
+                                        <value>
+                                            ${grantedTier !== 'none'
+                                ? `<span class="tier-badge ${grantClass}">${grantLabel}</span>`
+                                : `<span style="color:var(--text-tertiary);">${grantLabel}</span>`}
+                                        </value>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Status</label>
+                                        <value><span class="badge ${statusClass}">${statusText}</span></value>
+                                    </div>
+                                    ${sub.stoppedAt && status === 'paused' ? `
+                                    <div class="info-item">
+                                        <label>Paused On</label>
+                                        <value>${_fmtTs(sub.stoppedAt) || '—'} <span style="color:var(--text-tertiary);font-size:12px;">by ${stoppedBy}</span></value>
+                                    </div>` : ''}
+                                    ${sub.resumedAt && status === 'active' ? `
+                                    <div class="info-item">
+                                        <label>Last Reactivated</label>
+                                        <value>${_fmtTs(sub.resumedAt) || '—'}</value>
+                                    </div>` : ''}
+                                    ${data.referralCode ? `
+                                    <div class="info-item">
+                                        <label>Promo Code</label>
+                                        <value style="font-weight:700;color:var(--accent-primary);">${data.referralCode}</value>
+                                    </div>` : ''}
+                                    ${sub.adminNote ? `
+                                    <div class="info-item">
+                                        <label>Admin Note</label>
+                                        <value>${sub.adminNote}</value>
+                                    </div>` : ''}
+                                </div>
+                                ${status === 'paused' && sub.stoppedReason ? `
+                                <div class="sub-stopped-reason">
+                                    <strong>Pause reason (${stoppedBy}):</strong> ${sub.stoppedReason}
+                                </div>` : ''}
+                                
+                            `;
+                    })()}
+                    </div>
+
+                    <div class="info-section">
+                        <h3>Actions</h3>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            ${provider.approvalStatus === 'pending' ? `
+                                <button class="action-btn success" onclick="dashboard.showConfirmModal('approve', dashboard.currentProvider)">
+                                    Approve Provider
+                                </button>
+                                <button class="action-btn danger" onclick="dashboard.showConfirmModal('reject', dashboard.currentProvider)">
+                                    Reject Provider
+                                </button>
+                            ` : ''}
+
+                            ${provider.approvalStatus === 'approved' ? `
+                            
+                            ` : ''}
+
+                            <button class="request-changes-btn" onclick="dashboard.showRequestChangesModal()">
+                                Request Changes
+                            </button>
+
+                            ${provider.approvalStatus !== 'pending' ? `
+                                <button class="action-btn" onclick="dashboard.showConfirmModal('reset', dashboard.currentProvider)">
+                                    Reset to Pending
+                                </button>
+                            ` : ''}
+
+                            
+                        </div>
+                    </div>
+
+                    <div id="feedback-section-container">
+                        <div class="feedback-section">
+                            <h3>Change Requests</h3>
+                            <div id="provider-feedback-list"></div>
+                            <div id="provider-feedback-empty" style="text-align: center; padding: 20px; color: #666;">
+                                No change requests yet for this provider.
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                modal.style.display = 'flex';
+
+                // Load change requests
+                await this.loadAndRenderChangeRequests(provider);
+            }
+
+            async loadAndRenderChangeRequests(provider) {
+                try {
+                    const requests = await this.loadFeedbackRequests(provider.id);
+                    await this.renderFeedbackList(provider, requests);
+                } catch (error) {
+                    console.error('Error loading change requests:', error);
+                    const empty = document.getElementById('provider-feedback-empty');
+                    const list = document.getElementById('provider-feedback-list');
+                    if (empty && list) {
+                        list.innerHTML = '';
+                        empty.style.display = 'block';
+                    }
+                }
+            }
+
+            async loadFeedbackRequests(providerId) {
+                try {
+                    const qs = await db.collection('providers')
+                        .doc(providerId)
+                        .collection('feedback_requests')
+                        .orderBy('requestedAt', 'desc')
+                        .limit(10)
+                        .get();
+
+                    return qs.docs.map(d => ({ id: d.id, ...d.data() }));
+                } catch (error) {
+                    console.error('Error loading feedback requests:', error);
+                    return [];
+                }
+            }
+
+            async renderFeedbackList(provider, requests) {
+                const list = document.getElementById('provider-feedback-list');
+                const empty = document.getElementById('provider-feedback-empty');
+
+                if (!requests || requests.length === 0) {
+                    if (list) list.innerHTML = '';
+                    if (empty) empty.style.display = 'block';
+                    return;
+                }
+
+                if (empty) empty.style.display = 'none';
+                if (!list) return;
+
+                list.innerHTML = requests.map(req => {
+                    const items = req.items || [];
+                    const statusClass = req.blocking ? 'danger' : 'warn';
+
+                    return `
+                        <div class="feedback-item">
+                            <div class="feedback-header">
+                                <div>
+                                    <strong>Request ID:</strong> ${req.id}
+                                    <span class="badge ${req.status}">${req.status}</span>
+                                    ${req.blocking ? '<span class="chip chip-danger">Blocking</span>' : ''}
+                                </div>
+                                <div style="font-size: 12px; color: #666;">
+                                    ${req.requestedAt ? new Date(req.requestedAt.toDate()).toLocaleDateString() : 'N/A'}
+                                </div>
+                            </div>
+
+                            <div class="feedback-fields">
+                                ${items.map(item => `
+                                    <div class="field-row">
+                                        <span class="field-label">${RC_LABEL[item.id] || item.id}</span>
+                                        <span class="field-status ${item.status}">${item.status}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <div style="margin-top: 10px;">
+                                <strong>Reason:</strong> ${req.reason || 'N/A'}
+                            </div>
+
+                            ${['open', 'submitted', 'pending'].includes(req.status) ? `
+                                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                                    <button class="action-btn success" onclick="dashboard.verifyChangeRequest('${provider.id}', '${req.id}', { all: true })">
+                                        Verify All
+                                    </button>
+                                    <button class="action-btn" onclick="dashboard.closeChangeRequest('${provider.id}', '${req.id}')">
+                                        Close Request
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            async verifyChangeRequest(providerId, requestId, { all = false, ids = [] } = {}) {
+                const provRef = db.collection('providers').doc(providerId);
+                const reqRef = provRef.collection('feedback_requests').doc(requestId);
+                const snap = await reqRef.get();
+                if (!snap.exists) return;
+
+                const req = snap.data();
+                const provSnapNow = await provRef.get();
+                const provNow = provSnapNow.data() || {};
+
+                const newValues = {};
+                (req.fields || (req.items || []).map(x => x.id) || []).forEach(p => {
+                    const val = rcRead(provNow, p);
+                    newValues[p] = val !== undefined ? val : null;
+                });
+
+                const items = (req.items || []).map(it => {
+                    if (all || ids.includes(it.id)) return { ...it, status: 'verified' };
+                    return it;
+                });
+
+                const allVerified = items.every(it => it.status === 'verified');
+                const nextStatus = allVerified ? 'verified' : 'open';
+
+                const adminUid = (this.currentAdmin && this.currentAdmin.uid) || 'admin';
+                const adminName = (this.currentAdmin && (this.currentAdmin.name || this.currentAdmin.email)) || 'admin';
+
+                await reqRef.update({
+                    items,
+                    newValues,
+                    status: nextStatus,
+                    verifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    verifiedBy: adminUid,
+                    verifiedByName: adminName
+                });
+
+                const providerUpdates = {
+                    lastFeedback: { ...req, items, status: nextStatus },
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                if (allVerified) {
+                    providerUpdates.hasOpenBlockingFeedback = false;
+                    providerUpdates.pendingFeedbackCount = 0;
+                    providerUpdates.status = 'waiting';
+                    providerUpdates.statusChanged = firebase.firestore.FieldValue.serverTimestamp();
+                }
+
+                await provRef.update(providerUpdates);
+                await this.loadProvidersFromFirebase();
+                this.renderProviders();
+
+                if (this.currentProvider && this.currentProvider.id === providerId) {
+                    this.showProviderModal(this.providers.find(p => p.id === providerId));
+                }
+
+                this.showSuccessMessage(allVerified ? 'All items verified. Moved back to review.' : 'Selected items verified.');
+            }
+
+            async closeChangeRequest(providerId, requestId) {
+                const provRef = db.collection('providers').doc(providerId);
+                const reqRef = provRef.collection('feedback_requests').doc(requestId);
+                const snap = await reqRef.get();
+                if (!snap.exists) return;
+
+                const req = snap.data();
+                await reqRef.update({ status: 'closed' });
+
+                if (req.blocking) {
+                    await provRef.update({ hasOpenBlockingFeedback: false });
+                }
+
+                await this.loadProvidersFromFirebase();
+                this.renderProviders();
+
+                if (this.currentProvider && this.currentProvider.id === providerId) {
+                    this.showProviderModal(this.providers.find(p => p.id === providerId));
+                }
+
+                this.showSuccessMessage('Request closed.');
+            }
+
+            showRequestChangesModal() {
+                this.selectedFields = [];
+                const modal = document.getElementById('request-changes-modal');
+                this.renderGroupedRCFields();
+                modal.style.display = 'flex';
+            }
+
+            renderGroupedRCFields() {
+                const mount = document.getElementById('rc-fields-list');
+                if (!mount) return;
+
+                const groups = rcGetGroupedFieldCatalog();
+
+                mount.innerHTML = groups.map(group => `
+                    <div class="rc-group">
+                        <div class="rc-group-title">${group.title}</div>
+                        ${group.items.map(field => `
+                            <div class="rc-field-item">
+                                <input type="checkbox" 
+                                       id="rc-field-${field.id}" 
+                                       value="${field.id}"
+                                       onchange="dashboard.toggleField('${field.id}')">
+                                <label for="rc-field-${field.id}">${field.label}</label>
+                            </div>
+                        `).join('')}
+                    </div>
+                `).join('');
+            }
+
+            toggleField(fieldId) {
+                const checkbox = document.getElementById(`rc-field-${fieldId}`);
+                if (checkbox.checked) {
+                    if (!this.selectedFields.includes(fieldId)) {
+                        this.selectedFields.push(fieldId);
+                    }
+                } else {
+                    this.selectedFields = this.selectedFields.filter(id => id !== fieldId);
+                }
+            }
+
+            async submitChangeRequest() {
+                if (this.selectedFields.length === 0) {
+                    alert('Please select at least one field to request changes.');
+                    return;
+                }
+
+                const reason = document.getElementById('rc-reason').value.trim();
+                if (!reason) {
+                    alert('Please provide a reason for the changes.');
+                    return;
+                }
+
+                const blocking = document.getElementById('rc-blocking').checked;
+
+                try {
+                    const provider = this.currentProvider;
+                    const provRef = db.collection('providers').doc(provider.id);
+
+                    // Get current values
+                    const provSnap = await provRef.get();
+                    const provData = provSnap.data() || {};
+                    const oldValues = {};
+                    this.selectedFields.forEach(fieldId => {
+                        const val = rcRead(provData, fieldId);
+                        oldValues[fieldId] = val !== undefined ? val : null;
+                    });
+
+                    const adminUid = (this.currentAdmin && this.currentAdmin.uid) || 'admin';
+                    const adminName = (this.currentAdmin && (this.currentAdmin.name || this.currentAdmin.email)) || 'admin';
+
+                    // Create feedback request
+                    const requestData = {
+                        items: this.selectedFields.map(fieldId => ({
+                            id: fieldId,
+                            status: 'pending'
+                        })),
+                        reason: reason,
+                        blocking: blocking,
+                        status: 'open',
+                        requestedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        requestedBy: adminUid,
+                        requestedByName: adminName,
+                        oldValues: oldValues
+                    };
+
+                    await provRef.collection('feedback_requests').add(requestData);
+
+                    // Update provider status if blocking
+                    const updates = {
+                        lastFeedback: requestData,
+                        pendingFeedbackCount: firebase.firestore.FieldValue.increment(1),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    if (blocking) {
+                        updates.hasOpenBlockingFeedback = true;
+                        updates.status = 'needs_changes';
+                        updates.statusChanged = firebase.firestore.FieldValue.serverTimestamp();
+                    }
+
+                    await provRef.update(updates);
+
+                    // Clear form
+                    this.selectedFields = [];
+                    document.getElementById('rc-reason').value = '';
+                    document.getElementById('rc-blocking').checked = false;
+
+                    this.closeModal('request-changes-modal');
+                    await this.loadProvidersFromFirebase();
+                    this.renderProviders();
+
+                    if (this.currentProvider) {
+                        this.showProviderModal(this.providers.find(p => p.id === provider.id));
+                    }
+
+                    this.showSuccessMessage('Change request submitted successfully!');
+
+                } catch (error) {
+                    console.error('Error submitting change request:', error);
+                    alert('Error submitting change request. Please try again.');
+                }
+            }
+
+
+            showConfirmModal(action, provider) {
+                this.currentAction = action;
+                this.currentProvider = provider;
+
+                const modal = document.getElementById('confirm-modal');
+                const title = document.getElementById('confirm-modal-title');
+                const message = document.getElementById('confirm-modal-message');
+                const tierSec = document.getElementById('approve-tier-section');
+                const confirmBtn = document.getElementById('confirm-action-btn');
+
+                // Reset picker state
+                document.querySelectorAll('.approve-tier-btn').forEach(b => b.classList.remove('selected'));
+                document.getElementById('approve-tier-note').textContent = '';
+                this._approveGrant = 'none';
+                const defaultBtn = document.querySelector('.approve-tier-btn[data-tier="none"]');
+                if (defaultBtn) defaultBtn.classList.add('selected');
+
+                if (action === 'approve') {
+                    title.textContent = `Approve ${provider.name}`;
+                    message.textContent = 'Provider will be approved on Silver by default. Optionally pre-grant Gold or Platinum access — provider must still select and pay to activate it.';
+                    tierSec.style.display = 'block';
+                    confirmBtn.textContent = 'Approve';
+                    confirmBtn.className = 'action-btn success';
+                } else if (action === 'reject') {
+                    title.textContent = 'Confirm Rejection';
+                    message.textContent = `Are you sure you want to reject ${provider.name}?`;
+                    tierSec.style.display = 'none';
+                    confirmBtn.textContent = 'Reject';
+                    confirmBtn.className = 'action-btn danger';
+                } else if (action === 'reset') {
+                    title.textContent = 'Confirm Reset';
+                    message.textContent = `Are you sure you want to reset ${provider.name} to pending status?`;
+                    tierSec.style.display = 'none';
+                    confirmBtn.textContent = 'Reset';
+                    confirmBtn.className = 'action-btn primary';
+                }
+
+                modal.style.display = 'flex';
+            }
+
+            selectApproveTier(btn) {
+                document.querySelectorAll('.approve-tier-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                this._approveGrant = btn.dataset.tier;
+                const notes = {
+                    none: 'Provider activates on Silver immediately after approval.',
+                    gold: '🥇 Gold access pre-granted — provider selects & pays to activate.',
+                    platinum: '💎 Platinum access pre-granted (includes Gold) — provider selects & pays to activate.'
+                };
+                document.getElementById('approve-tier-note').textContent = notes[btn.dataset.tier] || '';
+            }
+
+            async executeAction() {
+                const action = this.currentAction;
+                const provider = this.currentProvider;
+
+                if (action === 'approve') {
+                    await this.approveProvider(provider.id, this._approveGrant || 'none');
+                } else if (action === 'reject') {
+                    await this.rejectProvider(provider.id);
+                } else if (action === 'reset') {
+                    await this.resetProvider(provider.id);
+                }
+
+                this.closeModal('confirm-modal');
+                this.closeModal('provider-modal');
+            }
+
+
+            async approveProvider(providerId, grantedTier) {
+                // grantedTier: 'none' | 'gold' | 'platinum'
+                // Provider is set to Silver. grantedTier is an offer — activates ONLY after provider selects & pays.
+                // Subscription logs are written by the payment flow, NOT here.
+                try {
+                    const now = firebase.firestore.FieldValue.serverTimestamp();
+                    const adminUid = (this.currentAdmin && this.currentAdmin.uid) || 'admin';
+                    const adminName = (this.currentAdmin && (this.currentAdmin.name || this.currentAdmin.email)) || 'admin';
+
+                    const updateData = {
+                        status: 'approved',
+                        tier: 'Silver',        // always Silver until provider pays
+                        statusChanged: now,
+                        updatedAt: now,
+                        // record the grant offer inside the subscription object
+                        'subscription.grantedTier': grantedTier === 'none' ? null : grantedTier,
+                        'subscription.grantedBy': adminUid,
+                        'subscription.grantedAt': now,
+                        // NOTE: subscription.status is NOT set here — it is only set after provider completes payment
+                        'subscription.plan': 'silver',
+                        'subscription.approvedAt': now,
+                    };
+
+                    await db.collection('providers').doc(providerId).update(updateData);
+
+                    // Write admin_action log (NOT subscription log)
+                    // subscription_logs are written only when provider completes payment
+                    await db.collection('providers').doc(providerId)
+                        .collection('admin_actions').add({
+                            type: 'approval',
+                            action: 'approved',
+                            grantedTier: grantedTier === 'none' ? null : grantedTier,
+                            adminId: adminUid,
+                            adminName: adminName,
+                            note: grantedTier === 'none'
+                                ? 'Approved — Silver plan active.'
+                                : `Approved — ${grantedTier.charAt(0).toUpperCase() + grantedTier.slice(1)} access pre-granted. Activates after provider selects and pays.`,
+                            createdAt: now,
+                        });
+
+                    await this.loadProvidersFromFirebase();
+                    this.renderProviders();
+                    this.updateStats();
+
+                    const msg = grantedTier === 'none'
+                        ? 'Provider approved on Silver plan.'
+                        : `Provider approved — ${grantedTier.charAt(0).toUpperCase() + grantedTier.slice(1)} access pre-granted (activates after payment).`;
+                    this.showSuccessMessage(msg);
+                } catch (error) {
+                    console.error('Error approving provider:', error);
+                    alert('Error approving provider. Please try again.');
+                }
+            }
+
+            async rejectProvider(providerId) {
+                try {
+                    const updateData = {
+                        status: 'rejected',
+                        statusChanged: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    await db.collection('providers').doc(providerId).update(updateData);
+                    await this.loadProvidersFromFirebase();
+                    this.renderProviders();
+                    this.updateStats();
+                    this.showSuccessMessage('Provider rejected.');
+                } catch (error) {
+                    console.error('Error rejecting provider:', error);
+                    alert('Error rejecting provider. Please try again.');
+                }
+            }
+
+            async resetProvider(providerId) {
+                try {
+                    const updateData = {
+                        status: 'waiting',
+                        statusChanged: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    await db.collection('providers').doc(providerId).update(updateData);
+                    await this.loadProvidersFromFirebase();
+                    this.renderProviders();
+                    this.updateStats();
+                    this.showSuccessMessage('Provider reset to pending status.');
+                } catch (error) {
+                    console.error('Error resetting provider:', error);
+                    alert('Error resetting provider. Please try again.');
+                }
+            }
+
+
+            closeModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            }
+
+            showSuccessMessage(message) {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'success-message';
+                msgDiv.textContent = message;
+                document.body.appendChild(msgDiv);
+
+                setTimeout(() => {
+                    msgDiv.style.animation = 'slideInRight 0.3s ease reverse';
+                    setTimeout(() => msgDiv.remove(), 300);
+                }, 3000);
+            }
+
+            // ── Subscription Management ──
+
+            showSubscriptionModal() {
+                const provider = this.currentProvider;
+                if (!provider) return;
+
+                const sub = (provider._fullData || {}).subscription || {};
+                const status = sub.status || 'none';
+                const plan = sub.plan || null;
+                const grantedTier = sub.grantedTier || 'none';
+
+                document.getElementById('sub-provider-name').textContent = provider.name;
+                document.getElementById('sub-admin-note').value = sub.adminNote || '';
+                document.getElementById('sub-pause-reason').value = '';
+
+                // Update status banner
+                const bannerIcon = document.getElementById('sub-banner-icon');
+                const bannerPlan = document.getElementById('sub-banner-plan');
+                const bannerStatus = document.getElementById('sub-banner-status');
+                bannerPlan.textContent = plan ? `${plan} · ${sub.price || ''}` : 'No active plan';
+                if (status === 'active') {
+                    bannerIcon.textContent = '✅';
+                    bannerStatus.textContent = 'Currently active';
+                } else if (status === 'paused') {
+                    bannerIcon.textContent = '⏸';
+                    bannerStatus.textContent = sub.stoppedByAdmin ? 'Paused by Admin' : 'Paused by Provider';
+                } else {
+                    bannerIcon.textContent = '📋';
+                    bannerStatus.textContent = 'Not subscribed';
+                }
+
+                // Highlight current grantedTier button
+                document.querySelectorAll('[data-grant]').forEach(btn => {
+                    btn.classList.toggle('selected', btn.dataset.grant === grantedTier);
+                });
+                this._selectedGrant = grantedTier;
+                this._selectedSubStatus = status === 'none' ? 'active' : status;
+                document.getElementById('sub-platinum-note').classList.toggle('visible', grantedTier === 'platinum');
+
+                document.getElementById('sub-status-active-btn').classList.toggle('selected', status !== 'paused');
+                document.getElementById('sub-status-paused-btn').classList.toggle('selected', status === 'paused');
+                document.getElementById('sub-pause-reason-section').style.display = status === 'paused' ? 'block' : 'none';
+
+                document.getElementById('subscription-modal').style.display = 'flex';
+            }
+
+            selectGrant(btn) {
+                document.querySelectorAll('[data-grant]').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                this._selectedGrant = btn.dataset.grant;
+                document.getElementById('sub-platinum-note').classList.toggle('visible', this._selectedGrant === 'platinum');
+            }
+
+            selectSubStatus(status) {
+                this._selectedSubStatus = status;
+                document.getElementById('sub-status-active-btn').classList.toggle('selected', status === 'active');
+                document.getElementById('sub-status-paused-btn').classList.toggle('selected', status === 'paused');
+                document.getElementById('sub-pause-reason-section').style.display = status === 'paused' ? 'block' : 'none';
+            }
+
+            async saveSubscriptionChanges() {
+                const provider = this.currentProvider;
+                if (!provider) return;
+
+                const status = this._selectedSubStatus || 'active';
+                const adminNote = document.getElementById('sub-admin-note').value.trim();
+                const pauseReason = document.getElementById('sub-pause-reason').value.trim();
+
+                if (status === 'paused' && !pauseReason) {
+                    alert('Please provide a reason for pausing the subscription.');
+                    document.getElementById('sub-pause-reason').focus();
+                    return;
+                }
+
+                const grantedTier = this._selectedGrant || 'none';
+                const adminUid = (this.currentAdmin && this.currentAdmin.uid) || 'admin';
+                const adminName = (this.currentAdmin && (this.currentAdmin.name || this.currentAdmin.email)) || 'admin';
+
+                const subUpdate = {
+                    'subscription.status': status,
+                    'subscription.grantedTier': grantedTier,
+                    'subscription.adminNote': adminNote,
+                    'subscription.updatedAt': firebase.firestore.FieldValue.serverTimestamp(),
+                    'subscription.updatedBy': adminUid,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                if (status === 'paused') {
+                    subUpdate['subscription.stoppedByAdmin'] = true;
+                    subUpdate['subscription.stoppedByProvider'] = false;
+                    subUpdate['subscription.stoppedReason'] = pauseReason;
+                    subUpdate['subscription.stoppedAt'] = firebase.firestore.FieldValue.serverTimestamp();
+                } else {
+                    subUpdate['subscription.stoppedByAdmin'] = false;
+                    subUpdate['subscription.stoppedByProvider'] = false;
+                    subUpdate['subscription.stoppedReason'] = '';
+                    subUpdate['subscription.resumedAt'] = firebase.firestore.FieldValue.serverTimestamp();
+                    subUpdate['subscription.resumedByAdmin'] = adminUid;
+                }
+
+                try {
+                    await db.collection('providers').doc(provider.id).update(subUpdate);
+
+                    // ── ADD THIS ──────────────────────────────────────────────────────
+                    await db.collection('providers').doc(provider.id)
+                        .collection('admin_actions').add({
+                            type: 'subscription_change',
+                            action: status === 'paused' ? 'paused' : 'resumed_or_updated',
+                            grantedTier: grantedTier === 'none' ? null : grantedTier,
+                            adminId: adminUid,
+                            adminName: adminName,
+                            note: adminNote || null,
+                            pauseReason: status === 'paused' ? pauseReason : null,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    // ─────────────────────────────────────────────────────────────────
+
+                    this.closeModal('subscription-modal');
+                    await this.loadProvidersFromFirebase();
+                    this.renderProviders();
+                    this.showProviderModal(this.providers.find(p => p.id === provider.id));
+                    this.showSuccessMessage('Subscription updated successfully!');
+                } catch (err) {
+                    console.error('Error saving subscription:', err);
+                    alert('Error saving subscription changes. Please try again.');
+                }
+            }
+
+            async handleLogout() {
+                try {
+                    await firebase.auth().signOut();
+                    window.location.href = 'index.html';
+                } catch (error) {
+                    console.error('Error during logout:', error);
+                    window.location.href = 'index.html';
+                }
+            }
+        }
+
+        // ============================================
+        // SUBSCRIPTION MANAGEMENT
+        // ============================================
+        let allSubProviders = [];
+        let bookingStats = {};
+        let subPlans = {};
+        let subFilter = 'all';
+        let subSortKey = 'eligible-first';
+        let subSearchTerm = '';
+        let _bookingsReady = false;
+        let _providersReady = false;
+
+        function _tryRenderSub() {
+            if (_bookingsReady && _providersReady) renderSubCards();
+        }
+
+        // ── Subscription Configuration ────────────────────────────
+        const SUB_THRESHOLDS = {
+            gold: { bookings: 10, rating: 4.0 },
+            platinum: { bookings: 20, rating: 4.0 }
+        };
+
+        // Statuses that count as a completed booking (case-insensitive)
+        const COMPLETED_STATUSES = new Set(['completed', 'payment completed', 'customer received']);
+
+        function initSubscriptionListeners() {
+            const grid = document.getElementById('sub-cards-grid');
+            if (grid) grid.innerHTML = '<div class="sub-state-box"><div class="sub-spinner"></div><p>Loading providers…</p></div>';
+
+            // Fallback: if any listener fails or stalls, render after 12 s with whatever we have
+            const safetyTimer = setTimeout(() => {
+                if (!_bookingsReady) { _bookingsReady = true; }
+                if (!_providersReady) { _providersReady = true; }
+                renderSubCards();
+            }, 12000);
+            function cancelSafety() { clearTimeout(safetyTimer); }
+
+            db.collection('subscriptions').onSnapshot(snap => {
+                snap.forEach(d => { subPlans[d.id] = d.data(); });
+                if (_bookingsReady && _providersReady) renderSubCards();
+            }, err => console.error('[Sub] Subscriptions error:', err));
+
+            // Fetch all bookings and filter client-side — avoids composite index requirements
+            // while correctly handling all status casing variants ('Completed', 'completed', 'Payment Completed', …)
+            db.collection('bookings').onSnapshot(snap => {
+                const newStats = {};
+                snap.forEach(d => {
+                    const b = d.data();
+                    const pid = b.providerId || b.providerUid || b.uid;
+                    if (!pid) return;
+
+                    // Normalise status to lowercase for comparison
+                    let status = '';
+                    if (typeof b.status === 'string') status = b.status.toLowerCase();
+                    else if (b.status && b.status.state) status = String(b.status.state).toLowerCase();
+                    else if (b.state) status = String(b.state).toLowerCase();
+
+                    if (!COMPLETED_STATUSES.has(status)) return;
+
+                    if (!newStats[pid]) newStats[pid] = { completed: 0, ratingTotal: 0, ratingCount: 0 };
+                    newStats[pid].completed++;
+                    let ratingVal = 0;
+                    if (typeof b.rating === 'number') ratingVal = b.rating;
+                    else if (b.rating && b.rating.value) ratingVal = Number(b.rating.value);
+                    else if (b.review && b.review.rating) ratingVal = Number(b.review.rating);
+                    else if (b.customerReview && b.customerReview.rating) ratingVal = Number(b.customerReview.rating);
+
+                    if (ratingVal > 0) { newStats[pid].ratingTotal += ratingVal; newStats[pid].ratingCount++; }
+                });
+                bookingStats = newStats;
+                _bookingsReady = true;
+                cancelSafety();
+                _tryRenderSub();
+            }, err => {
+                console.error('[Sub] Bookings error:', err);
+                _bookingsReady = true;   // don't let a failed listener block rendering
+                cancelSafety();
+                _tryRenderSub();
+            });
+
+            db.collection('providers').onSnapshot(snap => {
+                allSubProviders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                _providersReady = true;
+                _tryRenderSub();
+            }, err => {
+                console.error('[Sub] Providers error:', err);
+                _providersReady = true;
+                _tryRenderSub();
+            });
+
+            loadSubHistory();
+        }
+
+        function getSubProviderTier(p) {
+            const fromSubColl = (subPlans[p.id] && subPlans[p.id].plan) || (subPlans[p.uid] && subPlans[p.uid].plan);
+            return String(fromSubColl || p.subscriptionPlan || p.tier || (p.subscription && p.subscription.plan) || 'silver').toLowerCase();
+        }
+
+        function getSubProviderStats(p) {
+            return bookingStats[p.id] || bookingStats[p.providerId] || bookingStats[p.uid] || { completed: 0, ratingTotal: 0, ratingCount: 0 };
+        }
+
+        function isSubApproved(p) {
+            return String(p.status || (p.onboarding && p.onboarding.status) || 'pending').toLowerCase() === 'approved';
+        }
+
+        function calcEligibility(p) {
+            const s = getSubProviderStats(p);
+            const avg = s.ratingCount > 0 ? s.ratingTotal / s.ratingCount : 0;
+            const cur = getSubProviderTier(p);
+
+            const goldReq = SUB_THRESHOLDS.gold;
+            const platReq = SUB_THRESHOLDS.platinum;
+
+            if (cur === 'gold' && s.completed >= platReq.bookings && avg >= platReq.rating) return 'platinum';
+            if (cur === 'silver' && s.completed >= goldReq.bookings && avg >= goldReq.rating) return 'gold';
+            return 'none';
+        }
+
+        function calcProgressPct(p) {
+            const cur = getSubProviderTier(p);
+            if (cur === 'platinum') return 100;
+
+            const targetTier = cur === 'gold' ? 'platinum' : 'gold';
+            const req = SUB_THRESHOLDS[targetTier].bookings;
+            const s = getSubProviderStats(p);
+            return Math.min(100, Math.round((s.completed / req) * 100));
+        }
+
+        function isNearEligible(p) {
+            if (getSubProviderTier(p) === 'platinum') return false;
+            const pct = calcProgressPct(p);
+            return pct >= 70 && calcEligibility(p) === 'none';
+        }
+
+        function sortCandidates(candidates) {
+            return candidates.slice().sort((a, b) => {
+                if (subSortKey === 'eligible-first') {
+                    if (a._elig !== 'none' && b._elig === 'none') return -1;
+                    if (a._elig === 'none' && b._elig !== 'none') return 1;
+                    if (b._completed !== a._completed) return b._completed - a._completed;
+                    return (a.username || a.fullName || '').localeCompare(b.username || b.fullName || '');
+                }
+                if (subSortKey === 'closest') {
+                    if (b._progressPct !== a._progressPct) return b._progressPct - a._progressPct;
+                    return (a.username || a.fullName || '').localeCompare(b.username || b.fullName || '');
+                }
+                if (subSortKey === 'bookings-desc') return b._completed - a._completed;
+                if (subSortKey === 'rating-desc') return b._ratingNum - a._ratingNum;
+                if (subSortKey === 'name-asc') return (a.username || a.fullName || '').localeCompare(b.username || b.fullName || '');
+                return 0;
+            });
+        }
+
+        function renderSubCards() {
+            const grid = document.getElementById('sub-cards-grid');
+            if (!grid) return;
+
+            let candidates = allSubProviders
+                .filter(p => isSubApproved(p))
+                .map(p => {
+                    const s = getSubProviderStats(p);
+                    const ratingNum = s.ratingCount > 0 ? s.ratingTotal / s.ratingCount : 0;
+                    return {
+                        ...p,
+                        _elig: calcEligibility(p),
+                        _completed: s.completed,
+                        _ratingCount: s.ratingCount,
+                        _rating: ratingNum.toFixed(1),
+                        _ratingNum: ratingNum,
+                        _progressPct: calcProgressPct(p),
+                        _near: false  // set below
+                    };
+                });
+
+            candidates.forEach(p => { p._near = isNearEligible(p); });
+
+            // Update hero stats
+            const eligGold = candidates.filter(p => p._elig === 'gold').length;
+            const eligPlat = candidates.filter(p => p._elig === 'platinum').length;
+            const nearCount = candidates.filter(p => p._near).length;
+            const distSilv = candidates.filter(p => getSubProviderTier(p) === 'silver').length;
+            const distGold = candidates.filter(p => getSubProviderTier(p) === 'gold').length;
+            const distPlat = candidates.filter(p => getSubProviderTier(p) === 'platinum').length;
+            document.getElementById('sub-stat-total').textContent = eligGold + eligPlat;
+            document.getElementById('sub-stat-gold').textContent = eligGold;
+            document.getElementById('sub-stat-plat').textContent = eligPlat;
+            document.getElementById('sub-stat-near').textContent = nearCount;
+            document.getElementById('sub-dist-silver').textContent = `${distSilv} Silver`;
+            document.getElementById('sub-dist-gold').textContent = `${distGold} Gold`;
+            document.getElementById('sub-dist-platinum').textContent = `${distPlat} Platinum`;
+
+            // Apply search
+            if (subSearchTerm) {
+                const term = subSearchTerm.toLowerCase();
+                candidates = candidates.filter(p => {
+                    const name = (p.username || p.fullName || (p.identity && p.identity.fullName) || '').toLowerCase();
+                    const email = (p.email || (p.identity && p.identity.email) || '').toLowerCase();
+                    const domain = ((p.profile && p.profile.primaryDomain) || p.primaryDomain || '').toLowerCase();
+                    return name.includes(term) || email.includes(term) || domain.includes(term);
+                });
+            }
+
+            // Apply filter
+            let filtered;
+            if (subFilter === 'near') filtered = candidates.filter(p => p._near);
+            else if (subFilter === 'all') filtered = candidates;
+            else filtered = candidates.filter(p => p._elig === subFilter);
+
+            filtered = sortCandidates(filtered);
+
+            if (filtered.length === 0) {
+                const emptyMsg = subSearchTerm
+                    ? `No providers match "<strong>${subSearchTerm.replace(/</g, '&lt;')}</strong>" — <a href="#" style="color:var(--accent-primary)" onclick="clearSubSearch();return false;">Clear search</a>`
+                    : subFilter === 'near'
+                        ? 'No providers are near the eligibility threshold (70%+ progress) yet.'
+                        : subFilter !== 'all'
+                            ? `All ${subFilter === 'gold' ? 'Gold' : 'Platinum'}-eligible providers have already been upgraded or no providers qualify yet.`
+                            : 'No approved providers found.';
+                grid.innerHTML = `<div class="sub-state-box"><span style="font-size:2.5rem;display:block;margin-bottom:1rem;">${subFilter === 'near' ? '🔥' : '✅'}</span><p>${emptyMsg}</p></div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(p => {
+                const isEligible = p._elig !== 'none';
+                const curTier = getSubProviderTier(p);
+                const isMaxTier = curTier === 'platinum';
+                const nextTierTarget = isMaxTier ? 'platinum' : (curTier === 'gold' ? 'platinum' : 'gold');
+
+                const reqBooks = SUB_THRESHOLDS[nextTierTarget].bookings;
+                const reqRating = SUB_THRESHOLDS[nextTierTarget].rating;
+                const label = nextTierTarget.charAt(0).toUpperCase() + nextTierTarget.slice(1);
+
+                const name = p.username || p.fullName || (p.identity && p.identity.fullName) || 'Unknown';
+                const email = p.email || (p.identity && p.identity.email) || '—';
+                const domain = (p.profile && p.profile.primaryDomain) || p.primaryDomain || '—';
+                const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+
+                const ribbonClass = isMaxTier ? 'platinum' : (isEligible ? p._elig : (p._near ? nextTierTarget : curTier));
+                const tagClass = isMaxTier ? 'platinum' : (isEligible ? p._elig : 'none');
+                const tagIcon = isMaxTier ? '👑' : (isEligible ? (p._elig === 'platinum' ? '💎' : '⭐') : (p._near ? '🔥' : '⏳'));
+                const tagText = isMaxTier
+                    ? 'Max Tier — Platinum'
+                    : (isEligible
+                        ? `Eligible for ${label}`
+                        : `Working towards ${label}`);
+
+                const progressColor = isMaxTier ? '#a855f7' : (isEligible ? '#10b981' : (p._progressPct >= 70 ? '#f59e0b' : '#94a3b8'));
+
+                // "N more needed" hint
+                let needHint = '';
+                if (!isMaxTier && !isEligible) {
+                    const moreBooks = Math.max(0, reqBooks - p._completed);
+                    const moreRating = p._ratingNum < reqRating ? (reqRating - p._ratingNum).toFixed(1) : 0;
+                    const hints = [];
+                    if (moreBooks > 0) hints.push(`${moreBooks} more booking${moreBooks !== 1 ? 's' : ''}`);
+                    if (+moreRating > 0) hints.push(`+${moreRating} avg rating`);
+                    if (hints.length) {
+                        const isClose = p._progressPct >= 70;
+                        needHint = `<div class="sub-need-hint${isClose ? ' close' : ''}">${isClose ? '🔥 ' : ''}Needs ${hints.join(' & ')}</div>`;
+                    }
+                }
+
+                const safeName = name.replace(/"/g, '&quot;').replace(/</g, '&lt;');
+                const btnHtml = isMaxTier
+                    ? `<button type="button" class="btn-upgrade" disabled style="background:rgba(168,85,247,0.12);color:#a855f7;border:1px solid rgba(168,85,247,0.3);cursor:default;">👑 Max Tier</button>`
+                    : `<button type="button" class="btn-upgrade ${isEligible ? nextTierTarget : 'force'}" id="subbtn-${p.id}"
+                           data-pid="${p.id}" data-tier="${nextTierTarget}" data-label="${label}" data-name="${safeName}"
+                           onclick="handleUpgradeClick(this)">
+                           ${isEligible ? `Upgrade to ${label} →` : `Force Upgrade →`}
+                       </button>`;
+
+                const glowClass = isEligible
+                    ? `${p._elig}-glow`
+                    : (curTier === 'gold' || curTier === 'platinum' ? `${curTier}-glow` : '');
+
+                return `
+                <div class="sub-card ${glowClass}" id="subcard-${p.id}" style="${(!isEligible && !isMaxTier) ? 'opacity:0.85;' : ''}">
+                    <div class="card-ribbon ${ribbonClass}"></div>
+                    <div class="card-body-sub">
+                        <div class="prov-row-sub">
+                            <div class="sub-avatar ${ribbonClass}">${initials}</div>
+                            <div>
+                                <div class="sub-prov-name">${name}</div>
+                                <div class="sub-prov-email">${email}</div>
+                                <div class="sub-prov-domain">${domain}</div>
+                            </div>
+                        </div>
+                        <span class="elig-tag ${tagClass}">${tagIcon} ${tagText}</span>
+                        <div class="mini-stats-sub">
+                            <div class="ms-item">
+                                <span class="ms-lbl">Bookings</span>
+                                <span class="ms-val" style="${p._completed >= reqBooks ? 'color:#10b981;' : ''}">
+                                    ${p._completed}${isMaxTier ? '' : ` / ${reqBooks}`}
+                                </span>
+                                ${!isMaxTier ? `<div class="sub-progress-wrap"><div class="sub-progress-bar" style="width:${p._progressPct}%;background:${progressColor};"></div></div>${needHint}` : ''}
+                            </div>
+                            <div class="ms-item">
+                                <span class="ms-lbl">Avg Rating</span>
+                                <span class="ms-val" style="${p._ratingNum >= reqRating ? 'color:#10b981;' : ''}">⭐ ${p._rating}</span>
+                                <div class="sub-need-hint">${p._ratingCount} review${p._ratingCount !== 1 ? 's' : ''}</div>
+                            </div>
+                            <div class="ms-item">
+                                <span class="ms-lbl">Current Tier</span>
+                                <span class="ms-val"><span class="sub-tier-pill ${curTier}">${curTier.charAt(0).toUpperCase() + curTier.slice(1)}</span></span>
+                                <button type="button" class="sub-need-hint" style="background:none;border:none;padding:0;cursor:pointer;color:var(--accent-primary);font-size:0.7rem;font-style:normal;font-weight:600;"
+                                    data-pid="${p.id}" data-name="${safeName}" data-curtier="${curTier}"
+                                    onclick="openDowngradeModal(this)">Manage tier ›</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer-sub">
+                        <button type="button" class="sub-view-btn" onclick="viewSubProvider('${p.id}')">View Details</button>
+                        ${btnHtml}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ── Modal state ──────────────────────────────────────────
+        let _modalState = {};
+        let _modalBgListener = null;
+
+        function openSubModal(state) {
+            _modalState = state;
+            const overlay = document.getElementById('sub-upgrade-modal');
+
+            // Move modal to <body> so position:fixed is always viewport-relative,
+            // escaping any stacking context created by ancestor transforms/filters.
+            if (overlay.parentElement !== document.body) {
+                document.body.appendChild(overlay);
+            }
+
+            const icon = document.getElementById('sub-modal-icon');
+            const title = document.getElementById('sub-modal-title');
+            const subtitle = document.getElementById('sub-modal-subtitle');
+            const statsEl = document.getElementById('sub-modal-stats');
+            const warnEl = document.getElementById('sub-modal-warn');
+            const tierSel = document.getElementById('sub-modal-tier-select');
+            const confirmBtn = document.getElementById('sub-modal-confirm');
+
+            icon.className = `sub-modal-icon ${state.iconClass}`;
+            icon.textContent = state.icon;
+            title.textContent = state.title;
+            subtitle.textContent = state.subtitle;
+
+            statsEl.innerHTML = state.stats.map(s =>
+                `<div class="sub-modal-stat-item"><div class="sub-modal-stat-lbl">${s.label}</div><div class="sub-modal-stat-val">${s.value}</div></div>`
+            ).join('');
+
+            warnEl.style.display = state.warn ? 'block' : 'none';
+            warnEl.textContent = state.warn || '';
+
+            tierSel.style.display = state.showTierSelect ? 'flex' : 'none';
+            if (state.showTierSelect) {
+                tierSel.querySelectorAll('.sub-modal-tier-btn').forEach(b => b.classList.remove('selected'));
+                _modalState.selectedTier = null;
+                confirmBtn.disabled = true;
+            } else {
+                confirmBtn.disabled = false;
+            }
+
+            confirmBtn.className = `sub-modal-confirm ${state.confirmClass}`;
+            confirmBtn.textContent = state.confirmText;
+
+            overlay.classList.add('open');
+
+            // Remove any previously registered background-click listener before adding a new one
+            if (_modalBgListener) overlay.removeEventListener('click', _modalBgListener);
+            _modalBgListener = (e) => { if (e.target === overlay) closeSubModal(); };
+            overlay.addEventListener('click', _modalBgListener);
+        }
+
+        window.closeSubModal = function () {
+            const overlay = document.getElementById('sub-upgrade-modal');
+            overlay.classList.remove('open');
+            if (_modalBgListener) {
+                overlay.removeEventListener('click', _modalBgListener);
+                _modalBgListener = null;
+            }
+        };
+
+        window.selectDowngradeTier = function (btn) {
+            document.getElementById('sub-modal-tier-select').querySelectorAll('.sub-modal-tier-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            _modalState.selectedTier = btn.dataset.tier;
+            document.getElementById('sub-modal-confirm').disabled = false;
+        };
+
+        window.confirmSubModal = async function () {
+            closeSubModal();
+            const { providerId, newTier, label, name, isForced, isDowngrade, selectedTier } = _modalState;
+            const tierLower = isDowngrade ? (selectedTier || newTier) : newTier.toLowerCase();
+            const notify = document.getElementById('sub-modal-notify').checked;
+
+            const btn = document.getElementById(`subbtn-${providerId}`);
+            if (btn) { btn.disabled = true; btn.textContent = isDowngrade ? 'Updating…' : 'Upgrading…'; }
+
+            try {
+                const adminUid = (dashboard && dashboard.currentAdmin && dashboard.currentAdmin.uid) || 'admin';
+                const adminName = (dashboard && dashboard.currentAdmin && (dashboard.currentAdmin.name || dashboard.currentAdmin.email)) || 'admin';
+
+                let notifMsg = "";
+                let notifType = "";
+                let notifTitle = "";
+
+                if (isDowngrade) {
+                    const provUpdates = {
+                        'subscription.grantedTier': tierLower === 'silver' ? null : tierLower,
+                        'subscription.grantedBy': adminUid,
+                        'subscription.grantedAt': firebase.firestore.FieldValue.serverTimestamp(),
+                        'subscription.status': 'active',
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    await db.collection('providers').doc(providerId).update(provUpdates);
+                    await db.collection('subscriptions').doc(providerId).set(
+                        { plan: tierLower, status: 'active', updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
+                        { merge: true }
+                    );
+
+                    const tierLabel = tierLower.charAt(0).toUpperCase() + tierLower.slice(1);
+                    notifType = 'tier_change';
+                    notifTitle = 'Tier Updated';
+                    notifMsg = `Your subscription tier has been updated to ${tierLabel} by an administrator.`;
+                } else {
+                    const provUpdates = {
+                        adminGrantedTier: tierLower, // Grant access instead of directly upgrading
+                        tierAssignedDate: firebase.firestore.FieldValue.serverTimestamp(),
+                        tierAssignedBy: adminUid,
+                        tierAssignedByName: adminName,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    if (isForced) {
+                        provUpdates.forcedUpgrade = true;
+                        provUpdates.forcedUpgradeAt = firebase.firestore.FieldValue.serverTimestamp();
+                        provUpdates.forcedUpgradeBy = adminUid;
+                    }
+
+                    await db.collection('providers').doc(providerId).update(provUpdates);
+
+                    const tierLabel = tierLower.charAt(0).toUpperCase() + tierLower.slice(1);
+                    notifType = 'tier_access_granted';
+                    notifTitle = '🎉 Upgrade Unlocked!';
+                    notifMsg = `Congratulations! You've been granted access to upgrade to the ${tierLabel} tier. Visit your Upgrade Plan page to activate it.`;
+                }
+
+                if (notify) {
+                    await db.collection('notifications').doc(providerId).collection('items').add({
+                        type: notifType,
+                        title: notifTitle,
+                        message: notifMsg,
+                        tier: tierLower,
+                        read: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+
+                // Flash card before Firestore listener re-renders it
+                const card = document.getElementById(`subcard-${providerId}`);
+                if (card) card.classList.add('upgraded');
+
+                const verb = isDowngrade ? 'updated' : 'upgraded';
+                showSubToast(`✅ ${name} ${verb} to ${tierLower.charAt(0).toUpperCase() + tierLower.slice(1)}!`, 'success');
+                loadSubHistory();
+            } catch (err) {
+                console.error(err);
+                alert(err.message || err);
+                showSubToast('❌ Failed to update tier. Try again.', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = isForced ? 'Force Upgrade →' : `Upgrade to ${label} →`; }
+            }
+        };
+
+        // ── Upgrade click (from card button) ──────────────────────
+        window.handleUpgradeClick = function (btn) {
+            const providerId = btn.dataset.pid;
+            const newTier = btn.dataset.tier;
+            const label = btn.dataset.label;
+            const name = btn.dataset.name;
+            const provData = allSubProviders.find(p => p.id === providerId);
+            const isForced = provData ? calcEligibility(provData) !== newTier.toLowerCase() : false;
+            const s = provData ? getSubProviderStats(provData) : { completed: 0, ratingCount: 0, ratingTotal: 0 };
+            const avg = s.ratingCount > 0 ? (s.ratingTotal / s.ratingCount).toFixed(1) : '—';
+            const curTier = provData ? getSubProviderTier(provData) : '—';
+
+            openSubModal({
+                providerId, newTier, label, name, isForced, isDowngrade: false,
+                icon: isForced ? '⚠️' : (newTier === 'platinum' ? '💎' : '⭐'),
+                iconClass: isForced ? 'force' : newTier,
+                title: isForced ? `Force Upgrade to ${label}` : `Upgrade to ${label}`,
+                subtitle: `${name}`,
+                stats: [
+                    { label: 'Current Tier', value: curTier.charAt(0).toUpperCase() + curTier.slice(1) },
+                    { label: 'Bookings', value: s.completed },
+                    { label: 'Avg Rating', value: `⭐ ${avg}` }
+                ],
+                warn: isForced ? `${name} doesn't meet eligibility requirements. This will be flagged as a manual override.` : '',
+                showTierSelect: false,
+                confirmClass: isForced ? 'force' : newTier,
+                confirmText: isForced ? 'Force Upgrade' : `Upgrade to ${label}`
+            });
+        };
+
+        // ── Downgrade / Manage tier ───────────────────────────────
+        window.openDowngradeModal = function (btn) {
+            const providerId = btn.dataset.pid;
+            const name = btn.dataset.name;
+            const curTier = btn.dataset.curtier;
+            const provData = allSubProviders.find(p => p.id === providerId);
+            const s = provData ? getSubProviderStats(provData) : { completed: 0, ratingCount: 0, ratingTotal: 0 };
+            const avg = s.ratingCount > 0 ? (s.ratingTotal / s.ratingCount).toFixed(1) : '—';
+
+            openSubModal({
+                providerId, newTier: curTier, label: curTier, name, isForced: false, isDowngrade: true,
+                icon: '⚙️',
+                iconClass: 'downgrade',
+                title: 'Manage Tier',
+                subtitle: `Change ${name}'s subscription tier`,
+                stats: [
+                    { label: 'Current Tier', value: curTier.charAt(0).toUpperCase() + curTier.slice(1) },
+                    { label: 'Bookings', value: s.completed },
+                    { label: 'Avg Rating', value: `⭐ ${avg}` }
+                ],
+                warn: '',
+                showTierSelect: true,
+                confirmClass: 'downgrade',
+                confirmText: 'Apply Tier Change'
+            });
+        };
+
+        // ── Filter / Search / Sort ────────────────────────────────
+        window.applySubFilter = function (filter, el) {
+            subFilter = filter;
+            document.querySelectorAll('.sub-filter-btn').forEach(b => b.className = 'sub-filter-btn');
+            const cls = { all: 'active-all', gold: 'active-gold', platinum: 'active-plat', near: 'active-near' };
+            if (cls[filter]) el.classList.add(cls[filter]);
+            renderSubCards();
+        };
+
+        window.handleSubSearch = function (val) {
+            subSearchTerm = val.trim();
+            renderSubCards();
+        };
+
+        window.clearSubSearch = function () {
+            subSearchTerm = '';
+            const inp = document.getElementById('sub-search-input');
+            if (inp) inp.value = '';
+            renderSubCards();
+        };
+
+        window.handleSubSort = function (val) {
+            subSortKey = val;
+            renderSubCards();
+        };
+
+        // ── Recent upgrade history panel ──────────────────────────
+        window.toggleSubHistory = function () {
+            const body = document.getElementById('sub-history-body');
+            const toggle = document.getElementById('sub-history-toggle');
+            const open = body.classList.toggle('open');
+            toggle.classList.toggle('open', open);
+        };
+
+        async function loadSubHistory() {
+            try {
+                const snap = await db.collection('providers')
+                    .where('subscription.activatedByProvider', '==', true)
+                    .orderBy('subscription.activatedAt', 'desc')
+                    .limit(15)
+                    .get();
+
+                const body = document.getElementById('sub-history-body');
+                if (!body) return;
+
+                if (snap.empty) {
+                    body.innerHTML = `<div class="sub-history-empty">No provider has selected and paid for a plan yet.</div>`;
+                    return;
+                }
+
+                body.innerHTML = snap.docs.map(d => {
+                    const data = d.data();
+                    const sub = data.subscription || {};
+                    const name = data.identity?.fullName || data.fullName || data.username || 'Unknown';
+                    const plan = (sub.plan || 'silver').toLowerCase();
+                    const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+                    const dateStr = sub.activatedAt ? (() => {
+                        try {
+                            const d2 = typeof sub.activatedAt.toDate === 'function'
+                                ? sub.activatedAt.toDate()
+                                : new Date(sub.activatedAt.seconds * 1000);
+                            return d2.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                        } catch { return ''; }
+                    })() : '';
+                    return `
+                <div class="sub-history-row">
+                    <div class="sub-history-avatar ${plan}">${initials}</div>
+                    <span class="sub-history-name">${name}</span>
+                    <span class="sub-history-badge ${plan}">${plan.charAt(0).toUpperCase() + plan.slice(1)}</span>
+                    <span class="sub-history-date">${dateStr}</span>
+                </div>`;
+                }).join('');
+            } catch (err) {
+                // Fallback: filter from in-memory list (no composite index needed)
+                console.warn('[SubHistory] Index missing, using client filter.', err);
+                const body = document.getElementById('sub-history-body');
+                if (!body) return;
+                const paid = (allSubProviders || [])
+                    .filter(p => p.subscription?.activatedByProvider === true)
+                    .sort((a, b) => (b.subscription?.activatedAt?.seconds || 0) - (a.subscription?.activatedAt?.seconds || 0))
+                    .slice(0, 15);
+                if (!paid.length) {
+                    body.innerHTML = `<div class="sub-history-empty">No provider has selected and paid for a plan yet.</div>`;
+                    return;
+                }
+                body.innerHTML = paid.map(data => {
+                    const sub = data.subscription || {};
+                    const name = data.identity?.fullName || data.fullName || data.username || 'Unknown';
+                    const plan = (sub.plan || 'silver').toLowerCase();
+                    const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+                    return `
+                <div class="sub-history-row">
+                    <div class="sub-history-avatar ${plan}">${initials}</div>
+                    <span class="sub-history-name">${name}</span>
+                    <span class="sub-history-badge ${plan}">${plan.charAt(0).toUpperCase() + plan.slice(1)}</span>
+                </div>`;
+                }).join('');
+            }
+        }
+
+
+        // ── View Details ──────────────────────────────────────────
+        window.viewSubProvider = function (providerId) {
+            const prov = dashboard && dashboard.providers && dashboard.providers.find(p => p.id === providerId);
+            if (prov) { dashboard.showProviderModal(prov); return; }
+            switchTab('providers');
+            let attempts = 0;
+            const poll = setInterval(() => {
+                const found = dashboard.providers && dashboard.providers.find(p => p.id === providerId);
+                if (found || ++attempts > 20) {
+                    clearInterval(poll);
+                    if (found) dashboard.showProviderModal(found);
+                }
+            }, 250);
+        };
+
+        // ── Toast ─────────────────────────────────────────────────
+        function showSubToast(msg, type) {
+            const t = document.getElementById('sub-toast');
+            t.textContent = msg;
+            t.className = 'show' + (type ? ' ' + type : '');
+            setTimeout(() => { t.className = ''; }, 3500);
+        }
+
+        // ── Tab switching ─────────────────────────────────────────
+        window.switchTab = function (tab) {
+            document.getElementById('tab-providers').style.display = tab === 'providers' ? 'block' : 'none';
+            document.getElementById('tab-subscriptions').style.display = tab === 'subscriptions' ? 'block' : 'none';
+            document.getElementById('tab-providers-btn').classList.toggle('active', tab === 'providers');
+            document.getElementById('tab-subscriptions-btn').classList.toggle('active', tab === 'subscriptions');
+
+            if (tab === 'subscriptions' && !window._subInitialized) {
+                window._subInitialized = true;
+                initSubscriptionListeners();
+            }
+        };
+
+        // Initialize dashboard
+        const dashboard = new ProviderDashboard();
+    </script>
+</body>
+
+</html>

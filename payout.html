@@ -1,0 +1,2313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payouts & Commissions Management</title>
+    
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-color: #e2e8f0;
+            --table-header-bg: #f8fafc;
+            
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04);
+        }
+
+        html.dark-mode, html[data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #64748b;
+            --border-color: #334155;
+            --table-header-bg: #1e293b;
+            
+            --glass-bg: rgba(30, 41, 59, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.3);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1600px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        /* Header Card styled with premium gradient background */
+        .header-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 35px 40px;
+            border-radius: 20px;
+            box-shadow: var(--shadow-xl);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
+            pointer-events: none;
+        }
+
+        .header-info h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-info p {
+            opacity: 0.85;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateX(-3px);
+        }
+
+        .theme-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: white;
+            cursor: pointer;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+        }
+
+        .theme-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.05);
+        }
+
+        /* Summary metric cards grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+        }
+
+        .stat-icon {
+            width: 55px;
+            height: 55px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--primary);
+        }
+
+        .stat-icon.green {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .stat-icon.orange {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .stat-icon.purple {
+            background: rgba(118, 75, 162, 0.1);
+            color: var(--secondary);
+        }
+
+        .stat-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        /* Tab Navigation list */
+        .tab-nav {
+            display: flex;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 6px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            gap: 8px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-secondary);
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+        }
+
+        /* Workspace Panes */
+        .tab-pane {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .tab-pane.active {
+            display: flex;
+        }
+
+        /* Control bar with Filters, searches and sorting */
+        .controls-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px 24px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .search-group {
+            position: relative;
+            flex: 1;
+            min-width: 280px;
+            max-width: 450px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px 12px 42px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .filter-select {
+            padding: 11px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+            outline: none;
+            cursor: pointer;
+            min-width: 160px;
+        }
+
+        .filter-select:focus {
+            border-color: var(--primary);
+        }
+
+        /* Premium table design */
+        .table-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: var(--table-header-bg);
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 16px 24px;
+            border-bottom: 2px solid var(--border-color);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: var(--bg-tertiary);
+        }
+
+        /* Badges styles */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .badge-success {
+            background-color: rgba(16, 185, 129, 0.12);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background-color: rgba(245, 158, 11, 0.12);
+            color: var(--warning);
+        }
+
+        .badge-info {
+            background-color: rgba(59, 130, 246, 0.12);
+            color: var(--info);
+        }
+
+        .badge-danger {
+            background-color: rgba(239, 68, 68, 0.12);
+            color: var(--danger);
+        }
+
+        .badge-silver {
+            background-color: rgba(148, 163, 184, 0.15);
+            color: var(--text-secondary);
+        }
+
+        .badge-gold {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+        }
+
+        .badge-platinum {
+            background-color: rgba(124, 58, 237, 0.15);
+            color: #7c3aed;
+        }
+
+        /* Bank Transfer Details layout */
+        .bank-details-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background-color: var(--bg-tertiary);
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            max-width: 320px;
+        }
+
+        .bank-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            gap: 12px;
+        }
+
+        .bank-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .bank-val-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .bank-val {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .bank-val.mono {
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .copy-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 3px;
+            color: var(--text-tertiary);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .copy-btn:hover {
+            color: var(--primary);
+            background-color: rgba(102, 126, 234, 0.15);
+            transform: scale(1.1);
+        }
+
+        /* Button controls */
+        .btn-pay {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+            white-space: nowrap;
+        }
+
+        .btn-pay:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-pay:active {
+            transform: translateY(0);
+        }
+
+        /* Empty state component */
+        .empty-state {
+            padding: 60px 40px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            opacity: 0.6;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            max-width: 400px;
+        }
+
+        /* Toast Component */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 14px 20px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+            transition: opacity 0.3s, bottom 0.3s;
+            opacity: 0;
+        }
+
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 50px;
+        }
+
+        #toast.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        #toast.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        /* Loading indicator styling */
+        .loading-wrap {
+            text-align: center;
+            padding: 60px;
+            color: var(--primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .spinner {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Subscriptions secondary header */
+        .sub-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .sub-header-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sub-header-count {
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        /* Responsive changes */
+        /* Refund queue cards */
+        .refund-queue-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+        }
+        .refund-queue-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: #ef4444;
+        }
+        .refund-queue-card.processed {
+            opacity: 0.6;
+        }
+        .rdm-field {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+        .rdm-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            margin-bottom: 3px;
+        }
+        .rdm-val {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .header-card {
+                padding: 25px;
+                text-align: center;
+                justify-content: center;
+            }
+            .header-actions {
+                width: 100%;
+                justify-content: center;
+            }
+            td, th {
+                padding: 12px 15px;
+            }
+            .controls-card {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .search-group {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <!-- Header -->
+        <div class="header-card">
+            <div class="header-info">
+                <h1>💵 Payouts & Commissions Manager</h1>
+                <p>Track commission collections, review active provider subscriptions, and process manual payouts securely.</p>
+            </div>
+            <div class="header-actions">
+                <a href="dashboard.html" class="back-btn">← Dashboard</a>
+                <button class="theme-btn" id="themeBtn">🌙</button>
+            </div>
+        </div>
+
+        <!-- Metrics bar -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">💼</div>
+                <div class="stat-details">
+                    <span class="stat-label">Commissions (10%)</span>
+                    <span class="stat-value" id="kpi-commissions">₹0</span>
+                    <span class="stat-sub" id="kpi-commissions-count">0 advances received</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">⏳</div>
+                <div class="stat-details">
+                    <span class="stat-label">Pending Provider Payouts</span>
+                    <span class="stat-value" id="kpi-payouts-pending">₹0</span>
+                    <span class="stat-sub" id="kpi-payouts-pending-count">0 transfers pending</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">✅</div>
+                <div class="stat-details">
+                    <span class="stat-label">Completed Payouts</span>
+                    <span class="stat-value" id="kpi-payouts-completed">₹0</span>
+                    <span class="stat-sub" id="kpi-payouts-completed-count">0 transfers paid</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple">🏅</div>
+                <div class="stat-details">
+                    <span class="stat-label">Subscription Earnings</span>
+                    <span class="stat-value" id="kpi-subscriptions">₹0</span>
+                    <span class="stat-sub" id="kpi-subscriptions-count">0 paid subscriptions</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:rgba(239,68,68,0.1);color:#ef4444;">💸</div>
+                <div class="stat-details">
+                    <span class="stat-label">Pending Refunds</span>
+                    <span class="stat-value" id="kpi-refunds-pending">0</span>
+                    <span class="stat-sub" id="kpi-refunds-amount">₹0 queued</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Nav -->
+        <div class="tab-nav" role="tablist">
+            <button class="tab-btn active" onclick="switchTab('commissions', this)">💼 Commissions (10%)</button>
+            <button class="tab-btn" onclick="switchTab('payouts', this)">🏦 Provider Payouts</button>
+            <button class="tab-btn" onclick="switchTab('subscriptions', this)">🏅 Provider Subscriptions</button>
+            <button class="tab-btn" id="refunds-tab-btn" onclick="switchTab('refunds', this)" style="position:relative">
+                💸 Refunds
+                <span id="refunds-badge" style="display:none;position:absolute;top:6px;right:6px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;">0</span>
+            </button>
+        </div>
+
+        <!-- TAB 1: Commissions -->
+        <div id="tab-commissions" class="tab-pane active">
+            <div class="controls-card">
+                <div class="search-group">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="commissions-search" placeholder="Search by Booking ID, User, or Provider..." oninput="filterCommissions()">
+                </div>
+                <div style="color: var(--text-secondary); font-size: 13px; font-weight: 500;" id="commissions-count-label">
+                    Showing 0 transactions
+                </div>
+            </div>
+            
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Booking ID</th>
+                                <th>Category</th>
+                                <th>User Name</th>
+                                <th>Provider Name</th>
+                                <th>Booking Amount</th>
+                                <th>Advance Paid (10%)</th>
+                                <th>Payment Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="commissions-tbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="commissions-empty" class="empty-state" style="display: none;">
+                    <div class="empty-icon">💼</div>
+                    <h3>No Commissions Found</h3>
+                    <p>No 10% advance payment commissions have been recorded yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Provider Payouts -->
+        <div id="tab-payouts" class="tab-pane">
+            <div class="controls-card">
+                <div class="search-group">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="payouts-search" placeholder="Search by Provider, User, or Booking ID..." oninput="filterPayouts()">
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Payout Status:</span>
+                    <select class="filter-select" id="payouts-status-filter" onchange="filterPayouts()">
+                        <option value="pending">⏳ Pending Payout</option>
+                        <option value="paid">✅ Paid Payout</option>
+                        <option value="all">📋 All Payouts</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Booking ID</th>
+                                <th>Provider Details</th>
+                                <th>User Name</th>
+                                <th>Provider Payout Details</th>
+                                <th>Bank Account Details (Copy-Paste)</th>
+                                <th>Completion Date</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payouts-tbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="payouts-empty" class="empty-state" style="display: none;">
+                    <div class="empty-icon">🏦</div>
+                    <h3>No Payouts Found</h3>
+                    <p>No provider payouts match the current filters.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Provider Subscriptions -->
+        <div id="tab-subscriptions" class="tab-pane">
+            <div class="controls-card">
+                <div class="search-group">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="subscriptions-search" placeholder="Search by Provider Name, Plan, or Payment ID..." oninput="filterSubscriptions()">
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Plan Tier:</span>
+                    <select class="filter-select" id="subscriptions-plan-filter" onchange="filterSubscriptions()">
+                        <option value="all">All Plans</option>
+                        <option value="silver">Silver</option>
+                        <option value="gold">Gold</option>
+                        <option value="platinum">Platinum</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Subsection 1: Historical Razorpay Payments -->
+            <div class="sub-header-row">
+                <div class="sub-header-title">
+                    💳 Subscription Payments History (Razorpay)
+                </div>
+                <span class="sub-header-count" id="payments-history-count">0 payments</span>
+            </div>
+            
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Provider Name</th>
+                                <th>Plan Details</th>
+                                <th>Razorpay Payment ID</th>
+                                <th>Razorpay Order ID</th>
+                                <th>Promo Code</th>
+                                <th>Amount Billed</th>
+                                <th>Payment Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subscriptions-history-tbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="subscriptions-history-empty" class="empty-state" style="display: none;">
+                    <div class="empty-icon">💳</div>
+                    <h3>No Subscription Payments Found</h3>
+                    <p>No Razorpay payments for provider subscriptions have been registered.</p>
+                </div>
+            </div>
+
+            <!-- Subsection 2: Current Subscription States -->
+            <div class="sub-header-row" style="margin-top: 15px;">
+                <div class="sub-header-title">
+                    🏅 Active Subscription States
+                </div>
+                <span class="sub-header-count" id="active-states-count">0 active</span>
+            </div>
+
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Provider Name</th>
+                                <th>Plan Details</th>
+                                <th>Status</th>
+                                <th>Started At</th>
+                                <th>Renewal Date</th>
+                                <th>Total Price</th>
+                                <th>Auto Renew</th>
+                                <th>Cancellation Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subscriptions-states-tbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="subscriptions-states-empty" class="empty-state" style="display: none;">
+                    <div class="empty-icon">🏅</div>
+                    <h3>No Active Subscriptions</h3>
+                    <p>No active subscription plans are registered.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: Refunds -->
+        <div id="tab-refunds" class="tab-pane">
+            <div class="controls-card">
+                <div class="search-group">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="refunds-search" placeholder="Search by customer name, email, booking..." oninput="renderRefundsList()">
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Status:</span>
+                    <select class="filter-select" id="refunds-status-filter" onchange="renderRefundsList()">
+                        <option value="pending">⏳ Pending</option>
+                        <option value="processed">✅ Processed</option>
+                        <option value="all">📋 All</option>
+                    </select>
+                </div>
+                <div style="color:var(--text-secondary);font-size:13px;font-weight:500;" id="refunds-count-label">Showing 0 refunds</div>
+            </div>
+
+            <div class="table-card" id="refunds-table-card" style="display:none;">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Booking ID</th>
+                                <th>Customer Details</th>
+                                <th>Provider Name</th>
+                                <th>Service Name</th>
+                                <th>Total Booking</th>
+                                <th>Refundable Base (10% Advance)</th>
+                                <th>Refund Paid / Suggested</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="refunds-tbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="refunds-empty" class="empty-state" style="display:none;">
+                <div class="empty-icon">💸</div>
+                <h3>No Refunds Queued</h3>
+                <p>Refund requests from provider replacement will appear here. Use provider-replacement.html to queue a refund.</p>
+            </div>
+        </div>
+
+        <!-- Refund Detail Modal -->
+        <div id="refund-detail-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);overflow-y:auto;">
+            <div style="max-width:620px;margin:40px auto;background:var(--bg-secondary);border-radius:20px;border:1px solid var(--border-color);box-shadow:0 25px 60px rgba(0,0,0,0.3);overflow:hidden;">
+                <div style="background:linear-gradient(135deg,#ef4444,#dc2626);padding:24px 28px;color:#fff;position:relative;">
+                    <div style="font-size:20px;font-weight:800;">💸 Refund Details</div>
+                    <div style="font-size:13px;opacity:.8;margin-top:4px;" id="rdm-subtitle"></div>
+                    <button onclick="closeRefundModal()" style="position:absolute;top:16px;right:20px;background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:700;">×</button>
+                </div>
+                <div style="padding:24px 28px;display:flex;flex-direction:column;gap:20px;" id="rdm-body"></div>
+                <div style="padding:16px 28px 24px;border-top:1px solid var(--border-color);" id="rdm-calc"></div>
+                <div style="padding:0 28px 24px;display:flex;gap:12px;" id="rdm-actions"></div>
+            </div>
+        </div>
+
+        <!-- Global Toast Component -->
+        <div id="toast"></div>
+
+        <!-- Global Loader -->
+        <div class="loading-wrap" id="loading">
+            <div class="spinner"></div>
+            <div style="font-weight: 600; font-size: 15px; margin-top: 10px;">Loading Payouts and Financials...</div>
+        </div>
+
+    </div>
+
+    <script>
+        // Database credentials config
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+            authDomain: "phototester555.firebaseapp.com",
+            projectId: "phototester555",
+            storageBucket: "phototester555.firebasestorage.app",
+            messagingSenderId: "953997763616",
+            appId: "1:953997763616:web:4ac177ad8e79c5f38b8845",
+            measurementId: "G-6VS0G0NQ7K"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // Application states
+        let allBookings = [];
+        let allProviders = [];
+        let allSubPayments = [];
+        let allSubStates = [];
+        let allRefundQueue = [];   // ← new
+        let provMap = {};
+        let activeRefundDoc = null; // currently open refund in modal
+        let _rdmPct = 0, _rdmAmt = 0;
+
+        // Formatters
+        const INR = n => n === 0 ? '₹0' : '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+
+        // Dynamic payout and platform commission calculations based on provider subscription plans
+        function getProviderPlan(providerId, subscriptionsData) {
+            if (!providerId) return 'silver';
+            
+            // 1. Check subscriptions collection (doc ID is providerId)
+            const sub = subscriptionsData.find(s => s.id === providerId || s.providerId === providerId);
+            let plan = sub?.plan || sub?.planKey || sub?.planTitle || '';
+            
+            // 2. Fallback to providers cache
+            if (!plan && provMap[providerId]) {
+                const pData = provMap[providerId];
+                plan = pData.subscriptionPlan || pData.tier || (pData.subscription && pData.subscription.plan) || '';
+            }
+            
+            plan = String(plan || 'silver').toLowerCase().trim();
+            if (['silver', 'gold', 'platinum'].includes(plan)) {
+                return plan;
+            }
+            return 'silver'; // Safe fallback
+        }
+
+        function getCommissionRate(plan) {
+            const p = String(plan || 'silver').toLowerCase().trim();
+            if (p === 'platinum') return 5;
+            if (p === 'gold') return 10;
+            return 15; // silver / fallback
+        }
+
+        function getProviderPayoutRate(plan) {
+            const p = String(plan || 'silver').toLowerCase().trim();
+            if (p === 'platinum') return 95;
+            if (p === 'gold') return 90;
+            return 85; // silver / fallback
+        }
+
+        function resolveBookingRates(b, providerId, subscriptionsData) {
+            const currentPlan = getProviderPlan(providerId, subscriptionsData);
+            
+            let plan = currentPlan;
+            if (b && b.providerPlan) {
+                plan = b.providerPlan;
+            } else if (b && b.payoutCalculation && b.payoutCalculation.plan) {
+                plan = b.payoutCalculation.plan;
+            }
+            
+            let payoutRate = 85;
+            if (b && b.payoutRate !== undefined && b.payoutRate !== null && !isNaN(Number(b.payoutRate))) {
+                payoutRate = Number(b.payoutRate);
+            } else if (b && b.payoutCalculation && b.payoutCalculation.payoutRate !== undefined && b.payoutCalculation.payoutRate !== null && !isNaN(Number(b.payoutCalculation.payoutRate))) {
+                payoutRate = Number(b.payoutCalculation.payoutRate);
+            } else {
+                payoutRate = getProviderPayoutRate(plan);
+            }
+            
+            let commissionRate = 100 - payoutRate;
+            if (b && b.commissionRate !== undefined && b.commissionRate !== null && !isNaN(Number(b.commissionRate))) {
+                commissionRate = Number(b.commissionRate);
+            } else if (b && b.payoutCalculation && b.payoutCalculation.commissionRate !== undefined && b.payoutCalculation.commissionRate !== null && !isNaN(Number(b.payoutCalculation.commissionRate))) {
+                commissionRate = Number(b.payoutCalculation.commissionRate);
+            }
+            
+            const totalAmt = getBookingAmount(b);
+            let payoutAmt = Math.round(totalAmt * payoutRate / 100);
+            if (b && b.payoutCalculation && b.payoutCalculation.payoutAmount !== undefined && b.payoutCalculation.payoutAmount !== null && !isNaN(Number(b.payoutCalculation.payoutAmount))) {
+                payoutAmt = Number(b.payoutCalculation.payoutAmount);
+            }
+            
+            let commissionAmt = Math.round(totalAmt * commissionRate / 100);
+            if (b && b.payoutCalculation && b.payoutCalculation.commissionAmount !== undefined && b.payoutCalculation.commissionAmount !== null && !isNaN(Number(b.payoutCalculation.commissionAmount))) {
+                commissionAmt = Number(b.payoutCalculation.commissionAmount);
+            }
+            
+            return {
+                plan,
+                payoutRate,
+                commissionRate,
+                payoutAmt,
+                commissionAmt
+            };
+        }
+
+        function getPlatformCommissionAmount(totalAmount, plan) {
+            const amt = Number(totalAmount || 0);
+            const rate = getCommissionRate(plan);
+            return Math.round(amt * rate / 100);
+        }
+
+        function getProviderPayoutAmount(totalAmount, plan) {
+            const amt = Number(totalAmount || 0);
+            const rate = getProviderPayoutRate(plan);
+            return Math.round(amt * rate / 100);
+        }
+        
+        function esc(s) {
+            return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+        }
+
+        function fmtDate(ts) {
+            if (!ts) return '—';
+            let d;
+            if (ts.seconds) d = new Date(ts.seconds * 1000);
+            else if (ts instanceof Date) d = ts;
+            else d = new Date(ts);
+            
+            if (isNaN(d.getTime())) return '—';
+            return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        /**
+         * Robustly extracts the true booking total from any of the possible
+         * storage fields. In this codebase the cart saves the total into
+         * `estimatedSubtotal` and `selectedPricing.price`; `amount` is often 0.
+         */
+        function getBookingAmount(b) {
+            if (!b) return 0;
+            // Try explicit amount fields first
+            const direct = Number(
+                b.amount || b.totalAmount || b.bookingAmount || b.serviceAmount ||
+                b.cost || b.grandTotal || b.totalPrice || b.paidAmount || 0
+            );
+            if (direct > 0) return direct;
+
+            // estimatedSubtotal is the cart-carried total
+            const est = Number(b.estimatedSubtotal || 0);
+            if (est > 0) return est;
+
+            // selectedPricing carries the chosen package/hourly price
+            if (b.selectedPricing) {
+                const sp = b.selectedPricing;
+                if (sp.mode === 'package') {
+                    const pkg = Number(sp.price ?? sp.raw?.price ?? 0);
+                    if (pkg > 0) return pkg;
+                } else if (sp.mode === 'hourly') {
+                    const rate = Number(sp.rate ?? sp.raw?.rate ?? 0);
+                    const hrs  = Number(sp.hours ?? sp.minHours ?? sp.raw?.minHours ?? 1);
+                    if (rate > 0) return rate * hrs;
+                }
+                const fallback = Number(sp.price ?? sp.raw?.price ?? 0);
+                if (fallback > 0) return fallback;
+            }
+
+            // paymentStatus may carry a totalAmount
+            if (b.paymentStatus) {
+                const ps = Number(b.paymentStatus.totalAmount ?? 0);
+                if (ps > 0) return ps;
+            }
+            return 0;
+        }
+
+        /**
+         * Extracts the advance amount actually paid (10%).
+         * Falls back to 10% of the booking total if the stored value is 0.
+         */
+        function getAdvanceAmount(b) {
+            const stored = Number(
+                b.advanceAmount || b.advance || b.advancePaid || b.depositAmount ||
+                b.partialAmount || b.advancePayment || b.advancePay ||
+                (b.paymentStatus && (b.paymentStatus.advanceAmount || b.paymentStatus.advancePaidAmount)) || 0
+            );
+            if (stored > 0) return stored;
+            // Derive from real total
+            const total = getBookingAmount(b);
+            return total > 0 ? Math.ceil(total * 0.10) : 0;
+        }
+
+        // Copy Helper
+        window.copyText = function(text, name = 'Value') {
+            if (!text || text === '—') return;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(`✔ ${name} copied to clipboard!`, 'success');
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                showToast('❌ Copy failed. Please select manually.', 'error');
+            });
+        };
+
+        // UI Toast Controller
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'show' + (type ? ' ' + type : '');
+            setTimeout(() => { t.className = ''; }, 3000);
+        }
+
+        // Tab manager
+        window.switchTab = function(tabName, btn) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById('tab-' + tabName).classList.add('active');
+            if (btn) btn.classList.add('active');
+        };
+
+        // Theme management
+        const themeBtn = document.getElementById('themeBtn');
+        function applyTheme(dark) {
+            document.documentElement.classList.toggle('dark-mode', dark);
+            document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+            localStorage.setItem('theme', dark ? 'dark' : 'light');
+            themeBtn.textContent = dark ? '☀️' : '🌙';
+        }
+        themeBtn.addEventListener('click', () => {
+            const isDark = document.documentElement.classList.contains('dark-mode') || document.documentElement.getAttribute('data-theme') === 'dark';
+            applyTheme(!isDark);
+        });
+        (function initTheme() {
+            const saved = localStorage.getItem('theme');
+            const dark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme:dark)').matches);
+            applyTheme(dark);
+        })();
+
+        // Authenticate admin
+        auth.onAuthStateChanged(async user => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            try {
+                // Try adminusers first, fall back to admin_users to prevent logouts due to collection mismatches
+                let adminDoc = await db.collection('adminusers').doc(user.uid).get();
+                if (!adminDoc.exists) {
+                    adminDoc = await db.collection('admin_users').doc(user.uid).get();
+                }
+                
+                if (!adminDoc.exists || !adminDoc.data().isActive) {
+                    console.log('User is not an active admin, signing out');
+                    await auth.signOut();
+                    window.location.href = 'index.html';
+                    return;
+                }
+            } catch (error) {
+                console.error('Error verifying admin status:', error);
+                await auth.signOut();
+                window.location.href = 'index.html';
+                return;
+            }
+            initListeners();
+        });
+
+        // Database listeners
+        function initListeners() {
+            // 1. Providers listener
+            db.collection('providers').onSnapshot(snap => {
+                allProviders = [];
+                provMap = {};
+                snap.forEach(d => {
+                    const data = d.data();
+                    const payout = data.payout || {};
+                    const india = payout.india || {};
+                    const international = payout.international || {};
+                    
+                    const details = {
+                        id: d.id,
+                        name: data.username || data.fullName || (data.identity && data.identity.fullName) || d.id,
+                        email: data.email || (data.identity && data.identity.email) || '—',
+                        phone: data.phone || (data.profile && data.profile.phone) || '—',
+                        upi: payout.upi || india.upi || '—',
+                        subscriptionPlan: data.subscriptionPlan || data.tier || (data.subscription && data.subscription.plan) || 'silver',
+                        tier: data.tier || 'silver',
+                        india: {
+                            acctName: india.acctName || '—',
+                            bankName: india.bankName || '—',
+                            acctNumber: india.acctNumber || '—',
+                            ifsc: india.ifsc || '—',
+                            pan: india.pan || '—'
+                        },
+                        intl: {
+                            intlAcctName: international.intlAcctName || '—',
+                            intlAcctNumber: international.intlAcctNumber || '—',
+                            iban: international.iban || '—',
+                            swift: international.swift || '—',
+                            routing: international.routing || '—',
+                            altPayoutType: international.altPayoutType || '—',
+                            altPayoutId: international.altPayoutId || '—'
+                        }
+                    };
+                    allProviders.push(details);
+                    provMap[d.id] = details;
+                });
+                reprocess();
+            }, e => console.error('Listeners: providers error:', e));
+
+            // 2. Bookings listener
+            db.collection('bookings').onSnapshot(snap => {
+                allBookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                reprocess();
+            }, e => console.error('Listeners: bookings error:', e));
+
+            // 3. Subscription Payments history listener
+            db.collection('subscriptionPayments').onSnapshot(snap => {
+                allSubPayments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                reprocess();
+            }, e => console.error('Listeners: sub payments error:', e));
+
+            // 4. Subscriptions state listener
+            db.collection('subscriptions').onSnapshot(snap => {
+                allSubStates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                reprocess();
+            }, e => console.error('Listeners: sub states error:', e));
+
+            // 5. ✅ Refund Queue listener
+            db.collection('refundQueue').orderBy('createdAt', 'desc').onSnapshot(snap => {
+                allRefundQueue = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                reprocess();
+            }, e => console.error('Listeners: refundQueue error:', e));
+        }
+
+        function getSuggestedRefundPercent(r) {
+            if (r.suggestedRefundPercent !== undefined && r.suggestedRefundPercent !== null && r.suggestedRefundPercent !== '') {
+                return Number(r.suggestedRefundPercent);
+            }
+            // Fallback lookup from associated booking or refund document flags
+            const booking = allBookings.find(b => b.bookingId === r.bookingId || b.id === r.bookingId || b.docId === r.bookingId);
+            const byProvider = booking?.cancelledBy === 'provider' || 
+                               String(r.who || r.cancelledBy || r.cancellationBy || r.initiatedBy || '').toLowerCase() === 'provider' ||
+                               r.isCustomerIssue === false;
+            if (byProvider) {
+                return 100;
+            }
+            return 0;
+        }
+
+        // Reprocess data and update DOM
+        let processing = false;
+        function reprocess() {
+            if (processing) return;
+            processing = true;
+            
+            document.getElementById('loading').style.display = 'none';
+
+            // Calculations
+            let totalCommission = 0;
+            let commissionCount = 0;
+            let totalOwedPending = 0;
+            let pendingPayoutCount = 0;
+            let totalOwedCompleted = 0;
+            let completedPayoutCount = 0;
+            let totalSubRevenue = 0;
+            let subscriptionCount = 0;
+
+            // 1. Process Commissions & Payouts from Bookings (Dynamic Splits based on active subscription tier)
+            allBookings.forEach(b => {
+                const totalAmt = getBookingAmount(b);
+                if (totalAmt <= 0) return;
+
+                // 10% Advance Details (collected from customer at booking)
+                const advAmt = getAdvanceAmount(b);
+
+                // Provider active plan and dynamically computed payout share
+                const provId = b.providerId || '';
+                const plan = getProviderPlan(provId, allSubStates);
+                const payoutAmt = getProviderPayoutAmount(totalAmt, plan);
+
+                // Check user paid 10% advance (paymentConfirmed is set on booking creation in payment.html)
+                const isCollected = b.paymentConfirmed === true || b.advancePaymentDone === true || (b.paymentStatus && b.paymentStatus.advancePayment === true);
+                
+                // Check user paid final balance
+                const isFinalPaid = b.finalPaymentDone === true ||
+                    (b.paymentStatus && b.paymentStatus.finalPayment === true) ||
+                    ['completed', 'payment completed', 'work accepted', 'customer received'].includes((b.status || '').toLowerCase());
+
+                // Check provider payout completed by admin
+                const isPayoutPaid = b.payoutStatus === 'paid';
+
+                if (isCollected) {
+                    totalCommission += advAmt;
+                    commissionCount++;
+                }
+
+                if (isFinalPaid) {
+                    if (isPayoutPaid) {
+                        totalOwedCompleted += payoutAmt;
+                        completedPayoutCount++;
+                    } else {
+                        totalOwedPending += payoutAmt;
+                        pendingPayoutCount++;
+                    }
+                }
+            });
+
+            // 2. Process Subscription payments
+            allSubPayments.forEach(p => {
+                if (p.status === 'paid' || p.paymentMethod === 'Razorpay' || !p.status) {
+                    totalSubRevenue += Number(p.totalAmount || p.amount || 0);
+                    subscriptionCount++;
+                }
+            });
+
+            // Set KPI content
+            document.getElementById('kpi-commissions').textContent = INR(totalCommission);
+            document.getElementById('kpi-commissions-count').textContent = `${commissionCount} advances received`;
+
+            document.getElementById('kpi-payouts-pending').textContent = INR(totalOwedPending);
+            document.getElementById('kpi-payouts-pending-count').textContent = `${pendingPayoutCount} transfers pending`;
+
+            document.getElementById('kpi-payouts-completed').textContent = INR(totalOwedCompleted);
+            document.getElementById('kpi-payouts-completed-count').textContent = `${completedPayoutCount} transfers paid`;
+
+            document.getElementById('kpi-subscriptions').textContent = INR(totalSubRevenue);
+            document.getElementById('kpi-subscriptions-count').textContent = `${subscriptionCount} subscription payments`;
+
+            // ── Refund Queue KPI ── (10% commission advance is refundable base)
+            const pendingRefunds = allRefundQueue.filter(r => r.status !== 'processed');
+            // Use processedRefundAmount for done items, suggestedRefundAmount for pending
+            const pendingRefundAmount = pendingRefunds.reduce((s, r) => {
+                const total = Number(r.totalBookingAmount || 0);
+                const refundable = Math.round(total * 0.10); // 10% advance base
+                const pct = getSuggestedRefundPercent(r);
+                return s + Math.round(refundable * pct / 100);
+            }, 0);
+            document.getElementById('kpi-refunds-pending').textContent = pendingRefunds.length;
+            document.getElementById('kpi-refunds-amount').textContent = INR(pendingRefundAmount) + ' queued';
+
+            // Badge on tab
+            const badge = document.getElementById('refunds-badge');
+            if (pendingRefunds.length > 0) {
+                badge.textContent = pendingRefunds.length;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+
+            // Render tables
+            renderCommissionsTable();
+            renderPayoutsTable();
+            renderSubscriptionsTables();
+            renderRefundsList();
+
+            processing = false;
+        }
+
+        // Helper to format bank details HTML block
+        function renderBankDetailsHTML(provId) {
+            const p = provMap[provId];
+            if (!p) return '<span style="color:var(--text-tertiary);">No details found</span>';
+
+            const ind = p.india || {};
+            const intl = p.intl || {};
+
+            let html = '';
+            
+            // Check if India details are set
+            if ((ind.acctNumber && ind.acctNumber !== '—') || (p.upi && p.upi !== '—')) {
+                html += `
+                    <div class="bank-details-grid" style="margin-bottom: 8px;">
+                        <div class="bank-label" style="font-weight: 700; color: var(--primary);">🇮🇳 Domestic (India)</div>
+                        ${ind.acctName !== '—' ? `
+                        <div class="bank-row">
+                            <span class="bank-label">Name</span>
+                            <div class="bank-val-wrap">
+                                <span class="bank-val">${esc(ind.acctName)}</span>
+                                <button class="copy-btn" onclick="copyText('${esc(ind.acctName)}', 'Account Name')" title="Copy Name">📋</button>
+                            </div>
+                        </div>` : ''}
+                        ${ind.acctNumber !== '—' ? `
+                        <div class="bank-row">
+                            <span class="bank-label">A/C No</span>
+                            <div class="bank-val-wrap">
+                                <span class="bank-val mono text-red" style="color: var(--danger);">${esc(ind.acctNumber)}</span>
+                                <button class="copy-btn" onclick="copyText('${esc(ind.acctNumber)}', 'Account Number')" title="Copy Account Number">📋</button>
+                            </div>
+                        </div>` : ''}
+                        ${ind.bankName !== '—' ? `
+                        <div class="bank-row">
+                            <span class="bank-label">Bank</span>
+                            <div class="bank-val-wrap">
+                                <span class="bank-val">${esc(ind.bankName)}</span>
+                                <button class="copy-btn" onclick="copyText('${esc(ind.bankName)}', 'Bank Name')" title="Copy Bank Name">📋</button>
+                            </div>
+                        </div>` : ''}
+                        ${ind.ifsc !== '—' ? `
+                        <div class="bank-row">
+                            <span class="bank-label">IFSC</span>
+                            <div class="bank-val-wrap">
+                                <span class="bank-val mono">${esc(ind.ifsc)}</span>
+                                <button class="copy-btn" onclick="copyText('${esc(ind.ifsc)}', 'IFSC Code')" title="Copy IFSC">📋</button>
+                            </div>
+                        </div>` : ''}
+                        ${ind.pan !== '—' ? `
+                        <div class="bank-row">
+                            <span class="bank-label">PAN</span>
+                            <div class="bank-val-wrap">
+                                <span class="bank-val mono">${esc(ind.pan)}</span>
+                                <button class="copy-btn" onclick="copyText('${esc(ind.pan)}', 'PAN Number')" title="Copy PAN">📋</button>
+                            </div>
+                        </div>` : ''}
+                        ${p.upi !== '—' ? `
+                        <div class="bank-row">
+                            <span class="bank-label">UPI ID</span>
+                            <div class="bank-val-wrap">
+                                <span class="bank-val" style="color: var(--info);">${esc(p.upi)}</span>
+                                <button class="copy-btn" onclick="copyText('${esc(p.upi)}', 'UPI ID')" title="Copy UPI ID">📋</button>
+                            </div>
+                        </div>` : ''}
+                    </div>
+                `;
+            }
+
+            // Check if International details are set
+            if ((intl.intlAcctNumber && intl.intlAcctNumber !== '—') || (intl.iban && intl.iban !== '—')) {
+                html += `
+                    <div class="bank-details-grid">
+                        <div class="bank-label" style="font-weight: 700; color: var(--secondary);">🌐 International</div>
+                        ${intl.intlAcctName !== '—' ? `
+                        <div class="bank-row">
+                            <span class="bank-label">Name</span>
+                            <div class="bank-val-wrap">
+                                <span class="bank-val">${esc(intl.intlAcctName)}</span>
+                                <button class="copy-btn" onclick="copyText('${esc(intl.intlAcctName)}', 'International Account Name')" title="Copy Name">📋</button>
+                            </div>
+                        </div>` : ''}
+                        ${intl.intlAcctNumber !== '—' ? `
+                        <div class="bank-row">
+                            <span class="bank-label">Account</span>
+                            <div class="bank-val-wrap">
+                                <span class="bank-val mono" style="color: var(--danger);">${esc(intl.intlAcctNumber)}</span>
+                                <button class="copy-btn" onclick="copyText('${esc(intl.intlAcctNumber)}', 'Account Number')" title="Copy Account Number">📋</button>
+                            </div>
+                        </div>` : ''}
+                        ${intl.iban !== '—' ? `
+                        <div class="bank-row">
+                            <span class="bank-label">IBAN</span>
+                            <div class="bank-val-wrap">
+                                <span class="bank-val mono" style="color: var(--danger);">${esc(intl.iban)}</span>
+                                <button class="copy-btn" onclick="copyText('${esc(intl.iban)}', 'IBAN')" title="Copy IBAN">📋</button>
+                            </div>
+                        </div>` : ''}
+                        ${intl.swift !== '—' ? `
+                        <div class="bank-row">
+                            <span class="bank-label">SWIFT</span>
+                            <div class="bank-val-wrap">
+                                <span class="bank-val mono">${esc(intl.swift)}</span>
+                                <button class="copy-btn" onclick="copyText('${esc(intl.swift)}', 'SWIFT Code')" title="Copy SWIFT">📋</button>
+                            </div>
+                        </div>` : ''}
+                        ${intl.routing !== '—' ? `
+                        <div class="bank-row">
+                            <span class="bank-label">Routing</span>
+                            <div class="bank-val-wrap">
+                                <span class="bank-val mono">${esc(intl.routing)}</span>
+                                <button class="copy-btn" onclick="copyText('${esc(intl.routing)}', 'Routing Code')" title="Copy Routing">📋</button>
+                            </div>
+                        </div>` : ''}
+                        ${intl.altPayoutType !== '—' ? `
+                        <div class="bank-row">
+                            <span class="bank-label">Alt Pay (${esc(intl.altPayoutType)})</span>
+                            <div class="bank-val-wrap">
+                                <span class="bank-val">${esc(intl.altPayoutId)}</span>
+                                <button class="copy-btn" onclick="copyText('${esc(intl.altPayoutId)}', 'Alt Payout ID')" title="Copy Alt ID">📋</button>
+                            </div>
+                        </div>` : ''}
+                    </div>
+                `;
+            }
+
+            if (!html) {
+                html = '<span style="color:var(--text-tertiary); font-style:italic;">No bank details configured</span>';
+            }
+
+            return html;
+        }
+
+        // Render TAB 1: Commissions
+        function renderCommissionsTable() {
+            const tbody = document.getElementById('commissions-tbody');
+            const search = document.getElementById('commissions-search').value.toLowerCase();
+            
+            // Get all bookings where the 10% advance was collected
+            let data = allBookings.filter(b => {
+                const isCollected = b.paymentConfirmed === true || b.advancePaymentDone === true || (b.paymentStatus && b.paymentStatus.advancePayment === true);
+                return isCollected && getBookingAmount(b) > 0;
+            });
+
+            // Sort newest first
+            data.sort((a, b) => {
+                const da = a.timestamp ? (a.timestamp.seconds || new Date(a.timestamp).getTime()) : 0;
+                const db = b.timestamp ? (b.timestamp.seconds || new Date(b.timestamp).getTime()) : 0;
+                return db - da;
+            });
+
+            // Apply search filter
+            if (search) {
+                data = data.filter(b => {
+                    const bookingId = (b.id || '').toLowerCase();
+                    const userName = (b.userName || b.customerName || b.clientName || '').toLowerCase();
+                    const provId = b.providerId || '';
+                    const provName = (provMap[provId] ? provMap[provId].name : b.providerName || '').toLowerCase();
+                    const category = (b.category || b.serviceCategory || '').toLowerCase();
+                    
+                    return bookingId.includes(search) || userName.includes(search) || provName.includes(search) || category.includes(search);
+                });
+            }
+
+            document.getElementById('commissions-count-label').textContent = `Showing ${data.length} transactions`;
+
+            if (data.length === 0) {
+                tbody.innerHTML = '';
+                document.getElementById('commissions-empty').style.display = 'flex';
+                return;
+            }
+
+            document.getElementById('commissions-empty').style.display = 'none';
+
+            tbody.innerHTML = data.map(b => {
+                const totalAmt = getBookingAmount(b);
+                const advAmt = getAdvanceAmount(b);
+                
+                const category = b.category || b.serviceCategory || b.selectedPricing?.title || 'General';
+                const userName = b.userName || b.customerName || b.clientName || '—';
+                const provId = b.providerId || '';
+                const provName = provMap[provId] ? provMap[provId].name : b.providerName || '—';
+                const date = b.bookingTimestamp || b.createdAt || b.timestamp || b.paymentStatus?.advancePaidAt || null;
+
+                return `
+                    <tr>
+                        <td style="font-weight:700; color:var(--primary); font-family:monospace; font-size:13px;">${esc(b.id)}</td>
+                        <td><span class="badge badge-info">${esc(category)}</span></td>
+                        <td style="font-weight:600;">${esc(userName)}</td>
+                        <td style="font-weight:600;">${esc(provName)}</td>
+                        <td style="font-weight:700;">${INR(totalAmt)}</td>
+                        <td style="font-weight:800; color:var(--success);">${INR(advAmt)}</td>
+                        <td>${fmtDate(date)}</td>
+                        <td><span class="badge badge-success">✔ Collected</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.filterCommissions = function() {
+            renderCommissionsTable();
+        };
+
+        // Render TAB 2: Payouts
+        function renderPayoutsTable() {
+            const tbody = document.getElementById('payouts-tbody');
+            const search = document.getElementById('payouts-search').value.toLowerCase();
+            const statusFilter = document.getElementById('payouts-status-filter').value;
+
+            // Get completed bookings where user paid the remaining 90%
+            let data = allBookings.filter(b => {
+                const isFinalPaid = b.finalPaymentDone === true ||
+                    (b.paymentStatus && b.paymentStatus.finalPayment === true) ||
+                    ['completed', 'payment completed', 'work accepted', 'customer received'].includes((b.status || '').toLowerCase());
+                return isFinalPaid && getBookingAmount(b) > 0;
+            });
+
+            // Sort completions newest first
+            data.sort((a, b) => {
+                const da = a.completedAt ? (a.completedAt.seconds || new Date(a.completedAt).getTime()) : 0;
+                const db = b.completedAt ? (b.completedAt.seconds || new Date(b.completedAt).getTime()) : 0;
+                return db - da;
+            });
+
+            // Filter by Payout status (Pending, Paid, All)
+            if (statusFilter === 'pending') {
+                data = data.filter(b => b.payoutStatus !== 'paid');
+            } else if (statusFilter === 'paid') {
+                data = data.filter(b => b.payoutStatus === 'paid');
+            }
+
+            // Apply search filter
+            if (search) {
+                data = data.filter(b => {
+                    const bookingId = (b.id || '').toLowerCase();
+                    const userName = (b.userName || b.customerName || b.clientName || '').toLowerCase();
+                    const provId = b.providerId || '';
+                    const provName = (provMap[provId] ? provMap[provId].name : b.providerName || '').toLowerCase();
+                    
+                    return bookingId.includes(search) || userName.includes(search) || provName.includes(search);
+                });
+            }
+
+            if (data.length === 0) {
+                tbody.innerHTML = '';
+                document.getElementById('payouts-empty').style.display = 'flex';
+                return;
+            }
+
+            document.getElementById('payouts-empty').style.display = 'none';
+
+            tbody.innerHTML = data.map(b => {
+                const provId = b.providerId || '';
+                const rates = resolveBookingRates(b, provId, allSubStates);
+                const plan = rates.plan;
+                const payoutRate = rates.payoutRate;
+                const commissionRate = rates.commissionRate;
+                const payoutAmt = rates.payoutAmt;
+
+                const provName = provMap[provId] ? provMap[provId].name : b.providerName || '—';
+                const provEmail = provMap[provId] ? provMap[provId].email : '—';
+                const userName = b.userName || b.customerName || b.clientName || '—';
+                
+                const isPaid = b.payoutStatus === 'paid';
+                const badgeClass = isPaid ? 'badge-success' : 'badge-warning';
+                const badgeLabel = isPaid ? '✔ Payout Paid' : '⏳ Pending Transfer';
+
+                const completionDate = b.completedAt || b.updatedAt || null;
+
+                const actionButton = isPaid 
+                    ? `<span style="font-size: 13px; color: var(--text-tertiary); font-weight: 600;">Paid ✔</span>` 
+                    : `<button class="btn-pay" onclick="markPayoutAsPaid('${b.id}')">Confirm Paid</button>`;
+
+                const planClass = plan.toLowerCase();
+                const planTitle = plan.charAt(0).toUpperCase() + plan.slice(1);
+
+                return `
+                    <tr>
+                        <td style="font-weight:700; color:var(--primary); font-family:monospace; font-size:13px;">${esc(b.id)}</td>
+                        <td>
+                            <div style="font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                                ${esc(provName)}
+                                <span class="badge badge-${planClass}" style="font-size:10px; padding: 2px 6px;">${planTitle}</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">${esc(provEmail)}</div>
+                        </td>
+                        <td style="font-weight:600;">${esc(userName)}</td>
+                        <td>
+                            <div style="font-weight:800; color: var(--secondary); font-size: 15px;">${INR(payoutAmt)}</div>
+                            <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 2px; font-weight: 500;">
+                                ${payoutRate}% payout (Comm: ${commissionRate}%)
+                            </div>
+                        </td>
+                        <td>${renderBankDetailsHTML(provId)}</td>
+                        <td>${fmtDate(completionDate)}</td>
+                        <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
+                        <td>${actionButton}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.filterPayouts = function() {
+            renderPayoutsTable();
+        };
+
+        // ── Render TAB 4: Refund Queue cards ──────────────────────────────────────
+        function renderRefundsList() {
+            const tbody = document.getElementById('refunds-tbody');
+            const tableCard = document.getElementById('refunds-table-card');
+            const empty = document.getElementById('refunds-empty');
+            const search = (document.getElementById('refunds-search')?.value || '').toLowerCase();
+            const statusFilter = document.getElementById('refunds-status-filter')?.value || 'pending';
+
+            let data = allRefundQueue.slice();
+
+            if (statusFilter === 'pending') data = data.filter(r => r.status !== 'processed');
+            else if (statusFilter === 'processed') data = data.filter(r => r.status === 'processed');
+
+            if (search) {
+                data = data.filter(r => [
+                    r.customerName, r.customerEmail, r.customerPhone,
+                    r.serviceName, r.bookingId, r.providerName, r.category
+                ].some(v => (v || '').toLowerCase().includes(search)));
+            }
+
+            document.getElementById('refunds-count-label').textContent = `Showing ${data.length} refund${data.length !== 1 ? 's' : ''}`;
+
+            if (data.length === 0) {
+                if (tbody) tbody.innerHTML = '';
+                if (tableCard) tableCard.style.display = 'none';
+                empty.style.display = 'flex';
+                return;
+            }
+            empty.style.display = 'none';
+            if (tableCard) tableCard.style.display = 'block';
+
+            if (tbody) {
+                tbody.innerHTML = data.map(r => {
+                    const isProcessed = r.status === 'processed';
+                    const totalBooking = Number(r.totalBookingAmount || 0);
+                    // 10% commission advance is the refundable base
+                    const refundableBase = Math.round(totalBooking * 0.10);
+                    const suggestPct  = getSuggestedRefundPercent(r);
+                    // Suggested refund amount = % of 10% base
+                    const suggestAmt  = isProcessed
+                        ? Number(r.processedRefundAmount || r.suggestedRefundAmount || 0)
+                        : Math.round(refundableBase * suggestPct / 100);
+                    const dateStr  = r.selectedDate || fmtDate(r.createdAt);
+
+                    const actionButton = isProcessed
+                        ? `<span style="font-size: 13px; color: var(--success); font-weight: 750;">Processed ✔</span>`
+                        : `<button class="btn-pay" onclick="event.stopPropagation(); openRefundModal('${esc(r.id)}')">Process Refund</button>`;
+
+                    const statusBadge = isProcessed
+                        ? `<span class="badge badge-success">Processed</span>`
+                        : `<span class="badge badge-warning">Pending</span>`;
+
+                    return `
+                        <tr onclick="openRefundModal('${esc(r.id)}')" style="cursor:pointer;" title="Click to view details">
+                            <td style="font-weight:700; color:var(--primary); font-family:monospace; font-size:13px;">${esc(r.bookingId || '—')}</td>
+                            <td>
+                                <div style="font-weight:700;">${esc(r.customerName || '—')}</div>
+                                <div style="font-size:11px; color:var(--text-tertiary); margin-top:2px;">${esc(r.customerEmail || '')}</div>
+                            </td>
+                            <td style="font-weight:600;">${esc(r.providerName || '—')}</td>
+                            <td style="font-weight:600;">${esc(r.serviceName || '—')}</td>
+                            <td style="font-weight:600; color:var(--primary);">${INR(totalBooking)}</td>
+                            <td style="font-weight:800; color:var(--warning);">${INR(refundableBase)}</td>
+                            <td style="font-weight:800; color:#ef4444;">
+                                ${INR(suggestAmt)}
+                                <span style="font-size:11px; opacity:0.7; font-weight:500;">(${suggestPct}%)</span>
+                            </td>
+                            <td>${statusBadge}</td>
+                            <td>${actionButton}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+        window.renderRefundsList = renderRefundsList;
+
+        // ── Open Refund Detail Modal ──────────────────────────────────────────────
+        window.openRefundModal = function(refundId) {
+            const r = allRefundQueue.find(x => x.id === refundId);
+            if (!r) return;
+            activeRefundDoc = r;
+            _rdmPct = 0; _rdmAmt = 0;
+
+            const totalBooking   = Number(r.totalBookingAmount || 0);
+            // 10% commission advance paid by customer is the refundable base
+            const refundableBase = Math.round(totalBooking * 0.10);
+            const advancePaid    = Number(r.advancePaid || 0);
+            const suggestPct     = getSuggestedRefundPercent(r);
+            const isProcessed    = r.status === 'processed';
+
+            document.getElementById('rdm-subtitle').textContent =
+                `Booking: ${r.bookingId || '—'} · ${r.serviceName || '—'}`;
+
+            // ── Provider bank details ──
+            const bankHtml = r.providerId
+                ? renderBankDetailsHTML(r.providerId)
+                : `<span style="color:var(--text-tertiary);font-style:italic;">No provider bank details on file</span>`;
+
+            document.getElementById('rdm-body').innerHTML = `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="rdm-field"><div class="rdm-label">Customer</div>
+                        <div class="rdm-val">${esc(r.customerName || '—')}</div></div>
+                    <div class="rdm-field"><div class="rdm-label">Phone</div>
+                        <div class="rdm-val">${esc(r.customerPhone || '—')}</div></div>
+                    <div class="rdm-field" style="grid-column:1/-1"><div class="rdm-label">Email</div>
+                        <div class="rdm-val">${esc(r.customerEmail || '—')}</div></div>
+                    <div class="rdm-field"><div class="rdm-label">Service</div>
+                        <div class="rdm-val">${esc(r.serviceName || '—')}</div></div>
+                    <div class="rdm-field"><div class="rdm-label">Booking Date</div>
+                        <div class="rdm-val">${esc(r.selectedDate || fmtDate(r.createdAt) || '—')}</div></div>
+                    <div class="rdm-field"><div class="rdm-label">Category</div>
+                        <div class="rdm-val">${esc(r.category || '—')}</div></div>
+                    <div class="rdm-field"><div class="rdm-label">Booking ID</div>
+                        <div class="rdm-val" style="font-family:monospace;color:var(--primary);">${esc(r.bookingId || '—')}</div></div>
+                    <div class="rdm-field"><div class="rdm-label">Provider</div>
+                        <div class="rdm-val">${esc(r.providerName || '—')}</div></div>
+                    <div class="rdm-field"><div class="rdm-label">Provider Email</div>
+                        <div class="rdm-val">${esc(r.providerEmail || '—')}</div></div>
+                    <div class="rdm-field"><div class="rdm-label">Provider Phone</div>
+                        <div class="rdm-val">${esc(r.providerPhone || '—')}</div></div>
+                </div>
+
+                <!-- Financial summary strip -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;">
+                    <div class="rdm-field" style="text-align:center;">
+                        <div class="rdm-label">💰 Total Booking</div>
+                        <div class="rdm-val" style="font-size:16px;color:var(--primary);">${INR(totalBooking)}</div>
+                    </div>
+                    <div class="rdm-field" style="text-align:center;">
+                        <div class="rdm-label">🏦 Refundable Base (10% Advance)</div>
+                        <div class="rdm-val" style="font-size:16px;color:var(--warning);">${INR(refundableBase)}</div>
+                    </div>
+                </div>
+
+                <!-- Provider bank details -->
+                <div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-secondary);margin-bottom:8px;">🏦 Provider Bank Details</div>
+                    ${bankHtml}
+                </div>
+
+                ${r.adminNote ? `<div class="rdm-field"><div class="rdm-label">Admin Note</div><div class="rdm-val">${esc(r.adminNote)}</div></div>` : ''}
+            `;
+
+            if (!isProcessed) {
+                document.getElementById('rdm-calc').innerHTML = `
+                    <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--text-secondary);margin-bottom:8px;">
+                        Refund Calculator — Base: 10% Advance = ${INR(refundableBase)}
+                    </div>
+                    <div style="font-size:11px;color:#f59e0b;background:rgba(245,158,11,.08);border-radius:8px;padding:8px 10px;margin-bottom:12px;">
+                        ⚠️ Refund is calculated as a % of the 10% advance paid by customer (${INR(refundableBase)}).
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;" id="rdm-pills">
+                        ${[0,25,50,75,100].map(p => `
+                            <button onclick="rdmSelectPct(${p},${refundableBase})" id="rdm-pill-${p}"
+                                style="padding:8px 16px;border-radius:20px;
+                                border:1.5px solid ${p===suggestPct?'transparent':'var(--border-color)'};
+                                background:${p===suggestPct?'linear-gradient(135deg,#ef4444,#dc2626)':'var(--bg-tertiary)'};
+                                color:${p===suggestPct?'#fff':'var(--text-secondary)'};
+                                font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;">
+                                ${p}%${p===suggestPct?' ★':''}
+                            </button>`).join('')}
+                        <button onclick="rdmSelectPct('custom',${refundableBase})" id="rdm-pill-custom"
+                            style="padding:8px 16px;border-radius:20px;border:1.5px solid var(--border-color);
+                            background:var(--bg-tertiary);color:var(--text-secondary);
+                            font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;">Custom %</button>
+                    </div>
+                    <div id="rdm-custom-wrap" style="display:none;margin-bottom:12px;">
+                        <input id="rdm-custom-input" type="number" min="0" max="100"
+                            placeholder="Enter refund % of 10% advance (0–100)"
+                            style="width:100%;padding:11px 14px;border-radius:9px;
+                            border:1px solid var(--border-color);background:var(--bg-primary);
+                            color:var(--text-primary);font-size:14px;font-weight:500;outline:none;"
+                            oninput="rdmUpdateCustom(${refundableBase})">
+                    </div>
+                    <div id="rdm-summary" style="font-size:14px;font-weight:600;color:var(--text-primary);min-height:22px;"></div>
+                `;
+                document.getElementById('rdm-actions').innerHTML = `
+                    <button onclick="closeRefundModal()"
+                        style="flex:1;padding:12px;border:1px solid var(--border-color);
+                        background:var(--bg-tertiary);color:var(--text-primary);
+                        border-radius:10px;font-weight:600;cursor:pointer;">Cancel</button>
+                    <button id="rdm-confirm-btn" onclick="confirmRefundPayout()" disabled
+                        style="flex:2;padding:12px;
+                        background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;
+                        border:none;border-radius:10px;font-weight:800;font-size:15px;
+                        cursor:pointer;box-shadow:0 4px 12px rgba(239,68,68,.25);">✅ Confirm Refund</button>
+                `;
+                // Auto-select suggested percent
+                rdmSelectPct(suggestPct, refundableBase);
+            } else {
+                const processed = Number(r.processedRefundAmount || r.suggestedRefundAmount || 0);
+                const processedPct = Number(r.processedRefundPercent || getSuggestedRefundPercent(r) || 0);
+                document.getElementById('rdm-calc').innerHTML = `
+                    <div style="display:flex;align-items:center;gap:12px;padding:12px;
+                        background:rgba(16,185,129,.08);border-radius:10px;border:1px solid rgba(16,185,129,.2);">
+                        <div style="font-size:28px;">✅</div>
+                        <div>
+                            <div style="color:var(--success);font-weight:800;font-size:15px;">
+                                Refund Processed: ${INR(processed)}
+                            </div>
+                            <div style="color:var(--text-secondary);font-size:12px;margin-top:2px;">
+                                ${processedPct}% of 10% advance (${INR(refundableBase)}) · Processed on ${fmtDate(r.processedAt)}
+                            </div>
+                        </div>
+                    </div>`;
+                document.getElementById('rdm-actions').innerHTML = `
+                    <button onclick="closeRefundModal()"
+                        style="flex:1;padding:12px;border:1px solid var(--border-color);
+                        background:var(--bg-tertiary);color:var(--text-primary);
+                        border-radius:10px;font-weight:600;cursor:pointer;">Close</button>`;
+            }
+
+            document.getElementById('refund-detail-modal').style.display = 'block';
+        };
+
+        window.closeRefundModal = function() {
+            document.getElementById('refund-detail-modal').style.display = 'none';
+            activeRefundDoc = null;
+        };
+
+        // ── Pill selector — uses 10% advance as the calculation foundation ──
+        window.rdmSelectPct = function(pct, refundableBase) {
+            _rdmPct = 0; _rdmAmt = 0;
+            document.querySelectorAll('#rdm-pills button').forEach(b => {
+                b.style.background = 'var(--bg-tertiary)';
+                b.style.color = 'var(--text-secondary)';
+                b.style.borderColor = 'var(--border-color)';
+            });
+            const wrap = document.getElementById('rdm-custom-wrap');
+            if (pct === 'custom') {
+                wrap.style.display = 'block';
+                const b = document.getElementById('rdm-pill-custom');
+                if (b) { b.style.background='linear-gradient(135deg,#667eea,#764ba2)'; b.style.color='#fff'; }
+                const cfm = document.getElementById('rdm-confirm-btn');
+                if (cfm) cfm.disabled = true;
+                const sumEl = document.getElementById('rdm-summary');
+                if (sumEl) sumEl.textContent = 'Enter a custom refund % above.';
+                return;
+            }
+            wrap.style.display = 'none';
+            const amt = Math.round(refundableBase * pct / 100);
+            _rdmPct = pct; _rdmAmt = amt;
+            const btn = document.getElementById(`rdm-pill-${pct}`);
+            if (btn) { btn.style.background='linear-gradient(135deg,#ef4444,#dc2626)'; btn.style.color='#fff'; btn.style.borderColor='transparent'; }
+            const sumEl = document.getElementById('rdm-summary');
+            if (sumEl) sumEl.innerHTML = pct === 0
+                ? `<span style="color:var(--text-tertiary);">No refund will be issued.</span>`
+                : `Refund <strong>${pct}%</strong> of 10% advance → Customer receives <strong style="color:#ef4444;font-size:16px;">${INR(amt)}</strong>`;
+            const cfm = document.getElementById('rdm-confirm-btn');
+            if (cfm) cfm.disabled = (pct === 0);
+        };
+
+        window.rdmUpdateCustom = function(refundableBase) {
+            const val = parseFloat(document.getElementById('rdm-custom-input').value) || 0;
+            const clamped = Math.min(100, Math.max(0, val));
+            const amt = Math.round(refundableBase * clamped / 100);
+            _rdmPct = clamped; _rdmAmt = amt;
+            const sumEl = document.getElementById('rdm-summary');
+            if (sumEl) sumEl.innerHTML = clamped <= 0
+                ? `<span style="color:var(--text-tertiary);">No refund will be issued.</span>`
+                : `Refund <strong>${clamped}%</strong> of 10% advance → Customer receives <strong style="color:#ef4444;font-size:16px;">${INR(amt)}</strong>`;
+            const cfm = document.getElementById('rdm-confirm-btn');
+            if (cfm) cfm.disabled = (clamped <= 0);
+        };
+
+        // ── Confirm and execute the refund ──
+        window.confirmRefundPayout = async function() {
+            if (!activeRefundDoc) return;
+            if (_rdmPct < 0 || _rdmAmt < 0) return; // Allow 0% refund as valid admin decision
+            const r = activeRefundDoc;
+            const now = firebase.firestore.FieldValue.serverTimestamp();
+            const totalBooking   = Number(r.totalBookingAmount || 0);
+            const refundableBase = Math.round(totalBooking * 0.10);
+
+            const cfmBtn = document.getElementById('rdm-confirm-btn');
+            if (cfmBtn) { cfmBtn.disabled = true; cfmBtn.textContent = 'Processing…'; }
+
+            try {
+                // 1. Update booking document with full refund audit trail
+                if (r.bookingId) {
+                    await db.collection('bookings').doc(r.bookingId).update({
+                        'refundStatus.status': 'completed',
+                        'refundStatus.amount': _rdmAmt,
+                        'refundStatus.percent': _rdmPct,
+                        'refundStatus.refundableBase': refundableBase,
+                        'refundStatus.totalBookingAmount': totalBooking,
+                        'refundStatus.processedAt': now,
+                        'refundStatus.processedBy': 'admin_payout',
+                        // Sync to cancelRequest for UI display in booking/customer pages
+                        'cancelRequest.refundAmount': _rdmAmt,
+                        'cancelRequest.refundPercent': _rdmPct,
+                        'cancelRequest.finalRefundAmount': _rdmAmt,
+                        'cancelRequest.approvedRefundAmount': _rdmAmt,
+                        'cancelRequest.status': 'approved',
+                        // Sync to issueRequest for issue-based refunds
+                        'issueRequest.refundAmount': _rdmAmt,
+                        'issueRequest.refundPercent': _rdmPct,
+                        updatedAt: now
+                    });
+                }
+
+                // 2. Mark refundQueue entry as processed with full audit trail
+                await db.collection('refundQueue').doc(r.id).update({
+                    status: 'processed',
+                    processedAt: now,
+                    processedRefundAmount: _rdmAmt,
+                    processedRefundPercent: _rdmPct,
+                    processedRefundableBase: refundableBase,
+                    processedTotalBooking: totalBooking
+                });
+
+                showToast(`✅ Refund of ${INR(_rdmAmt)} (${_rdmPct}% of 10% advance) confirmed for ${r.customerName || 'customer'}!`, 'success');
+                closeRefundModal();
+            } catch (err) {
+                console.error('Refund payout error:', err);
+                showToast('❌ Error: ' + err.message, 'error');
+                if (cfmBtn) { cfmBtn.disabled = false; cfmBtn.textContent = '✅ Confirm Refund'; }
+            }
+        };
+
+        // Confirm manual payout and update Firestore with audit trail details
+        window.markPayoutAsPaid = function(bookingId) {
+            if (!bookingId) return;
+            
+            const b = allBookings.find(x => x.id === bookingId);
+            if (!b) return;
+
+            const totalAmt = getBookingAmount(b);
+            const provId = b.providerId || '';
+            const rates = resolveBookingRates(b, provId, allSubStates);
+            const plan = rates.plan;
+            const payoutRate = rates.payoutRate;
+            const commissionRate = rates.commissionRate;
+            const payoutAmt = rates.payoutAmt;
+            const commissionAmt = rates.commissionAmt;
+
+            if (!confirm(`Confirm payout of ${INR(payoutAmt)} (${payoutRate}% payout on ${plan.toUpperCase()} tier) to the provider via bank transfer? This will record audit calculations and update the document permanently.`)) {
+                return;
+            }
+
+            const now = firebase.firestore.FieldValue.serverTimestamp();
+            
+            db.collection('bookings').doc(bookingId).update({
+                payoutStatus: 'paid',
+                payoutPaidAt: now,
+                payoutPaidByAdmin: true,
+                payoutCalculation: {
+                    plan: plan,
+                    payoutRate: payoutRate,
+                    commissionRate: commissionRate,
+                    payoutAmount: payoutAmt,
+                    commissionAmount: commissionAmt,
+                    totalBookingAmount: totalAmt,
+                    advanceCollected: getAdvanceAmount(b),
+                    processedAt: now,
+                    processedBy: 'admin_payout'
+                }
+            }).then(() => {
+                showToast('✔ Payout successfully marked as paid with audit details!', 'success');
+            }).catch(error => {
+                console.error('Error updating payout status:', error);
+                showToast('❌ Error updating payout status. Please try again.', 'error');
+            });
+        };
+
+        // Render TAB 3: Provider Subscriptions (Dual tables)
+        function renderSubscriptionsTables() {
+            const search = document.getElementById('subscriptions-search').value.toLowerCase();
+            const planFilter = document.getElementById('subscriptions-plan-filter').value;
+
+            // Subsection 1: Historical Razorpay Payments
+            const historyTbody = document.getElementById('subscriptions-history-tbody');
+            let historyData = allSubPayments.slice();
+
+            // Sort payments newest first
+            historyData.sort((a, b) => {
+                const da = a.createdAt ? (a.createdAt.seconds || new Date(a.createdAt).getTime()) : 0;
+                const db = b.createdAt ? (b.createdAt.seconds || new Date(b.createdAt).getTime()) : 0;
+                return db - da;
+            });
+
+            // Filters
+            if (planFilter !== 'all') {
+                historyData = historyData.filter(p => (p.planKey || '').toLowerCase() === planFilter);
+            }
+            if (search) {
+                historyData = historyData.filter(p => {
+                    const name = (p.providerName || '').toLowerCase();
+                    const email = (p.providerEmail || '').toLowerCase();
+                    const plan = (p.planTitle || '').toLowerCase();
+                    const payId = (p.razorpayPaymentId || '').toLowerCase();
+                    const orderId = (p.razorpayOrderId || '').toLowerCase();
+                    
+                    return name.includes(search) || email.includes(search) || plan.includes(search) || payId.includes(search) || orderId.includes(search);
+                });
+            }
+
+            document.getElementById('payments-history-count').textContent = `${historyData.length} records`;
+
+            if (historyData.length === 0) {
+                historyTbody.innerHTML = '';
+                document.getElementById('subscriptions-history-empty').style.display = 'flex';
+            } else {
+                document.getElementById('subscriptions-history-empty').style.display = 'none';
+                historyTbody.innerHTML = historyData.map(p => {
+                    const planTitle = p.planTitle || p.planKey || 'Silver';
+                    const planClass = (p.planKey || 'silver').toLowerCase();
+                    const rzpPaymentId = p.razorpayPaymentId || '—';
+                    const rzpOrderId = p.razorpayOrderId || '—';
+                    const promoCode = p.promoCode ? `<span style="font-weight:600; color:var(--primary);">${esc(p.promoCode)}</span>` : '—';
+                    
+                    return `
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700;">${esc(p.providerName)}</div>
+                                <div style="font-size: 11px; color: var(--text-secondary);">${esc(p.providerEmail)}</div>
+                            </td>
+                            <td><span class="badge badge-${planClass}">${esc(planTitle)}</span></td>
+                            <td style="font-family: monospace; font-size:12px; font-weight:600; color:var(--info);">${esc(rzpPaymentId)}</td>
+                            <td style="font-family: monospace; font-size:12px; color:var(--text-secondary);">${esc(rzpOrderId)}</td>
+                            <td>${promoCode}</td>
+                            <td style="font-weight: 700; color: var(--success);">${INR(p.totalAmount || p.amount)}</td>
+                            <td>${fmtDate(p.createdAt)}</td>
+                            <td><span class="badge badge-success">✔ Success</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // Subsection 2: Current Subscription States
+            const statesTbody = document.getElementById('subscriptions-states-tbody');
+            let statesData = allSubStates.slice();
+
+            // Sort states by start date newest first
+            statesData.sort((a, b) => {
+                const da = a.startedAt ? (a.startedAt.seconds || new Date(a.startedAt).getTime()) : 0;
+                const db = b.startedAt ? (b.startedAt.seconds || new Date(b.startedAt).getTime()) : 0;
+                return db - da;
+            });
+
+            // Filters
+            if (planFilter !== 'all') {
+                statesData = statesData.filter(s => (s.plan || '').toLowerCase() === planFilter);
+            }
+            if (search) {
+                statesData = statesData.filter(s => {
+                    const provId = s.providerId || s.id || '';
+                    const prov = provMap[provId];
+                    const provName = prov ? prov.name.toLowerCase() : (s.providerName || '').toLowerCase();
+                    const plan = (s.planTitle || s.plan || '').toLowerCase();
+                    
+                    return provName.includes(search) || plan.includes(search) || provId.toLowerCase().includes(search);
+                });
+            }
+
+            document.getElementById('active-states-count').textContent = `${statesData.length} records`;
+
+            if (statesData.length === 0) {
+                statesTbody.innerHTML = '';
+                document.getElementById('subscriptions-states-empty').style.display = 'flex';
+            } else {
+                document.getElementById('subscriptions-states-empty').style.display = 'none';
+                statesTbody.innerHTML = statesData.map(s => {
+                    const provId = s.providerId || s.id || '';
+                    const provName = provMap[provId] ? provMap[provId].name : s.providerName || '—';
+                    const planTitle = s.planTitle || s.plan || 'Silver';
+                    const planClass = (s.plan || 'silver').toLowerCase();
+                    
+                    const status = (s.status || 'active').toLowerCase();
+                    let stClass = 'badge-success';
+                    if (status === 'cancel_requested') stClass = 'badge-warning';
+                    else if (status !== 'active') stClass = 'badge-danger';
+
+                    const startedAt = s.startedAt || null;
+                    const renewalDate = s.renewalDate || s.nextRenewal || null;
+                    const autoRenew = s.autoRenew === false ? '❌ Off' : '✔ Auto';
+                    
+                    let cancelInfo = '—';
+                    if (s.cancelRequested || status === 'cancel_requested') {
+                        cancelInfo = `<div style="font-size:12px; color:var(--danger); max-width:200px;">Req: ${esc(s.cancelReason || 'No reason provided')}</div>`;
+                    }
+
+                    return `
+                        <tr>
+                            <td style="font-weight: 700;">${esc(provName)}</td>
+                            <td><span class="badge badge-${planClass}">${esc(planTitle)}</span></td>
+                            <td><span class="badge ${stClass}">${esc(status)}</span></td>
+                            <td>${fmtDate(startedAt)}</td>
+                            <td>${fmtDate(renewalDate)}</td>
+                            <td style="font-weight: 700;">${INR(s.totalAmount || s.price)}</td>
+                            <td><span class="badge ${s.autoRenew === false ? 'badge-danger' : 'badge-success'}">${autoRenew}</span></td>
+                            <td>${cancelInfo}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        window.filterSubscriptions = function() {
+            renderSubscriptionsTables();
+        };
+
+    </script>
+</body>
+</html>

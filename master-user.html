@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro X - Master User Directory</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Firebase SDK v8 (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        /* CSS Variables for Theming */
+        :root {
+            --color-primary: #667eea;
+            --color-primary-dark: #5568d3;
+            --color-secondary: #764ba2;
+            --color-success: #10b981;
+            --color-warning: #f59e0b;
+            --color-error: #ef4444;
+            --color-info: #3b82f6;
+
+            /* Light theme */
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --bg-card: rgba(255, 255, 255, 0.55);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-color: rgba(226, 232, 240, 0.8);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --bg-card: rgba(30, 41, 59, 0.55);
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --border-color: rgba(51, 65, 85, 0.5);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            background-image: 
+                radial-gradient(circle at 15% 25%, rgba(102, 126, 234, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 85% 75%, rgba(118, 75, 162, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(to right, #a044ff, #6a3093);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: var(--shadow-lg);
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            text-decoration: none;
+            color: white;
+        }
+
+        .header-actions { display: flex; gap: 1rem; align-items: center; }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-outline {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(4px);
+        }
+
+        .btn-outline:hover { background: rgba(255, 255, 255, 0.25); }
+
+        /* Main Layout */
+        .main-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Sidebar - User List */
+        .sidebar {
+            width: 350px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            outline: none;
+        }
+
+        .search-box:focus { border-color: var(--color-primary); }
+
+        .user-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .user-item {
+            padding: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 0.5rem;
+            transition: background 0.2s;
+            border: 1px solid transparent;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .user-item:hover { background: var(--bg-tertiary); }
+        .user-item.active {
+            background: var(--bg-tertiary);
+            border-color: var(--color-primary);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            object-fit: cover;
+        }
+
+        .user-info h4 { margin-bottom: 0.2rem; font-size: 0.95rem; }
+        .user-info p { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.2rem; }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-success { background: rgba(16, 185, 129, 0.1); color: var(--color-success); }
+        .badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--color-warning); }
+
+        /* Main Detail Area */
+        .detail-area {
+            flex: 1;
+            background: var(--bg-primary);
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: none; /* hidden until user selected */
+        }
+
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+        }
+        
+        .empty-state h2 { margin-bottom: 0.5rem; color: var(--text-secondary); }
+
+        /* Overview Header */
+        .detail-header {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .detail-avatar-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            object-fit: cover;
+        }
+
+        .detail-title h1 { font-size: 1.75rem; margin-bottom: 0.35rem; letter-spacing: -0.5px; }
+        .detail-title p { display: flex; gap: 0.75rem; align-items: center; font-size: 0.9rem; color: var(--text-secondary); }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1.25rem;
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-title { font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.5px; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 0.65rem 1.15rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .tab-btn.active { background: var(--color-primary); color: white; }
+
+        /* Content Cards */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .content-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1.5rem;
+        }
+
+        .content-card h3 { margin-bottom: 1.25rem; font-size: 1.15rem; font-weight: 750; letter-spacing: -0.3px; }
+
+        /* Data Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .data-table th, .data-table td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th { font-weight: 600; color: var(--text-secondary); background: rgba(0, 0, 0, 0.02); }
+        [data-theme="dark"] .data-table th { background: rgba(255, 255, 255, 0.02); }
+
+        /* Document Links */
+        .document-link {
+            transition: all 0.2s;
+        }
+        .document-link:hover {
+            border-color: var(--color-primary) !important;
+            background: var(--bg-tertiary) !important;
+            transform: translateY(-1px);
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-top: 3px solid var(--color-primary);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            gap: 1rem;
+        }
+
+        .loading-container .loading-spinner {
+            border-color: var(--border-color);
+            border-top-color: var(--color-primary);
+            width: 40px;
+            height: 40px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar { width: 300px; }
+        }
+        @media (max-width: 768px) {
+            .main-layout { flex-direction: column; }
+            .sidebar { width: 100%; height: 300px; border-right: none; border-bottom: 1px solid var(--border-color); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="dashboard.html" class="logo">
+                <span class="logo-icon">👤</span>
+                <span>Pro X Master User</span>
+            </a>
+            <div class="header-actions">
+                <button class="btn btn-outline" id="theme-toggle">🌙</button>
+                <button class="btn btn-outline" onclick="window.location.href='dashboard.html'">Back to Dashboard</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <input type="text" id="search-input" class="search-box" placeholder="Search users...">
+            </div>
+            <div class="user-list" id="user-list">
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <p>Loading Users...</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Empty State -->
+        <div class="empty-state" id="empty-state">
+            <h2>No User Selected</h2>
+            <p>Select a user from the list to view their master details.</p>
+        </div>
+
+        <!-- Detail Area -->
+        <main class="detail-area" id="detail-area">
+            
+            <div class="detail-header">
+                <div id="detail-avatar-container"></div>
+                <div class="detail-title">
+                    <h1 id="detail-name">User Name</h1>
+                    <p>
+                        <span id="detail-email">email@example.com</span>
+                        <span class="badge" id="detail-status">Active</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Top Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">💰 Total Spent</div>
+                    <div class="stat-value" id="stat-spending">₹0.00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">📅 Total Bookings</div>
+                    <div class="stat-value" id="stat-bookings">0</div>
+                    <div style="font-size: 0.75rem; color: var(--color-success); margin-top: 5px;">
+                        <span id="stat-bookings-success">0</span> Successful • <span id="stat-bookings-cancel" style="color: var(--color-error)">0</span> Canceled
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">⭐ Avg Rating Given</div>
+                    <div class="stat-value" id="stat-rating">N/A</div>
+                </div>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <div class="tabs">
+                <button class="tab-btn active" data-target="tab-profile">Profile & Accounts</button>
+                <button class="tab-btn" data-target="tab-analytics">Analytics 📊</button>
+                <button class="tab-btn" data-target="tab-bookings">Bookings</button>
+                <button class="tab-btn" data-target="tab-reviews">Reviews</button>
+            </div>
+
+            <!-- Tab Content: Profile -->
+            <div class="tab-content active" id="tab-profile">
+                <div class="content-card">
+                    <h3>Account Profile Details</h3>
+                    <table class="data-table">
+                        <tbody id="profile-table">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab Content: Analytics -->
+            <div class="tab-content" id="tab-analytics">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div class="content-card">
+                        <h3>Bookings Status Distribution</h3>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="chart-booking-status"></canvas>
+                        </div>
+                    </div>
+                    <div class="content-card">
+                        <h3>Spend Trend (Last 6 Months)</h3>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="chart-spending"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Bookings -->
+            <div class="tab-content" id="tab-bookings">
+                <div class="content-card">
+                    <h3>Bookings Made</h3>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Date</th>
+                                    <th>Service</th>
+                                    <th>Category</th>
+                                    <th>Total Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bookings-table">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Reviews -->
+            <div class="tab-content" id="tab-reviews">
+                <div class="content-card">
+                    <h3>Reviews Left by User</h3>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Booking ID</th>
+                                    <th>Rating</th>
+                                    <th>Comment</th>
+                                    <th>Service Reviewed</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reviews-table">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+            authDomain: "phototester555.firebaseapp.com",
+            projectId: "phototester555",
+            storageBucket: "phototester555.firebasestorage.app",
+            messagingSenderId: "953997763616",
+            appId: "1:953997763616:web:4ac177ad8e79c5f38b8845",
+            measurementId: "G-6VS0G0NQ7K"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // State
+        let allUsers = [];
+        let currentUser = null;
+        let allBookings = [];
+        let charts = {};
+
+        function normalizeUrl(url) {
+            if (!url || typeof url !== 'string') return '';
+            const trimmed = url.trim();
+            if (!trimmed || trimmed === '#') return '';
+            if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//i.test(trimmed)) {
+                return trimmed;
+            }
+            if (trimmed.startsWith('//')) {
+                return 'https:' + trimmed;
+            }
+            if (/^(mailto|tel):/i.test(trimmed)) {
+                return trimmed;
+            }
+            return 'https://' + trimmed;
+        }
+        
+        // DOM Elements
+        const userList = document.getElementById('user-list');
+        const searchInput = document.getElementById('search-input');
+        const emptyState = document.getElementById('empty-state');
+        const detailArea = document.getElementById('detail-area');
+
+        // Check Auth
+        auth.onAuthStateChanged(user => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            // Fetch users list
+            listenUsers();
+        });
+
+        // Theme Toggle
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        window.toggleTheme = () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggleBtn.textContent = newTheme === 'light' ? '🌙' : '☀️';
+            
+            // Re-render charts to update grid text color
+            if (currentUser && allBookings.length > 0) {
+                renderCharts(allBookings.filter(b => b.customerId === currentUser.id));
+            }
+        };
+        themeToggleBtn.addEventListener('click', window.toggleTheme);
+
+        // Load theme preferences
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        themeToggleBtn.textContent = savedTheme === 'light' ? '🌙' : '☀️';
+
+        // Tab selection logic
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.target).classList.add('active');
+            });
+        });
+
+        // Search box filter
+        searchInput.addEventListener('input', () => {
+            renderUserSidebar(searchInput.value.toLowerCase());
+        });
+
+        // Listen for users
+        function listenUsers() {
+            db.collection('users').onSnapshot(snapshot => {
+                allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderUserSidebar();
+            }, err => {
+                console.error("Error loading users", err);
+                userList.innerHTML = '<p style="padding:1rem;color:var(--color-error)">Failed to load users.</p>';
+            });
+        }
+
+        function getInitials(fullName, name) {
+            const display = fullName || name || 'Unknown';
+            const parts = display.split(' ').filter(Boolean);
+            if (parts.length >= 2) {
+                return (parts[0][0] + parts[1][0]).toUpperCase();
+            }
+            return display.substring(0, 2).toUpperCase();
+        }
+
+        // Render Sidebar
+        function renderUserSidebar(searchQuery = '') {
+            const filtered = allUsers.filter(u => {
+                const name = (u.fullName || u.name || '').toLowerCase();
+                const email = (u.email || u.identity?.email || '').toLowerCase();
+                const username = (u.username || '').toLowerCase();
+                return name.includes(searchQuery) || email.includes(searchQuery) || username.includes(searchQuery);
+            });
+
+            if (filtered.length === 0) {
+                userList.innerHTML = '<p style="padding:1rem;text-align:center;color:var(--text-tertiary)">No users found</p>';
+                return;
+            }
+
+            userList.innerHTML = filtered.map(u => {
+                const name = u.fullName || u.name || 'Unknown User';
+                const email = u.email || u.identity?.email || 'No email provided';
+                const initials = getInitials(u.fullName, u.name);
+                
+                let avatarHtml = `<div class="user-avatar">${initials}</div>`;
+                const photo = u.profilePhoto || u.profilePic;
+                if(photo) {
+                    avatarHtml = `<img src="${photo}" class="user-avatar" onerror="this.outerHTML='<div class=user-avatar>${initials}</div>'">`;
+                }
+
+                const activeClass = currentUser && currentUser.id === u.id ? 'active' : '';
+
+                return `
+                    <div class="user-item ${activeClass}" data-id="${u.id}" onclick="selectUser('${u.id}')">
+                        ${avatarHtml}
+                        <div class="user-info">
+                            <h4>${escapeHtml(name)}</h4>
+                            <p>${escapeHtml(email)}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Escape HTML helper
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // Select user
+        async function selectUser(userId) {
+            // Update active state in sidebar
+            document.querySelectorAll('.user-item').forEach(el => el.classList.remove('active'));
+            const selectedEl = document.querySelector(`.user-item[data-id="${userId}"]`);
+            if (selectedEl) selectedEl.classList.add('active');
+
+            // Find user
+            currentUser = allUsers.find(u => u.id === userId);
+            if (!currentUser) return;
+
+            // Show UI
+            emptyState.style.display = 'none';
+            detailArea.style.display = 'block';
+
+            // Populate Overview Header
+            const name = currentUser.fullName || currentUser.name || 'Unknown';
+            const initials = getInitials(currentUser.fullName, currentUser.name);
+            
+            const photo = currentUser.profilePhoto || currentUser.profilePic;
+            const avatarContainer = document.getElementById('detail-avatar-container');
+            if (photo) {
+                avatarContainer.innerHTML = `<img src="${photo}" class="detail-avatar-large" onerror="this.outerHTML='<div class=detail-avatar-large>${initials}</div>'">`;
+            } else {
+                avatarContainer.innerHTML = `<div class="detail-avatar-large">${initials}</div>`;
+            }
+            
+            document.getElementById('detail-name').textContent = name;
+            document.getElementById('detail-email').textContent = currentUser.email || currentUser.identity?.email || 'No email provided';
+            
+            const status = String(currentUser.status || 'Active').toUpperCase();
+            document.getElementById('detail-status').textContent = status;
+            document.getElementById('detail-status').className = 'badge ' + (status === 'ACTIVE' || status === 'APPROVED' ? 'badge-success' : 'badge-warning');
+
+            // Fetch User bookings
+            await fetchUserDetails(userId);
+        }
+
+        async function fetchUserDetails(userId) {
+            try {
+                // Bookings where customerId == userId
+                const bookingsQuery = await db.collection('bookings')
+                    .where('customerId', '==', userId)
+                    .get();
+                
+                const bookings = bookingsQuery.docs.map(d => ({id: d.id, ...d.data()}));
+                allBookings = bookings;
+                
+                populateStats(bookings);
+                populateProfile();
+                populateBookings(bookings);
+                populateReviews(bookings);
+                renderCharts(bookings);
+
+            } catch (err) {
+                console.error("Error fetching user details", err);
+                alert("Failed to load user details.");
+            }
+        }
+
+        function populateStats(bookings) {
+            const total = bookings.length;
+            let success = 0;
+            let cancel = 0;
+            let spending = 0;
+            let ratingSum = 0;
+            let ratingCount = 0;
+
+            bookings.forEach(b => {
+                const status = String(b.status || b.state || '').toLowerCase();
+                const amt = Number(b.amount || b.price || b.totalAmount || 0);
+
+                if (['cancelled', 'canceled', 'refunded', 'declined'].includes(status)) {
+                    cancel++;
+                } else if (['completed', 'payment completed', 'customer received', 'work accepted'].includes(status)) {
+                    success++;
+                    spending += amt;
+                } else {
+                    spending += amt; // include ongoing spent
+                }
+
+                const rating = Number(b.rating || (b.review && b.review.rating) || 0);
+                if (rating > 0) {
+                    ratingSum += rating;
+                    ratingCount++;
+                }
+            });
+
+            document.getElementById('stat-bookings').textContent = total;
+            document.getElementById('stat-bookings-success').textContent = success;
+            document.getElementById('stat-bookings-cancel').textContent = cancel;
+            document.getElementById('stat-spending').textContent = '₹' + spending.toLocaleString('en-IN');
+            
+            const avgRating = ratingCount > 0 ? (ratingSum / ratingCount).toFixed(1) + ' ★' : 'N/A';
+            document.getElementById('stat-rating').textContent = avgRating;
+        }
+
+        function populateProfile() {
+            const u = currentUser;
+            const identity = u.identity || {};
+            
+            let addressStr = 'N/A';
+            if (u.address) {
+                addressStr = typeof u.address === 'object' ? Object.values(u.address).filter(Boolean).join(', ') : u.address;
+            } else if (identity.city) {
+                addressStr = identity.city + (identity.country ? ', ' + identity.country : '');
+            }
+
+            const table = document.getElementById('profile-table');
+            const rows = [
+                ['Full Name', identity.fullName || u.fullName || u.name || 'N/A'],
+                ['Username', u.username || 'N/A'],
+                ['Email', u.email || identity.email || 'N/A'],
+                ['Phone', identity.phone || u.phone || u.phoneNumber || 'N/A'],
+                ['Date of Birth', u.dob || 'N/A'],
+                ['Gender', identity.gender || u.gender || 'N/A'],
+                ['Address', addressStr],
+                ['Joined Date', u.createdAt ? new Date(u.createdAt.toDate ? u.createdAt.toDate() : u.createdAt).toLocaleDateString() : 'N/A'],
+                ['Profile Photo URL', (u.profilePhoto || u.profilePic) ? `<a href="${normalizeUrl(u.profilePhoto || u.profilePic)}" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary)">View Photo ↗</a>` : 'N/A']
+            ];
+
+            table.innerHTML = rows.map(r => `
+                <tr>
+                    <th style="width: 30%">${r[0]}</th>
+                    <td>${r[1]}</td>
+                </tr>
+            `).join('');
+        }
+
+        function populateBookings(bookings) {
+            const table = document.getElementById('bookings-table');
+            if (bookings.length === 0) {
+                table.innerHTML = '<tr><td colspan="6" style="text-align:center">No bookings found</td></tr>';
+                return;
+            }
+
+            bookings.sort((a, b) => {
+                const tA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
+                const tB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
+                return tB - tA; // desc
+            });
+
+            table.innerHTML = bookings.map(b => {
+                const dateStr = b.createdAt ? new Date(b.createdAt.toDate ? b.createdAt.toDate() : b.createdAt).toLocaleDateString() : 'N/A';
+                const status = String(b.status || b.state || 'Unknown');
+                const amt = b.amount || b.price || b.totalAmount || 0;
+                const service = b.serviceName || 'Service';
+
+                let statusBadge = 'badge-warning';
+                if (['completed', 'payment completed'].includes(status.toLowerCase())) statusBadge = 'badge-success';
+                if (['cancelled', 'canceled'].includes(status.toLowerCase())) statusBadge = 'badge-error';
+
+                return `
+                    <tr>
+                        <td style="font-size:0.8rem">#${b.id.substring(0,8)}...</td>
+                        <td>${dateStr}</td>
+                        <td><strong>${escapeHtml(service)}</strong></td>
+                        <td>${escapeHtml(b.category || 'N/A')}</td>
+                        <td>₹${Number(amt).toLocaleString('en-IN')}</td>
+                        <td><span class="badge ${statusBadge}">${status.toUpperCase()}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function populateReviews(bookings) {
+            const table = document.getElementById('reviews-table');
+            const reviews = bookings.filter(b => b.rating || (b.review && b.review.rating) || b.feedback);
+
+            if (reviews.length === 0) {
+                table.innerHTML = '<tr><td colspan="4" style="text-align:center">No reviews submitted yet</td></tr>';
+                return;
+            }
+
+            table.innerHTML = reviews.map(b => {
+                const rating = b.rating || (b.review && b.review.rating) || 0;
+                const comment = b.feedback || (b.review && b.review.comment) || 'No comment provided';
+                const service = b.serviceName || 'Service';
+
+                return `
+                    <tr>
+                        <td style="font-size:0.8rem">#${b.id.substring(0,8)}...</td>
+                        <td style="color:var(--color-warning); font-weight:bold">${rating} ★</td>
+                        <td style="font-style:italic">"${escapeHtml(comment)}"</td>
+                        <td><strong>${escapeHtml(service)}</strong></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderCharts(bookings) {
+            const rootStyle = getComputedStyle(document.documentElement);
+            const textColor = rootStyle.getPropertyValue('--text-primary').trim();
+            const gridColor = rootStyle.getPropertyValue('--border-color').trim();
+
+            // 1. Booking Status Doughnut Chart
+            let statusCounts = { Completed: 0, Canceled: 0, Ongoing: 0 };
+            bookings.forEach(b => {
+                const s = String(b.status || b.state || '').toLowerCase();
+                if (['cancelled', 'canceled', 'refunded'].includes(s)) statusCounts.Canceled++;
+                else if (['completed', 'payment completed'].includes(s)) statusCounts.Completed++;
+                else statusCounts.Ongoing++;
+            });
+
+            if(charts.status) charts.status.destroy();
+            const ctxStatus = document.getElementById('chart-booking-status').getContext('2d');
+            charts.status = new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Canceled', 'Ongoing'],
+                    datasets: [{
+                        data: [statusCounts.Completed, statusCounts.Canceled, statusCounts.Ongoing],
+                        backgroundColor: ['#10b981', '#ef4444', '#3b82f6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: textColor } } }
+                }
+            });
+
+            // 2. Spending Line Chart (Last 6 Months)
+            const months = [];
+            const spendingData = [];
+            const now = new Date();
+            for(let i=5; i>=0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                months.push(d.toLocaleString('default', { month: 'short' }));
+                spendingData.push(0);
+            }
+
+            bookings.forEach(b => {
+                const amt = Number(b.amount || b.price || b.totalAmount || 0);
+                const bDate = b.createdAt ? new Date(b.createdAt.toDate ? b.createdAt.toDate() : b.createdAt) : null;
+                if(bDate) {
+                    const monthDiff = (now.getFullYear() - bDate.getFullYear()) * 12 + now.getMonth() - bDate.getMonth();
+                    if(monthDiff >= 0 && monthDiff < 6) {
+                        spendingData[5 - monthDiff] += amt;
+                    }
+                }
+            });
+
+            if(charts.spending) charts.spending.destroy();
+            const ctxSpending = document.getElementById('chart-spending').getContext('2d');
+            charts.spending = new Chart(ctxSpending, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Spent (₹)',
+                        data: spendingData,
+                        backgroundColor: '#667eea',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { ticks: { color: textColor }, grid: { color: gridColor } },
+                        x: { ticks: { color: textColor }, grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro X - Support Tickets</title>
+
+    <!-- Firebase SDK v8 CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        :root {
+            /* Light Mode (Default) */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #f1f3f5;
+            --bg-gradient-1: #667eea;
+            --bg-gradient-2: #764ba2;
+            
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            
+            --border-color: #e0e0e0;
+            --border-light: rgba(0, 0, 0, 0.05);
+            
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
+            --accent-light: rgba(102, 126, 234, 0.1);
+            
+            --success: #28a745;
+            --warning: #ff9800;
+            --danger: #dc3545;
+            
+            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Dark Mode */
+        html.dark-mode {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: rgba(30, 41, 59, 0.8);
+            --bg-gradient-1: #1e293b;
+            --bg-gradient-2: #0f172a;
+            
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            
+            --border-color: rgba(148, 163, 184, 0.2);
+            --border-light: rgba(148, 163, 184, 0.1);
+            
+            --accent-primary: #60a5fa;
+            --accent-secondary: #3b82f6;
+            --accent-light: rgba(96, 165, 250, 0.1);
+            
+            --success: #22c55e;
+            --warning: #f97316;
+            --danger: #ef4444;
+            
+            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .theme-toggle-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .theme-toggle-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .theme-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        .theme-toggle-btn svg {
+            width: 24px;
+            height: 24px;
+            position: absolute;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .sun-icon {
+            opacity: 1;
+            transform: rotate(0deg);
+        }
+
+        .moon-icon {
+            opacity: 0;
+            transform: rotate(-180deg);
+        }
+
+        html.dark-mode .sun-icon {
+            opacity: 0;
+            transform: rotate(180deg);
+        }
+
+        html.dark-mode .moon-icon {
+            opacity: 1;
+            transform: rotate(0deg);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--bg-primary);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header-left h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .header-left .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-left a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .header-left a:hover {
+            text-decoration: underline;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .admin-welcome {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: var(--bg-secondary);
+            transition: background 0.3s ease;
+        }
+
+        .stat-card {
+            background: var(--bg-primary);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+            border: 1px solid var(--border-light);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-color);
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        .controls {
+            padding: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-light);
+            background: var(--bg-primary);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .filter-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .filter-btn.active {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .tickets-section {
+            padding: 30px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background: var(--bg-primary);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+            color: white;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border-light);
+            transition: background 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        td {
+            padding: 15px;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.open {
+            background: rgba(255, 152, 0, 0.15);
+            color: #e65100;
+        }
+
+        .badge.in-progress {
+            background: rgba(33, 150, 243, 0.15);
+            color: #0d47a1;
+        }
+
+        .badge.resolved {
+            background: rgba(76, 175, 80, 0.15);
+            color: #1b5e20;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn.primary {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .action-btn.primary:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-2px);
+        }
+
+        /* Modal styling */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--bg-primary);
+            border-radius: 20px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            animation: modalSlideIn 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        @keyframes modalSlideIn {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 30px;
+            text-align: left;
+        }
+
+        .detail-row {
+            margin-bottom: 15px;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: var(--text-primary);
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .form-group {
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-textarea {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--text-primary);
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .form-textarea:focus {
+            border-color: var(--accent-primary);
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            border-radius: 0 0 20px 20px;
+        }
+
+        .loading-state, .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
+        }
+
+        .loading-state p, .empty-state p {
+            font-size: 16px;
+            margin-top: 15px;
+        }
+
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            z-index: 2000;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1>Support Tickets</h1>
+                <div class="subtitle">
+                    <a href="dashboard.html">← Dashboard</a>
+                    <span>| Manage client support tickets</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <span class="admin-welcome" id="admin-email">Loading Admin...</span>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+                <div class="theme-toggle-container">
+                    <button class="theme-toggle-btn" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle Theme">
+                        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Container -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="label">Total Tickets</div>
+                <div class="value" id="stat-total">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Open</div>
+                <div class="value" id="stat-open" style="color: var(--warning);">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">In Progress</div>
+                <div class="value" id="stat-progress" style="color: var(--accent-primary);">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Resolved</div>
+                <div class="value" id="stat-resolved" style="color: var(--success);">0</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="ticket-search" placeholder="Search by Ticket ID, User Email, Description..." oninput="handleSearch(this.value)">
+            </div>
+            <div class="filter-group">
+                <button class="filter-btn active" id="filter-all" onclick="filterTickets('all')">All</button>
+                <button class="filter-btn" id="filter-open" onclick="filterTickets('open')">Open</button>
+                <button class="filter-btn" id="filter-inprogress" onclick="filterTickets('in progress')">In Progress</button>
+                <button class="filter-btn" id="filter-resolved" onclick="filterTickets('resolved')">Resolved</button>
+            </div>
+        </div>
+
+        <!-- Tickets Section -->
+        <div class="tickets-section">
+            <div class="table-container">
+                <table id="tickets-table">
+                    <thead>
+                        <tr>
+                            <th>Ticket ID</th>
+                            <th>Date Raised</th>
+                            <th>User Name</th>
+                            <th>User Email</th>
+                            <th>User Type</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tickets-tbody">
+                        <!-- Loading State -->
+                        <tr>
+                            <td colspan="8" class="loading-state">
+                                <p>Loading tickets...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket Detail Modal -->
+    <div class="modal" id="ticketModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-ticket-id">Ticket Details</h2>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-row">
+                    <div class="detail-label">User Type</div>
+                    <div class="detail-value" id="detail-userType">-</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">User Name</div>
+                    <div class="detail-value" id="detail-userName">-</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">User Email</div>
+                    <div class="detail-value" id="detail-userEmail">-</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">User Phone</div>
+                    <div class="detail-value" id="detail-userPhone">-</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Category</div>
+                    <div class="detail-value" id="detail-category">-</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Description</div>
+                    <div class="detail-value" id="detail-description">-</div>
+                </div>
+                <div class="detail-row" id="detail-screenshot-row" style="display:none;">
+                    <div class="detail-label">Attached Screenshot</div>
+                    <div class="detail-value">
+                        <a href="" id="detail-screenshot-link" target="_blank" style="color:var(--accent-primary); font-weight:600; text-decoration:none;">
+                            🖼️ View Attachment Image
+                        </a>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Raised At</div>
+                    <div class="detail-value" id="detail-date">-</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="resolution-text">Resolution Comments</label>
+                    <textarea class="form-textarea" id="resolution-text" rows="4" placeholder="Enter resolution notes here..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn" style="background:#e0e0e0; color:#333;" onclick="closeModal()">Cancel</button>
+                <button class="action-btn primary" id="btn-in-progress" onclick="updateTicketStatus('in progress')">In Progress</button>
+                <button class="action-btn" style="background:var(--success); color:white;" id="btn-resolve" onclick="updateTicketStatus('resolved')">Resolve</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Config -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+            authDomain: "phototester555.firebaseapp.com",
+            projectId: "phototester555",
+            storageBucket: "phototester555.firebasestorage.app",
+            messagingSenderId: "953997763616",
+            appId: "1:953997763616:web:4ac177ad8e79c5f38b8845",
+            measurementId: "G-6VS0G0NQ7K"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let allTickets = [];
+        let filteredTickets = [];
+        let activeFilter = 'all';
+        let searchQuery = '';
+        let currentTicket = null;
+
+        // Theme management
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.classList.contains('dark-mode') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            if (newTheme === 'dark') {
+                html.classList.add('dark-mode');
+            } else {
+                html.classList.remove('dark-mode');
+            }
+            localStorage.setItem('admin-theme', newTheme);
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('admin-theme') || 'light';
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark-mode');
+        }
+
+        // Auth check
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                const adminDoc = await db.collection('admin_users').doc(user.uid).get();
+                if (!adminDoc.exists || !adminDoc.data().isActive) {
+                    await auth.signOut();
+                    window.location.href = 'index.html';
+                    return;
+                }
+            } catch (error) {
+                console.error("Admin verification error:", error);
+                await auth.signOut();
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('admin-email').textContent = user.email;
+            initTicketsListener();
+        });
+
+        // Logout
+        async function handleLogout() {
+            try {
+                await auth.signOut();
+                window.location.href = 'index.html';
+            } catch (err) {
+                alert("Logout failed: " + err.message);
+            }
+        }
+
+        // Realtime Tickets listener
+        function initTicketsListener() {
+            db.collection('support_tickets')
+              .orderBy('createdAt', 'desc')
+              .onSnapshot(snapshot => {
+                  allTickets = [];
+                  snapshot.forEach(doc => {
+                      allTickets.push({ id: doc.id, ...doc.data() });
+                  });
+                  updateStats();
+                  applyFilterAndSearch();
+              }, error => {
+                  console.error("Firestore loading error:", error);
+                  document.getElementById('tickets-tbody').innerHTML = `
+                      <tr>
+                          <td colspan="8" class="empty-state">
+                              <p>Error loading support tickets: ${error.message}</p>
+                          </td>
+                      </tr>
+                  `;
+              });
+        }
+
+        function updateStats() {
+            const total = allTickets.length;
+            const open = allTickets.filter(t => t.status === 'open').length;
+            const progress = allTickets.filter(t => t.status === 'in progress').length;
+            const resolved = allTickets.filter(t => t.status === 'resolved' || t.status === 'closed').length;
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-open').textContent = open;
+            document.getElementById('stat-progress').textContent = progress;
+            document.getElementById('stat-resolved').textContent = resolved;
+        }
+
+        function filterTickets(status) {
+            activeFilter = status;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            if (status === 'all') document.getElementById('filter-all').classList.add('active');
+            if (status === 'open') document.getElementById('filter-open').classList.add('active');
+            if (status === 'in progress') document.getElementById('filter-inprogress').classList.add('active');
+            if (status === 'resolved') document.getElementById('filter-resolved').classList.add('active');
+            applyFilterAndSearch();
+        }
+
+        function handleSearch(val) {
+            searchQuery = val.toLowerCase().trim();
+            applyFilterAndSearch();
+        }
+
+        function applyFilterAndSearch() {
+            filteredTickets = allTickets.filter(t => {
+                const matchesFilter = activeFilter === 'all' || 
+                                     (activeFilter === 'resolved' ? (t.status === 'resolved' || t.status === 'closed') : t.status === activeFilter);
+                
+                const matchesSearch = !searchQuery || 
+                                      (t.ticketId && t.ticketId.toLowerCase().includes(searchQuery)) ||
+                                      (t.userEmail && t.userEmail.toLowerCase().includes(searchQuery)) ||
+                                      (t.userName && t.userName.toLowerCase().includes(searchQuery)) ||
+                                      (t.issueType && t.issueType.toLowerCase().includes(searchQuery)) ||
+                                      (t.description && t.description.toLowerCase().includes(searchQuery));
+                
+                return matchesFilter && matchesSearch;
+            });
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tickets-tbody');
+            if (filteredTickets.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <p>No support tickets match the current selection.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            filteredTickets.forEach(t => {
+                const dateStr = t.createdAt ? (t.createdAt.toDate ? t.createdAt.toDate().toLocaleDateString('en-IN', {
+                    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                }) : new Date(t.createdAt).toLocaleDateString()) : 'Pending';
+
+                const statusClass = t.status.toLowerCase().replace(' ', '-');
+                const descSnippet = t.description.length > 50 ? t.description.substring(0, 47) + '...' : t.description;
+
+                const userType = t.userType || 'user';
+                const userTypeLabel = userType.charAt(0).toUpperCase() + userType.slice(1);
+                const userTypeBadgeColor = userType.toLowerCase() === 'provider' 
+                    ? 'background: rgba(117, 87, 230, 0.15); color: #7557e6;' 
+                    : 'background: rgba(102, 126, 234, 0.15); color: #667eea;';
+
+                html += `
+                    <tr>
+                        <td><strong>${t.ticketId || t.id.substring(0,8)}</strong></td>
+                        <td>${dateStr}</td>
+                        <td>${escapeHtml(t.userName)}</td>
+                        <td>${escapeHtml(t.userEmail)}</td>
+                        <td><span class="badge" style="${userTypeBadgeColor}">${userTypeLabel}</span></td>
+                        <td>${t.issueType}</td>
+                        <td title="${escapeHtml(t.description)}">${escapeHtml(descSnippet)}</td>
+                        <td><span class="badge ${statusClass}">${t.status}</span></td>
+                        <td>
+                            <button class="action-btn primary" onclick="openDetailModal('${t.id}')">View</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function openDetailModal(id) {
+            currentTicket = allTickets.find(t => t.id === id);
+            if (!currentTicket) return;
+
+            document.getElementById('modal-ticket-id').textContent = `Manage Ticket ${currentTicket.ticketId}`;
+            const typeVal = currentTicket.userType || 'user';
+            document.getElementById('detail-userType').textContent = typeVal.charAt(0).toUpperCase() + typeVal.slice(1);
+            document.getElementById('detail-userName').textContent = currentTicket.userName;
+            document.getElementById('detail-userEmail').textContent = currentTicket.userEmail;
+            document.getElementById('detail-userPhone').textContent = currentTicket.userPhone || 'Not Provided';
+            document.getElementById('detail-category').textContent = currentTicket.issueType;
+            document.getElementById('detail-description').textContent = currentTicket.description;
+
+            // Handle screenshot preview
+            const screenshotRow = document.getElementById('detail-screenshot-row');
+            const screenshotLink = document.getElementById('detail-screenshot-link');
+            if (currentTicket.screenshotUrl) {
+                screenshotLink.href = currentTicket.screenshotUrl;
+                screenshotRow.style.display = 'block';
+            } else {
+                screenshotRow.style.display = 'none';
+            }
+
+            const dateStr = currentTicket.createdAt ? (currentTicket.createdAt.toDate ? currentTicket.createdAt.toDate().toLocaleString() : new Date(currentTicket.createdAt).toLocaleString()) : 'Pending';
+            document.getElementById('detail-date').textContent = dateStr;
+
+            document.getElementById('resolution-text').value = currentTicket.resolution || '';
+
+            // Handle actions visibility based on status
+            const isResolved = currentTicket.status === 'resolved' || currentTicket.status === 'closed';
+            document.getElementById('btn-in-progress').style.display = isResolved ? 'none' : 'inline-block';
+            document.getElementById('btn-resolve').style.display = isResolved ? 'none' : 'inline-block';
+
+            document.getElementById('ticketModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('ticketModal').style.display = 'none';
+            currentTicket = null;
+        }
+
+        async function updateTicketStatus(newStatus) {
+            if (!currentTicket) return;
+            const resolution = document.getElementById('resolution-text').value.trim();
+
+            try {
+                await db.collection('support_tickets').doc(currentTicket.id).update({
+                    status: newStatus,
+                    resolution: resolution,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showToast(`Ticket status updated to ${newStatus}`);
+                closeModal();
+            } catch (error) {
+                alert("Failed to update ticket: " + error.message);
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'success-message';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>

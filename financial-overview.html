@@ -1,0 +1,2460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Overview – Pro X Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* ── CSS VARIABLES ──────────────────────────────── */
+        :root {
+            --bg-primary:   #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary:  #f1f5f9;
+            --bg-card:      #ffffff;
+            --text-primary:   #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary:  #94a3b8;
+            --border-color: #e2e8f0;
+            --border-light: rgba(0,0,0,0.05);
+            --accent-primary:   #667eea;
+            --accent-secondary: #764ba2;
+            --accent-light:     rgba(102,126,234,0.1);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger:  #ef4444;
+            --info:    #3b82f6;
+            --purple:  #a855f7;
+            --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        html.dark-mode {
+            --bg-primary:   #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary:  #334155;
+            --bg-card:      #1e293b;
+            --text-primary:   #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary:  #94a3b8;
+            --border-color: rgba(148,163,184,0.2);
+            --border-light: rgba(148,163,184,0.08);
+            --accent-primary:   #818cf8;
+            --accent-light:     rgba(129,140,248,0.1);
+            --success: #34d399;
+            --warning: #fbbf24;
+            --danger:  #f87171;
+            --info:    #60a5fa;
+            --purple:  #c084fc;
+            --shadow-sm: 0 1px 4px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* ── RESET ──────────────────────────────────────── */
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* ── HEADER ─────────────────────────────────────── */
+        .page-header {
+            background: linear-gradient(to right, #a044ff, #6a3093);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-lg);
+        }
+        .header-inner {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0.9rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .header-left { display:flex; align-items:center; gap:1rem; }
+        .back-btn {
+            display: inline-flex; align-items:center; gap:0.4rem;
+            background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+            color: white; padding: 0.45rem 0.9rem; border-radius: 8px;
+            font-size: 0.83rem; font-weight: 600; text-decoration: none; transition: background 0.2s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.25); }
+        .page-title    { font-size: 1.2rem; font-weight: 800; }
+        .page-subtitle { font-size: 0.78rem; opacity: 0.8; margin-top: 0.1rem; }
+        .header-right  { display:flex; align-items:center; gap:0.6rem; }
+        .hdr-btn {
+            background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+            color: white; padding: 0.45rem 0.9rem; border-radius: 8px;
+            font-size: 0.83rem; font-weight: 600; cursor: pointer; transition: background 0.2s;
+        }
+        .hdr-btn:hover { background: rgba(255,255,255,0.25); }
+        .theme-btn {
+            background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+            color: white; width: 36px; height: 36px; border-radius: 8px;
+            cursor: pointer; font-size: 1rem; display:flex; align-items:center; justify-content:center;
+            transition: background 0.2s;
+        }
+        .theme-btn:hover { background: rgba(255,255,255,0.25); }
+
+        /* ── TAB NAV ─────────────────────────────────────── */
+        .tab-nav {
+            background: var(--bg-card);
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            overflow-x: auto;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .tab-nav::-webkit-scrollbar { display:none; }
+        .tab-btn {
+            padding: 0.9rem 1.5rem;
+            white-space: nowrap;
+            border: none; border-bottom: 3px solid transparent; margin-bottom: -2px;
+            background: none; color: var(--text-secondary);
+            font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .tab-btn.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+        .tab-btn:hover:not(.active) { color: var(--accent-primary); }
+
+        /* ── LAYOUT ──────────────────────────────────────── */
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+        .page-body { max-width: 1600px; margin: 0 auto; padding: 1.5rem; }
+
+        /* ── STAT CARDS ──────────────────────────────────── */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.25rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .stat-icon  { font-size: 1.6rem; margin-bottom: 0.6rem; }
+        .stat-label { font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 0.3rem; }
+        .stat-value { font-size: 1.7rem; font-weight: 800; line-height: 1; color: var(--text-primary); }
+        .stat-sub   { font-size: 0.76rem; color: var(--text-secondary); margin-top: 0.35rem; }
+
+        /* ── CHART CARDS ─────────────────────────────────── */
+        .chart-row { display: grid; gap: 1rem; margin-bottom: 1rem; }
+        .chart-row.cols-2 { grid-template-columns: 1fr 1fr; }
+        .chart-row.cols-1-2 { grid-template-columns: 1fr 2fr; }
+        .chart-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .chart-hd { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.15rem; }
+        .chart-sub { font-size: 0.76rem; color: var(--text-tertiary); margin-bottom: 1rem; }
+        .chart-wrap { position: relative; }
+        .chart-wrap.h240 { height: 240px; }
+        .chart-wrap.h280 { height: 280px; }
+        .chart-wrap.h320 { height: 320px; }
+
+        /* ── FILTER BAR ──────────────────────────────────── */
+        .filter-bar {
+            background: var(--bg-card);
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            display: flex; flex-wrap: wrap; gap: 0.65rem; align-items: center;
+            margin-bottom: 1rem;
+            transition: background 0.3s;
+        }
+        .filter-bar input,
+        .filter-bar select {
+            padding: 0.45rem 0.8rem;
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.83rem;
+            font-family: inherit;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: border-color 0.2s, background 0.3s;
+        }
+        .filter-bar input:focus,
+        .filter-bar select:focus { outline: none; border-color: var(--accent-primary); }
+        .filter-bar input[type="text"]   { min-width: 220px; }
+        .filter-bar input[type="date"]   { min-width: 140px; }
+        .filter-lbl { font-size: 0.78rem; font-weight: 600; color: var(--text-tertiary); white-space:nowrap; }
+        .filter-sep { width: 1px; height: 24px; background: var(--border-color); }
+        .reset-btn {
+            padding: 0.45rem 0.9rem; border-radius: 8px;
+            border: 1.5px solid var(--border-color);
+            background: var(--bg-primary); color: var(--text-secondary);
+            font-size: 0.83rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+        /* ── TABLE ───────────────────────────────────────── */
+        .table-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            transition: background 0.3s;
+        }
+        .table-hd {
+            padding: 1rem 1.25rem;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap; gap: 0.5rem;
+        }
+        .table-hd-title { font-size: 0.95rem; font-weight: 700; }
+        .table-hd-meta  { font-size: 0.78rem; color: var(--text-tertiary); }
+        .table-scroll   { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: linear-gradient(135deg, #667eea, #764ba2); }
+        th {
+            padding: 0.7rem 1rem; text-align: left; white-space: nowrap;
+            font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: white;
+        }
+        tbody tr { border-bottom: 1px solid var(--border-light); transition: background 0.15s; }
+        tbody tr:hover { background: var(--bg-tertiary); }
+        tbody tr:last-child { border-bottom: none; }
+        td { padding: 0.7rem 1rem; font-size: 0.83rem; color: var(--text-primary); }
+
+        /* ── BADGES ──────────────────────────────────────── */
+        .badge {
+            display: inline-flex; align-items: center; gap: 0.25rem;
+            padding: 0.25rem 0.65rem; border-radius: 999px;
+            font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+        }
+        .b-advance      { background: rgba(245,158,11,0.12);  color: #d97706; }
+        .b-balance      { background: rgba(59,130,246,0.12);  color: #2563eb; }
+        .b-full         { background: rgba(16,185,129,0.12);  color: #059669; }
+        .b-subscription { background: rgba(168,85,247,0.12);  color: #9333ea; }
+        .b-refund       { background: rgba(239,68,68,0.12);   color: #dc2626; }
+        .b-cancellation { background: rgba(107,114,128,0.12); color: #4b5563; }
+        html.dark-mode .b-advance      { color: #fbbf24; }
+        html.dark-mode .b-balance      { color: #60a5fa; }
+        html.dark-mode .b-full         { color: #34d399; }
+        html.dark-mode .b-subscription { color: #c084fc; }
+        html.dark-mode .b-refund       { color: #f87171; }
+        html.dark-mode .b-cancellation { color: #9ca3af; }
+
+        .s-paid      { background: rgba(16,185,129,0.12);  color: #059669; }
+        .s-pending   { background: rgba(245,158,11,0.12);  color: #d97706; }
+        .s-refunded  { background: rgba(239,68,68,0.12);   color: #dc2626; }
+        .s-cancelled { background: rgba(107,114,128,0.12); color: #4b5563; }
+        .s-active    { background: rgba(16,185,129,0.12);  color: #059669; }
+        html.dark-mode .s-paid      { color: #34d399; }
+        html.dark-mode .s-pending   { color: #fbbf24; }
+        html.dark-mode .s-refunded  { color: #f87171; }
+        html.dark-mode .s-cancelled { color: #9ca3af; }
+        html.dark-mode .s-active    { color: #34d399; }
+
+        .tier-silver   { background: rgba(148,163,184,0.15); color: #64748b; }
+        .tier-gold     { background: rgba(245,158,11,0.12);  color: #d97706; }
+        .tier-platinum { background: rgba(168,85,247,0.12);  color: #9333ea; }
+        html.dark-mode .tier-silver   { color: #94a3b8; }
+        html.dark-mode .tier-gold     { color: #fbbf24; }
+        html.dark-mode .tier-platinum { color: #c084fc; }
+
+        .amount-pos { color: var(--success); font-weight: 700; }
+        .amount-neg { color: var(--danger);  font-weight: 700; }
+
+        /* ── COLLECTIONS & PAYOUTS TAB ───────────────────── */
+        .cp-flow-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px; padding: 1.1rem 1.5rem;
+            display: flex; align-items: center; gap: 0; margin-bottom: 1.25rem;
+            flex-wrap: wrap; overflow: hidden;
+        }
+        .cp-flow-step {
+            flex: 1; min-width: 120px; text-align: center; color: white;
+            padding: 0.5rem 0.75rem;
+        }
+        .cp-flow-step-icon { font-size: 1.6rem; display: block; margin-bottom: 0.25rem; }
+        .cp-flow-step-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.8; }
+        .cp-flow-step-name  { font-size: 0.95rem; font-weight: 700; }
+        .cp-flow-arrow {
+            font-size: 1.4rem; color: rgba(255,255,255,0.5); padding: 0 0.25rem; flex-shrink: 0;
+        }
+        .cp-flow-note {
+            font-size: 0.7rem; color: rgba(255,255,255,0.65); margin-top: 0.15rem;
+        }
+
+        .cp-alert-bar {
+            background: rgba(245,158,11,0.08); border: 1.5px solid rgba(245,158,11,0.3);
+            border-radius: 12px; padding: 0.85rem 1.1rem;
+            display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+            margin-bottom: 1.25rem;
+        }
+        .cp-alert-icon { font-size: 1.1rem; }
+        .cp-alert-text { font-size: 0.85rem; font-weight: 600; color: var(--warning); flex: 1; }
+        .cp-alert-badge {
+            background: var(--warning); color: white; border-radius: 999px;
+            padding: 0.2rem 0.65rem; font-size: 0.72rem; font-weight: 800;
+        }
+
+        /* Transaction cards */
+        .tx-list { display: flex; flex-direction: column; gap: 0.85rem; }
+        .tx-card {
+            background: var(--bg-card); border-radius: 16px;
+            border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);
+            overflow: hidden; transition: box-shadow 0.2s, background 0.3s;
+        }
+        .tx-card:hover { box-shadow: var(--shadow-md); }
+        .tx-card.tx-needs-action { border-left: 4px solid var(--warning); }
+        .tx-card.tx-done         { border-left: 4px solid var(--success); }
+        .tx-card.tx-cancelled    { border-left: 4px solid var(--danger); }
+        .tx-card.tx-active       { border-left: 4px solid var(--info); }
+
+        .tx-top {
+            display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+            padding: 0.75rem 1.1rem; border-bottom: 1px solid var(--border-light);
+            background: var(--bg-tertiary);
+        }
+        .tx-bid { font-size: 0.75rem; font-family: monospace; color: var(--text-secondary); font-weight: 700; }
+        .tx-date-lbl { font-size: 0.76rem; color: var(--text-tertiary); }
+        .tx-bstatus {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.2rem 0.65rem; border-radius: 999px;
+            font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px;
+            margin-left: auto;
+        }
+        .tx-bs-completed { background: rgba(16,185,129,0.12);  color: #059669; }
+        .tx-bs-active    { background: rgba(59,130,246,0.12);   color: #2563eb; }
+        .tx-bs-cancelled { background: rgba(239,68,68,0.12);    color: #dc2626; }
+        .tx-bs-default   { background: rgba(148,163,184,0.12);  color: #64748b; }
+        html.dark-mode .tx-bs-completed { color: #34d399; }
+        html.dark-mode .tx-bs-active    { color: #60a5fa; }
+        html.dark-mode .tx-bs-cancelled { color: #f87171; }
+        html.dark-mode .tx-bs-default   { color: #94a3b8; }
+
+        .tx-parties {
+            padding: 0.6rem 1.1rem;
+            font-size: 0.83rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .tx-customer { font-weight: 700; }
+        .tx-arrow-sm { color: var(--text-tertiary); font-size: 0.8rem; }
+        .tx-provname { font-weight: 700; color: var(--accent-primary); }
+        .tx-svc { font-size: 0.76rem; color: var(--text-tertiary); margin-left: auto; font-style: italic; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .tx-money-row {
+            display: grid; grid-template-columns: 1fr 1fr;
+        }
+        .tx-money-block {
+            padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.25rem;
+        }
+        .tx-money-block:first-child { border-right: 1px solid var(--border-light); }
+        .tx-money-block-label {
+            font-size: 0.68rem; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 0.7px; color: var(--text-tertiary); margin-bottom: 0.1rem;
+        }
+        .tx-money-amt {
+            font-size: 1.35rem; font-weight: 800; line-height: 1; color: var(--text-primary);
+        }
+        .tx-money-pct { font-size: 0.72rem; color: var(--text-tertiary); }
+        .tx-money-status {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.22rem 0.65rem; border-radius: 999px;
+            font-size: 0.72rem; font-weight: 700; margin-top: 0.3rem; width: fit-content;
+        }
+        .mst-collected { background: rgba(16,185,129,0.12); color: #059669; }
+        .mst-pending   { background: rgba(245,158,11,0.12); color: #d97706; }
+        .mst-action    { background: rgba(239,68,68,0.1);   color: #dc2626; font-weight: 800; }
+        .mst-notdue    { background: rgba(148,163,184,0.12); color: #64748b; }
+        .mst-paidout   { background: rgba(16,185,129,0.12); color: #059669; }
+        .mst-refunded  { background: rgba(16,185,129,0.12); color: #059669; }
+        .mst-refpending{ background: rgba(239,68,68,0.1);   color: #dc2626; }
+        html.dark-mode .mst-collected  { color: #34d399; }
+        html.dark-mode .mst-pending    { color: #fbbf24; }
+        html.dark-mode .mst-action     { color: #f87171; }
+        html.dark-mode .mst-notdue     { color: #94a3b8; }
+        html.dark-mode .mst-paidout    { color: #34d399; }
+        html.dark-mode .mst-refunded   { color: #34d399; }
+        html.dark-mode .mst-refpending { color: #f87171; }
+
+        .tx-footer {
+            padding: 0.45rem 1.1rem;
+            font-size: 0.72rem; color: var(--text-tertiary);
+            border-top: 1px solid var(--border-light);
+            display: flex; gap: 1.25rem; flex-wrap: wrap;
+        }
+        .tx-footer strong { color: var(--text-secondary); }
+
+        /* filter bar for cp tab */
+        .cp-filter-bar {
+            background: var(--bg-card); border-radius: 14px;
+            padding: 0.85rem 1.1rem; border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm); display: flex; flex-wrap: wrap;
+            gap: 0.65rem; align-items: center; margin-bottom: 1rem;
+        }
+        .cp-filter-bar select,
+        .cp-filter-bar input {
+            padding: 0.4rem 0.75rem; border: 1.5px solid var(--border-color);
+            border-radius: 8px; font-size: 0.83rem; font-family: inherit;
+            background: var(--bg-primary); color: var(--text-primary);
+        }
+        .cp-filter-bar input { min-width: 220px; }
+        .cp-filter-bar input:focus,
+        .cp-filter-bar select:focus { outline: none; border-color: var(--accent-primary); }
+
+        @media (max-width: 600px) {
+            .tx-money-row { grid-template-columns: 1fr; }
+            .tx-money-block:first-child { border-right: none; border-bottom: 1px solid var(--border-light); }
+            .cp-flow-banner { gap: 0.25rem; }
+        }
+
+
+        /* ── Payment Cards ─────────────────────────────────────── */
+.pay-cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; padding:4px 0 8px; }
+.pay-card { background:var(--card-bg,#fff); border:1px solid var(--border,rgba(0,0,0,.1)); border-radius:16px; padding:15px 16px 12px; cursor:pointer; transition:transform 200ms ease,box-shadow 200ms ease,border-color 200ms ease; box-shadow:0 4px 12px rgba(0,0,0,.07); display:flex; flex-direction:column; gap:10px; position:relative; overflow:hidden; }
+.pay-card:hover { transform:translateY(-4px); box-shadow:0 12px 28px rgba(0,0,0,.13); border-color:rgba(109,69,255,.28); }
+.pay-card--refund { border-left:4px solid #ef4444; }
+.pay-card--cancelled { border-left:4px solid #f59e0b; opacity:.85; }
+.pcard-refund-banner { background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(248,113,113,.10)); color:#b91c1c; font-size:11px; font-weight:800; padding:5px 10px; border-radius:8px; text-align:center; border:1px solid rgba(239,68,68,.18); }
+.pcard-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.pcard-left { display:flex; flex-direction:column; gap:4px; }
+.pcard-date { font-size:11px; color:var(--text-secondary,#64748b); font-weight:600; }
+.pcard-amount-pos { font-size:1.25rem; font-weight:900; color:#059669; }
+.pcard-amount-neg { font-size:1.25rem; font-weight:900; color:#dc2626; }
+.pcard-amount-cancel { font-size:1.25rem; font-weight:900; color:#d97706; }
+.pcard-people { display:flex; align-items:center; gap:8px; }
+.pcard-person { display:flex; align-items:center; gap:6px; flex:1; min-width:0; }
+.pcard-person-icon { font-size:15px; flex-shrink:0; }
+.pcard-person-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary,#94a3b8); display:block; }
+.pcard-person-name { font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; max-width:100px; }
+.pcard-arrow { color:var(--text-secondary,#94a3b8); font-size:14px; flex-shrink:0; }
+.pcard-bottom { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.pcard-booking-id { font-family:monospace; font-size:10px; color:var(--text-secondary,#475569); background:rgba(148,163,184,.10); padding:3px 7px; border-radius:6px; }
+.pcard-category { font-size:11px; font-weight:600; color:var(--text-secondary,#475569); }
+.pcard-split { display:flex; justify-content:space-between; background:rgba(109,69,255,.06); border:1px solid rgba(109,69,255,.12); border-radius:8px; padding:7px 10px; font-size:11px; font-weight:700; color:var(--text-secondary,#475569); gap:8px; flex-wrap:wrap; }
+.ps-paid      { background:rgba(16,185,129,.12); color:#047857; border-radius:999px; padding:3px 9px; font-size:10px; font-weight:800; }
+.ps-pending   { background:rgba(245,158,11,.12);  color:#92400e; border-radius:999px; padding:3px 9px; font-size:10px; font-weight:800; }
+.ps-refunded  { background:rgba(239,68,68,.12);   color:#b91c1c; border-radius:999px; padding:3px 9px; font-size:10px; font-weight:800; }
+.ps-cancelled { background:rgba(245,158,11,.12);  color:#92400e; border-radius:999px; padding:3px 9px; font-size:10px; font-weight:800; }
+.ps-active    { background:rgba(14,165,233,.12);  color:#0369a1; border-radius:999px; padding:3px 9px; font-size:10px; font-weight:800; }
+
+/* ── Payment Modal ──────────────────────────────────────── */
+.pay-modal-backdrop { position:fixed; inset:0; background:rgba(2,6,23,.55); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px; }
+.pay-modal-box { background:var(--body-bg,#f8fafc); border-radius:20px; width:100%; max-width:520px; max-height:88vh; overflow-y:auto; padding:24px; position:relative; box-shadow:0 30px 60px rgba(0,0,0,.25); border:1px solid var(--border,rgba(0,0,0,.1)); }
+.pay-modal-close { position:absolute; top:14px; right:14px; width:36px; height:36px; border-radius:999px; border:1px solid var(--border,rgba(0,0,0,.1)); background:rgba(255,255,255,.6); font-size:14px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 160ms; }
+.pay-modal-close:hover { background:#ef4444; color:#fff; border-color:transparent; }
+.pmodal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; padding-right:44px; flex-wrap:wrap; gap:8px; }
+.pmodal-amount { font-size:1.7rem; font-weight:900; }
+.pmodal-section { background:rgba(255,255,255,.60); border:1px solid var(--border,rgba(0,0,0,.08)); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
+.pmodal-section-title { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#94a3b8); margin-bottom:8px; }
+.pmodal-row { display:flex; justify-content:space-between; align-items:baseline; gap:8px; padding:5px 0; border-bottom:1px solid rgba(148,163,184,.10); font-size:13px; }
+.pmodal-row:last-child { border-bottom:none; }
+.pmodal-row > span:first-child { color:var(--text-secondary,#475569); font-weight:600; flex-shrink:0; }
+.pmodal-row > span:last-child  { font-weight:700; text-align:right; word-break:break-all; }
+.pmodal-refund-box { background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(248,113,113,.10)); border:1.5px solid rgba(239,68,68,.22); border-radius:12px; text-align:center; padding:14px; margin-bottom:10px; }
+.pmodal-refund-title { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#b91c1c; }
+.pmodal-refund-amount { font-size:1.8rem; font-weight:900; color:#dc2626; margin-top:4px; }
+.pmodal-split-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
+.pmodal-split-card { border-radius:10px; padding:10px 12px; text-align:center; }
+.pmodal-split-platform { background:rgba(109,69,255,.08); border:1px solid rgba(109,69,255,.16); }
+.pmodal-split-provider { background:rgba(16,185,129,.08); border:1px solid rgba(16,185,129,.16); }
+.pmodal-split-label { font-size:10px; font-weight:700; color:var(--text-secondary,#94a3b8); margin-bottom:5px; }
+.pmodal-split-value { font-size:1.15rem; font-weight:900; }
+.pmodal-split-platform .pmodal-split-value { color:#6d45ff; }
+.pmodal-split-provider .pmodal-split-value { color:#059669; }
+.pmodal-cancel-box { background:rgba(245,158,11,.06); border-color:rgba(245,158,11,.18); }
+
+        /* ── PAGINATION ──────────────────────────────────── */
+        .pagination {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.75rem 1.25rem; border-top: 1px solid var(--border-color);
+            font-size: 0.8rem; color: var(--text-secondary);
+        }
+        .page-btns { display:flex; gap:0.35rem; }
+        .page-btn {
+            width: 30px; height: 30px; border-radius: 7px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary); color: var(--text-secondary);
+            font-size: 0.8rem; font-family: inherit; cursor: pointer; transition: all 0.2s;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .page-btn.active { background: var(--accent-primary); border-color: var(--accent-primary); color: white; }
+        .page-btn:hover:not(.active):not(:disabled) { border-color: var(--accent-primary); color: var(--accent-primary); }
+        .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        /* ── PLAN CARDS ──────────────────────────────────── */
+        .plan-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
+        .plan-card {
+            background: var(--bg-card); border-radius: 16px;
+            padding: 1.5rem; border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm); text-align: center;
+            transition: background 0.3s, transform 0.2s;
+        }
+        .plan-card:hover { transform: translateY(-3px); }
+        .plan-icon  { font-size: 2rem; display:block; margin-bottom: 0.4rem; }
+        .plan-name  { font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+        .plan-count { font-size: 2.5rem; font-weight: 800; line-height: 1; margin-bottom: 0.25rem; }
+        .plan-meta  { font-size: 0.76rem; color: var(--text-tertiary); }
+        .pc-silver   { border-top: 4px solid #94a3b8; }
+        .pc-gold     { border-top: 4px solid #f59e0b; }
+        .pc-platinum { border-top: 4px solid #a855f7; }
+        .pc-silver   .plan-name { color: #64748b; }
+        .pc-gold     .plan-name { color: #d97706; }
+        .pc-platinum .plan-name { color: #9333ea; }
+
+        /* ── CATEGORY CARDS ──────────────────────────────── */
+        .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .cat-card {
+            background: var(--bg-card); border-radius: 16px;
+            padding: 1.25rem; border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm); transition: background 0.3s, transform 0.2s;
+        }
+        .cat-card:hover { transform: translateY(-3px); }
+        .cat-name  { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; }
+        .cat-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+        .cat-val   { font-size: 1rem; font-weight: 800; color: var(--text-primary); }
+        .cat-lbl   { font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 0.1rem; }
+        .cat-refund-note { font-size: 0.75rem; color: var(--danger); margin-top: 0.6rem; }
+
+        /* ── RECENT TRANSACTIONS ─────────────────────────── */
+        .recent-list { display: flex; flex-direction: column; }
+        .recent-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.7rem 0; border-bottom: 1px solid var(--border-light);
+        }
+        .recent-item:last-child { border-bottom: none; }
+        .ri-left   { display:flex; align-items:center; gap:0.75rem; }
+        .ri-dot    { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        .ri-name   { font-size: 0.85rem; font-weight: 600; }
+        .ri-meta   { font-size: 0.72rem; color: var(--text-tertiary); margin-top: 0.1rem; }
+        .ri-amount { font-size: 0.9rem; font-weight: 700; }
+
+        /* ── EMPTY / LOADING ─────────────────────────────── */
+        .empty-state { text-align:center; padding:3rem 1rem; color:var(--text-tertiary); font-size:0.88rem; }
+        .spinner { width:32px; height:32px; border:3px solid var(--border-color); border-top-color:var(--accent-primary); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 0.75rem; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        /* ── TOAST ───────────────────────────────────────── */
+        #toast {
+            position:fixed; bottom:2rem; right:2rem;
+            padding:0.8rem 1.4rem; border-radius:12px;
+            background:#1e293b; color:white;
+            font-size:0.875rem; font-weight:600;
+            box-shadow:var(--shadow-lg);
+            transform:translateY(100px); opacity:0; transition:all 0.3s; z-index:999;
+        }
+        #toast.show { transform:translateY(0); opacity:1; }
+        #toast.success { background:#065f46; }
+        #toast.error   { background:#991b1b; }
+
+        /* ── TOP PROVIDERS ─────────────────────────────── */
+        .top-prov-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .top-prov-item {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 0.85rem 1rem; background: var(--bg-tertiary);
+            border-radius: 12px; transition: transform 0.2s;
+        }
+        .top-prov-item:hover { transform: translateX(5px); background: var(--bg-card); border: 1px solid var(--border-color); }
+        .tp-rank {
+            width: 28px; height: 28px; border-radius: 8px;
+            background: var(--accent-primary); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 800; flex-shrink: 0;
+        }
+        .tp-info { flex: 1; min-width: 0; }
+        .tp-name { font-size: 0.88rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tp-meta { font-size: 0.72rem; color: var(--text-tertiary); }
+        .tp-revenue { font-size: 0.95rem; font-weight: 800; color: var(--accent-primary); }
+
+        /* ── RESPONSIVE ──────────────────────────────────── */
+        @media (max-width: 960px) {
+            .chart-row.cols-2     { grid-template-columns: 1fr; }
+            .chart-row.cols-1-2   { grid-template-columns: 1fr; }
+            .plan-row { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+            .page-body { padding: 1rem; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .filter-bar input[type="text"] { min-width: unset; }
+            .stat-grid { grid-template-columns: 1fr 1fr; }
+        }
+        /* ══ Payment Cards ════════════════════════════════════════ */
+.pay-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px;padding:4px 0 12px;}
+.pay-card{background:var(--card-bg,#1e1e2e);border:1px solid rgba(255,255,255,.08);border-radius:18px;
+  padding:0 0 14px;cursor:pointer;transition:transform 180ms,box-shadow 180ms;
+  box-shadow:0 4px 18px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:0;overflow:hidden;position:relative;}
+.pay-card:hover{transform:translateY(-5px);box-shadow:0 16px 36px rgba(0,0,0,.35);}
+.pcard-accent-bar{height:4px;background:var(--card-accent,#6d45ff);border-radius:18px 18px 0 0;}
+.pcard-top{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px 6px;gap:10px;}
+.pcard-left{display:flex;flex-direction:column;gap:3px;}
+.pcard-type-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--card-accent,#a78bfa);}
+.pcard-date{font-size:11px;color:rgba(255,255,255,.45);font-weight:500;}
+.pcard-amount{font-size:1.3rem;font-weight:900;flex-shrink:0;}
+.pcard-flow{display:flex;align-items:center;gap:6px;padding:8px 16px;
+  background:rgba(255,255,255,.04);margin:0 0 0 0;}
+.pcard-person{display:flex;align-items:center;gap:6px;flex:1;min-width:0;}
+.pcard-person-icon{font-size:14px;flex-shrink:0;}
+.pcard-person-role{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:rgba(255,255,255,.35);}
+.pcard-person-name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;max-width:90px;color:rgba(255,255,255,.9);}
+.pcard-flow-arrow{display:flex;flex-direction:column;align-items:center;gap:0;
+  color:rgba(255,255,255,.25);font-size:10px;flex-shrink:0;}
+.pcard-flow-label{font-size:8px;font-weight:700;color:rgba(255,255,255,.25);
+  text-transform:uppercase;letter-spacing:.05em;}
+.pcard-split-bar{display:flex;gap:0;margin:8px 16px 0;border-radius:8px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.08);}
+.pcard-split-item{flex:1;padding:5px 8px;font-size:10px;font-weight:700;text-align:center;}
+.split-platform{background:rgba(109,69,255,.15);color:#a78bfa;}
+.split-provider{background:rgba(16,185,129,.12);color:#34d399;}
+.pcard-footer{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px 0;}
+.pcard-booking-chip,.pcard-cat-chip{font-size:10px;font-weight:600;background:rgba(255,255,255,.07);
+  color:rgba(255,255,255,.5);padding:3px 8px;border-radius:999px;}
+.pcard-flow-pill{font-size:10px;font-weight:800;padding:3px 9px;border-radius:999px;margin-left:auto;}
+.pill-done{background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(16,185,129,.25);}
+.pill-pending{background:rgba(245,158,11,.13);color:#fbbf24;border:1px solid rgba(245,158,11,.22);}
+
+/* ══ Payment Modal ════════════════════════════════════════ */
+.pay-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(12px);
+  z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;}
+.pay-modal-box{background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:22px;
+  width:100%;max-width:540px;max-height:90vh;overflow-y:auto;padding:24px;position:relative;
+  box-shadow:0 40px 80px rgba(0,0,0,.5);}
+.pay-modal-close{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);font-size:14px;
+  font-weight:800;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;
+  transition:all 150ms;}
+.pay-modal-close:hover{background:#ef4444;border-color:transparent;}
+.pmodal-header{display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:18px;padding-right:44px;gap:12px;flex-wrap:wrap;}
+.pmodal-type-label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
+  color:#a78bfa;}
+.pmodal-date{font-size:12px;color:rgba(255,255,255,.4);margin-top:3px;}
+.pmodal-amount{font-size:1.9rem;font-weight:900;}
+.pmodal-amount.pos{color:#34d399;} .pmodal-amount.neg{color:#f87171;} .pmodal-amount.cancel{color:#fb923c;}
+.pmodal-section{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;padding:13px 15px;margin-bottom:10px;}
+.pmodal-section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;
+  color:rgba(255,255,255,.35);margin-bottom:9px;}
+.pmodal-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px;}
+.pmodal-row:last-child{border-bottom:none;}
+.pmodal-row>span:first-child{color:rgba(255,255,255,.45);font-weight:600;flex-shrink:0;}
+.pmodal-row>span:last-child{font-weight:700;color:rgba(255,255,255,.9);text-align:right;word-break:break-all;}
+.mono{font-family:monospace;font-size:11px;}
+.pmodal-bank{border-color:rgba(16,185,129,.2);background:rgba(16,185,129,.05);}
+.pmodal-refund-box{border-color:rgba(239,68,68,.2);background:rgba(239,68,68,.05);}
+.pmodal-split-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;}
+.pmodal-split-card{border-radius:10px;padding:10px 12px;text-align:center;font-size:11px;
+  font-weight:700;color:rgba(255,255,255,.55);}
+.pmodal-split-card.platform{background:rgba(109,69,255,.12);border:1px solid rgba(109,69,255,.2);}
+.pmodal-split-card.provider{background:rgba(16,185,129,.10);border:1px solid rgba(16,185,129,.18);}
+.pmodal-split-val{font-size:1.2rem;font-weight:900;margin-top:4px;}
+.pmodal-split-card.platform .pmodal-split-val{color:#a78bfa;}
+.pmodal-split-card.provider .pmodal-split-val{color:#34d399;}
+/* Flow steps */
+.pmodal-flow-status{border-color:rgba(109,69,255,.2);background:rgba(109,69,255,.04);}
+.pmodal-flow-steps{display:flex;flex-direction:column;gap:0;}
+.pflow-step{display:flex;align-items:flex-start;gap:12px;padding:8px 0;}
+.pflow-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:3px;
+  background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.2);}
+.pflow-step.done .pflow-dot{background:#34d399;border-color:#34d399;box-shadow:0 0 8px rgba(52,211,153,.4);}
+.pflow-step.pending .pflow-dot{background:#fbbf24;border-color:#fbbf24;}
+.pflow-text strong{display:block;font-size:12px;font-weight:700;color:rgba(255,255,255,.85);}
+.pflow-text span{font-size:11px;color:rgba(255,255,255,.45);}
+.pflow-line{width:2px;height:20px;background:rgba(255,255,255,.1);margin-left:5px;}
+/* Action buttons */
+.pmodal-action-btn{width:100%;padding:14px;border-radius:12px;border:none;font-size:14px;
+  font-weight:800;cursor:pointer;margin-bottom:10px;transition:all 160ms;letter-spacing:.02em;}
+.btn-provider-pay{background:linear-gradient(135deg,#10b981,#059669);color:#fff;
+  box-shadow:0 6px 20px rgba(16,185,129,.35);}
+.btn-provider-pay:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(16,185,129,.5);}
+.btn-refund-pay{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;
+  box-shadow:0 6px 20px rgba(239,68,68,.35);}
+.btn-refund-pay:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(239,68,68,.5);}
+.pmodal-done-badge{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);
+  color:#34d399;font-size:13px;font-weight:800;padding:12px 16px;border-radius:12px;
+  text-align:center;margin-bottom:10px;}
+
+    </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ══════════════════════════════════════════════ -->
+<header class="page-header">
+    <div class="header-inner">
+        <div class="header-left">
+            <a href="dashboard.html" class="back-btn">← Dashboard</a>
+            <div>
+                <div class="page-title">💰 Financial Overview</div>
+                <div class="page-subtitle">Earnings, payments &amp; subscriptions — real-time</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="hdr-btn" onclick="refreshAll()">↻ Refresh</button>
+            <button class="theme-btn" id="themeBtn">🌙</button>
+        </div>
+    </div>
+</header>
+
+<!-- ═══ TAB NAV ═════════════════════════════════════════════ -->
+<div class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab('overview',this)">📊 Overview</button>
+    <button class="tab-btn" onclick="switchTab('payments',this)">💳 Payments Log</button>
+    <button class="tab-btn" onclick="switchTab('subscriptions',this)">🏅 Subscriptions</button>
+    <button class="tab-btn" onclick="switchTab('categories',this)">📁 Category Earnings</button>
+    <button class="tab-btn" onclick="switchTab('collections',this)">💰 Collections &amp; Payouts</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TAB 1 — OVERVIEW
+════════════════════════════════════════════════════════════ -->
+<div id="tab-overview" class="tab-pane active">
+    <div class="page-body">
+
+        <!-- Stat cards -->
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-label">Net Revenue</div>
+                <div class="stat-value" id="s-net-rev">₹0</div>
+                <div class="stat-sub"  id="s-net-sub">After refunds</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-label">Booking Payments</div>
+                <div class="stat-value" id="s-book-rev">₹0</div>
+                <div class="stat-sub"  id="s-book-sub">0 completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">↩️</div>
+                <div class="stat-label">Total Refunds</div>
+                <div class="stat-value" id="s-refunds">₹0</div>
+                <div class="stat-sub"  id="s-refunds-sub">0 refund records</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-label">This Month</div>
+                <div class="stat-value" id="s-month-rev">₹0</div>
+                <div class="stat-sub" id="s-month-sub">Revenue</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🗓️</div>
+                <div class="stat-label">This Year</div>
+                <div class="stat-value" id="s-year-rev">₹0</div>
+                <div class="stat-sub" id="s-year-sub">Revenue</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏅</div>
+                <div class="stat-label">Active Subscriptions</div>
+                <div class="stat-value" id="s-subs">0</div>
+                <div class="stat-sub"  id="s-subs-sub">0 Gold · 0 Platinum</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">❌</div>
+                <div class="stat-label">Cancellations</div>
+                <div class="stat-value" id="s-cancel">0</div>
+                <div class="stat-sub"  id="s-cancel-sub">₹0 at risk</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-label">Avg Booking Value</div>
+                <div class="stat-value" id="s-avg">₹0</div>
+                <div class="stat-sub"  id="s-avg-sub">Per completed booking</div>
+            </div>
+        </div>
+
+        <!-- Weekly + Monthly charts -->
+        <div class="chart-row cols-2">
+            <div class="chart-card">
+                <div class="chart-hd">Weekly Earnings</div>
+                <div class="chart-sub">Last 7 days — daily revenue</div>
+                <div class="chart-wrap h280"><canvas id="weeklyChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-hd">Monthly Earnings</div>
+                <div class="chart-sub">Last 12 months — monthly revenue trend</div>
+                <div class="chart-wrap h280"><canvas id="monthlyChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Payment type donut + Category donut -->
+        <div class="chart-row cols-2">
+            <div class="chart-card">
+                <div class="chart-hd">Payment Type Breakdown</div>
+                <div class="chart-sub">Distribution across all payment types</div>
+                <div class="chart-wrap h240"><canvas id="typeChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-hd">Revenue by Category</div>
+                <div class="chart-sub">Top-8 categories by total earnings</div>
+                <div class="chart-wrap h240"><canvas id="catDonutChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Recent transactions + Top Providers -->
+        <div class="chart-row cols-2">
+            <div class="chart-card">
+                <div class="chart-hd" style="margin-bottom:0.75rem;">Recent Transactions</div>
+                <div id="recent-list" class="recent-list">
+                    <div class="empty-state"><div class="spinner"></div><p>Loading…</p></div>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-hd" style="margin-bottom:0.75rem;">Top Earning Providers</div>
+                <div id="top-providers-list" class="top-prov-list">
+                    <div class="empty-state"><div class="spinner"></div><p>Loading…</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TAB 2 — PAYMENTS LOG
+════════════════════════════════════════════════════════════ -->
+<div id="tab-payments" class="tab-pane">
+    <div class="page-body">
+
+        <div class="filter-bar">
+            <input type="text" id="f-search" placeholder="Search by user, provider, booking ID, note…" oninput="applyPayFilter()">
+            <div class="filter-sep"></div>
+            <span class="filter-lbl">Type:</span>
+            <select id="f-type" onchange="applyPayFilter()">
+                <option value="all">All Types</option>
+                <option value="advance">Advance</option>
+                <option value="balance">Balance Payment</option>
+                <option value="full">Full Payment</option>
+                <option value="subscription">Subscription</option>
+                <option value="refund">Refund</option>
+                <option value="cancellation">Cancellation</option>
+            </select>
+            <span class="filter-lbl">Status:</span>
+            <select id="f-status" onchange="applyPayFilter()">
+                <option value="all">All Statuses</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+                <option value="refunded">Refunded</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="active">Active</option>
+            </select>
+            <span class="filter-lbl">Category:</span>
+            <select id="f-cat" onchange="applyPayFilter()">
+                <option value="all">All Categories</option>
+            </select>
+            <div class="filter-sep"></div>
+            <span class="filter-lbl">From:</span>
+            <input type="date" id="f-from" onchange="applyPayFilter()">
+            <span class="filter-lbl">To:</span>
+            <input type="date" id="f-to" onchange="applyPayFilter()">
+            <button class="reset-btn" onclick="resetPayFilter()">✕ Reset</button>
+        </div>
+
+        <!-- Summary row for filtered results -->
+        <div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:1rem;" id="pay-summary-row">
+        </div>
+
+        <div class="table-card">
+            <div class="table-hd">
+                <span class="table-hd-title">Payment Records</span>
+                <span class="table-hd-meta" id="pay-count-lbl">0 records</span>
+            </div>
+
+            <!-- Payment Cards Grid -->
+            <div id="pay-cards-grid" class="pay-cards-grid"></div>
+
+            <div class="pagination" style="margin-top:16px;">
+                <span id="pay-page-info">—</span>
+                <div class="page-btns" id="pay-page-btns"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Detail Modal -->
+<div id="payDetailModal" class="pay-modal-backdrop" onclick="closePayModal(event)" style="display:none;">
+    <div class="pay-modal-box">
+        <button class="pay-modal-close" onclick="document.getElementById('payDetailModal').style.display='none'">✕</button>
+        <div id="payModalContent"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TAB 3 — SUBSCRIPTIONS
+════════════════════════════════════════════════════════════ -->
+<div id="tab-subscriptions" class="tab-pane">
+    <div class="page-body">
+
+        <!-- Plan distribution cards -->
+        <div class="plan-row">
+            <div class="plan-card pc-silver">
+                <span class="plan-icon">🥈</span>
+                <div class="plan-name">Silver</div>
+                <div class="plan-count" id="ps-silver">0</div>
+                <div class="plan-meta">Active providers</div>
+            </div>
+            <div class="plan-card pc-gold">
+                <span class="plan-icon">🥇</span>
+                <div class="plan-name">Gold</div>
+                <div class="plan-count" id="ps-gold">0</div>
+                <div class="plan-meta">Active providers</div>
+            </div>
+            <div class="plan-card pc-platinum">
+                <span class="plan-icon">💎</span>
+                <div class="plan-name">Platinum</div>
+                <div class="plan-count" id="ps-plat">0</div>
+                <div class="plan-meta">Active providers</div>
+            </div>
+        </div>
+
+        <!-- Subscription trend chart -->
+        <div class="chart-card" style="margin-bottom:1rem;">
+            <div class="chart-hd">Subscription Activity by Month</div>
+            <div class="chart-sub">Monthly signups / upgrades per plan tier (last 12 months)</div>
+            <div class="chart-wrap h280"><canvas id="subTrendChart"></canvas></div>
+        </div>
+
+        <!-- Subscription table -->
+        <div class="table-card">
+            <div class="table-hd">
+                <span class="table-hd-title">All Subscription Records</span>
+                <span class="table-hd-meta" id="sub-count-lbl">0 records</span>
+            </div>
+            <div style="padding:0.75rem 1.25rem;border-bottom:1px solid var(--border-color);display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+                <span class="filter-lbl">Filter:</span>
+                <select id="sub-plan-filter" onchange="renderSubTable()" style="padding:0.4rem 0.75rem;border:1.5px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);font-size:0.83rem;font-family:inherit;">
+                    <option value="all">All Plans</option>
+                    <option value="silver">Silver</option>
+                    <option value="gold">Gold</option>
+                    <option value="platinum">Platinum</option>
+                </select>
+                <select id="sub-status-filter" onchange="renderSubTable()" style="padding:0.4rem 0.75rem;border:1.5px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);font-size:0.83rem;font-family:inherit;">
+                    <option value="all">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="cancel_requested">Cancel Requested</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Provider</th>
+                            <th>Plan</th>
+                            <th>Status</th>
+                            <th>Started / Upgraded</th>
+                            <th>Renewal Date</th>
+                            <th>Amount</th>
+                            <th>Force Upgraded</th>
+                            <th>Assigned By</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sub-tbody">
+                        <tr><td colspan="8"><div class="empty-state"><div class="spinner"></div></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TAB 4 — CATEGORY EARNINGS
+════════════════════════════════════════════════════════════ -->
+<div id="tab-categories" class="tab-pane">
+    <div class="page-body">
+
+        <!-- Horizontal bar chart -->
+        <div class="chart-card" style="margin-bottom:1.25rem;">
+            <div class="chart-hd">Revenue by Category</div>
+            <div class="chart-sub">Total earnings per service category (sorted highest → lowest)</div>
+            <div class="chart-wrap h320"><canvas id="catBarChart"></canvas></div>
+        </div>
+
+        <!-- Weekly + Monthly per-category charts -->
+        <div class="chart-row cols-2" style="margin-bottom:1.25rem;">
+            <div class="chart-card">
+                <div class="chart-hd">Weekly — Category Comparison</div>
+                <div class="chart-sub">Last 7 days per category</div>
+                <div class="chart-wrap h280"><canvas id="catWeeklyChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-hd">Monthly — Category Comparison</div>
+                <div class="chart-sub">Last 6 months per category</div>
+                <div class="chart-wrap h280"><canvas id="catMonthlyChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Category cards -->
+        <div id="cat-cards" class="cat-grid">
+            <div class="empty-state"><div class="spinner"></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ COLLECTIONS & PAYOUTS TAB ═══════════════════ -->
+<div id="tab-collections" class="tab-pane">
+    <div class="page-body">
+
+        <!-- Flow banner -->
+        <div class="cp-flow-banner">
+            <div class="cp-flow-step">
+                <span class="cp-flow-step-icon">👤</span>
+                <div class="cp-flow-step-label">User</div>
+                <div class="cp-flow-step-name">Pays Advance</div>
+                <div class="cp-flow-note">~10% at booking</div>
+            </div>
+            <div class="cp-flow-arrow">→</div>
+            <div class="cp-flow-step">
+                <span class="cp-flow-step-icon">🏢</span>
+                <div class="cp-flow-step-label">Pro X</div>
+                <div class="cp-flow-step-name">Holds Funds</div>
+                <div class="cp-flow-note">Manual tracking</div>
+            </div>
+            <div class="cp-flow-arrow">→</div>
+            <div class="cp-flow-step">
+                <span class="cp-flow-step-icon">✅</span>
+                <div class="cp-flow-step-label">Service Done</div>
+                <div class="cp-flow-step-name">Verify &amp; Approve</div>
+                <div class="cp-flow-note">Booking = Completed</div>
+            </div>
+            <div class="cp-flow-arrow">→</div>
+            <div class="cp-flow-step">
+                <span class="cp-flow-step-icon">💸</span>
+                <div class="cp-flow-step-label">Provider</div>
+                <div class="cp-flow-step-name">Receives Balance</div>
+                <div class="cp-flow-note">~90% payout</div>
+            </div>
+        </div>
+
+        <!-- Summary stat cards -->
+        <div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:1.25rem;">
+            <div class="stat-card">
+                <div class="stat-icon">💳</div>
+                <div class="stat-label">Collected from Users</div>
+                <div class="stat-value" id="cp-total-collected">₹0</div>
+                <div class="stat-sub" id="cp-collected-count">0 advances received</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📤</div>
+                <div class="stat-label">Still Owed to Providers</div>
+                <div class="stat-value" id="cp-total-owed" style="color:var(--warning)">₹0</div>
+                <div class="stat-sub" id="cp-owed-count">0 pending payouts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔄</div>
+                <div class="stat-label">Refunds Pending</div>
+                <div class="stat-value" id="cp-refund-pending" style="color:var(--danger)">₹0</div>
+                <div class="stat-sub" id="cp-refund-count">0 refunds to process</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏦</div>
+                <div class="stat-label">Net Platform Retained</div>
+                <div class="stat-value" id="cp-net-retained" style="color:var(--success)">₹0</div>
+                <div class="stat-sub">Collected − Paid Out so far</div>
+            </div>
+        </div>
+
+        <!-- Attention banner (shown only if actions needed) -->
+        <div id="cp-alert-bar" class="cp-alert-bar" style="display:none;">
+            <span class="cp-alert-icon">⚠️</span>
+            <span class="cp-alert-text" id="cp-alert-text">Some bookings need your attention</span>
+        </div>
+
+        <!-- Filters -->
+        <div class="cp-filter-bar">
+            <span class="filter-lbl">Show</span>
+            <select id="cp-view-filter">
+                <option value="all">All Bookings</option>
+                <option value="needs_payout">Needs Payout (Completed, Unpaid)</option>
+                <option value="needs_refund">Needs Refund (Cancelled, Unrefunded)</option>
+                <option value="done">All Settled</option>
+                <option value="active">In Progress</option>
+            </select>
+            <div class="filter-sep"></div>
+            <input type="text" id="cp-search" placeholder="Search customer, provider, service, booking ID…" />
+            <span class="filter-lbl" id="cp-count-lbl" style="margin-left:auto;color:var(--text-secondary)">— records</span>
+        </div>
+
+        <!-- Card list -->
+        <div id="cp-card-list" class="tx-list">
+            <div class="empty-state"><div class="spinner"></div><p>Loading…</p></div>
+        </div>
+
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════════════════════════ -->
+<script>
+// ── Firebase ─────────────────────────────────────────────────
+const firebaseConfig = {
+    apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+    authDomain: "phototester555.firebaseapp.com",
+    projectId: "phototester555",
+    storageBucket: "phototester555.firebasestorage.app",
+    messagingSenderId: "953997763616",
+    appId: "1:953997763616:web:4ac177ad8e79c5f38b8845",
+    measurementId: "G-6VS0G0NQ7K"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+// ── State ─────────────────────────────────────────────────────
+let allBookings      = [];
+let allSubscriptions = [];
+let provMap          = {};   // uid → display name
+let payRecords       = [];   // derived from bookings + subscriptions
+let filteredPay      = [];
+let payPage          = 1;
+const PER_PAGE       = 25;
+
+// Chart instances
+const charts = {};
+
+// ── Auth ──────────────────────────────────────────────────────
+auth.onAuthStateChanged(async user => {
+    if (!user) { window.location.href = 'index.html'; return; }
+    try {
+        const snap = await db.collection('admin_users').doc(user.uid).get();
+        if (!snap.exists || !snap.data().isActive) {
+            await auth.signOut();
+            window.location.href = 'index.html';
+            return;
+        }
+    } catch (e) { console.warn('Admin check skipped:', e.message); }
+    initListeners();
+});
+
+// ── Helpers ───────────────────────────────────────────────────
+const INR = n => n === 0 ? '₹0' : '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+
+function parseTs(v) {
+    if (!v) return null;
+    if (typeof v.toDate === 'function') return v.toDate();
+    if (v instanceof Date) return v;
+    if (typeof v === 'number') return new Date(v);
+    if (v && v.seconds) return new Date(v.seconds * 1000);
+    if (typeof v === 'string') { const d = new Date(v); return isNaN(d) ? null : d; }
+    return null;
+}
+function docDate(d) {
+    return parseTs(d.createdAt || d.bookingDate || d.date || d.timestamp || d.startDate || d.tierAssignedDate);
+}
+function docAmount(d) {
+    return Number(
+        d.amount || d.totalAmount || d.price || d.bookingAmount || d.serviceAmount || 
+        d.cost || d.total || d.grandTotal || d.totalPrice || d.paidAmount || d.total_amount || 
+        d.estimatedSubtotal || (d.paymentStatus && d.paymentStatus.totalAmount) ||
+        (d.pricingSelection && d.pricingSelection.price) || 0
+    );
+}
+function docAdvance(d) {
+    return Number(
+        d.advanceAmount || d.advance || d.advancePaid || d.depositAmount || d.partialAmount || 
+        d.advancePayment || d.advancePay || d.paid_advance || d.advance_amount || 
+        (d.paymentStatus && (d.paymentStatus.advanceAmount || d.paymentStatus.advancePaidAmount)) || 0
+    );
+}
+function docCategory(d) { return (d.category || d.serviceCategory || d.primaryDomain || d.domain || d.serviceType || 'General').trim(); }
+function docUser(d)     { return d.userName || d.customerName || d.clientName || d.bookedByName || d.bookedBy || d.userNameDisplay || (d.user && d.user.name) || '—'; }
+function docProvider(d) {
+    const pid = d.providerId || d.providerUid || d.providerID;
+    const p = pid && provMap[pid];
+    return (p && p.name) || d.providerName || pid || '—';
+}
+function docProviderId(d) {
+    return d.providerId || d.providerUid || d.providerID || null;
+}
+function getProviderData(pid) {
+    return (pid && provMap[pid]) || null;
+}
+
+function docStatus(d) {
+    const s = d.status || d.state || d.bookingStatus || '';
+    if (typeof s === 'string') return s.toLowerCase();
+    if (s && typeof s.state === 'string') return s.state.toLowerCase();
+    if (s && typeof s.status === 'string') return s.status.toLowerCase();
+    
+    const rs = d.refundStatus;
+    if (typeof rs === 'string') return rs.toLowerCase();
+    if (rs && typeof rs.status === 'string') return rs.status.toLowerCase();
+    
+    return '';
+}
+
+const COMPLETED_STATUSES = ['completed', 'payment completed', 'payment_completed', 'paid', 'success', 'finished', 'done', 'settled', 'confirmed', 'refund-completed', 'refund-success', 'customer received', 'work accepted'];
+const CANCELLED_STATUSES = ['cancelled', 'canceled', 'cancelled_by_user', 'cancelled_by_provider', 'refunded', 'declined', 'failed', 'refund-pending', 'refund-processing', 'refund-completed', 'cancellation requested'];
+function isCompleted(d) { 
+    const s = docStatus(d); 
+    return COMPLETED_STATUSES.includes(s) || s.includes('payment completed') || s.includes('paid'); 
+}
+function isCancelled(d) { 
+    const s = docStatus(d); 
+    return CANCELLED_STATUSES.includes(s) || s.includes('cancel') || s.includes('refund'); 
+}
+
+const PLATFORM_COMMISSION_PCT = 0.10; // 10% commission
+
+
+function fmtDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+}
+function fmtDateTime(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function fmtDateShort(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+}
+
+const TYPE_LABELS = {
+    advance: 'Advance', balance: 'Balance', full: 'Full Pay',
+    subscription: 'Subscription', refund: 'Refund', cancellation: 'Cancellation'
+};
+const TYPE_COLORS = {
+    advance:'#f59e0b', balance:'#3b82f6', full:'#10b981',
+    subscription:'#a855f7', refund:'#ef4444', cancellation:'#6b7280'
+};
+
+// ── Firestore listeners ────────────────────────────────────────
+function initListeners() {
+db.collection('providers').onSnapshot(snap => {
+    provMap = {};
+    snap.forEach(d => {
+        const data = d.data();
+        const payout = (data.payout && data.payout.india) || data.payout || {};
+        provMap[d.id] = {
+            name: data.username || data.fullName ||
+                  (data.identity && data.identity.fullName) || d.id,
+            email: data.email || (data.identity && data.identity.email) || '—',
+            phone: data.phone || (data.profile && data.profile.phone) || '—',
+            acctName:   payout.acctName   || '—',
+            acctNumber: payout.acctNumber || '—',
+            bankName:   payout.bankName   || '—',
+            ifsc:       payout.ifsc       || '—',
+            upi:        payout.upi        || '—',
+            currency:   payout.payoutCurrency || 'INR',
+        };
+    });
+    reprocess();
+}, e => console.error('Providers:', e));
+
+    db.collection('bookings').onSnapshot(snap => {
+        allBookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        reprocess();
+    }, e => console.error('Bookings:', e));
+
+    db.collection('subscriptions').onSnapshot(snap => {
+        allSubscriptions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        reprocess();
+    }, e => console.error('Subscriptions:', e));
+}
+
+function reprocess() {
+    payRecords = buildPayRecords();
+    renderAll();
+}
+
+function refreshAll() {
+    renderAll();
+    showToast('Data refreshed', 'success');
+}
+
+// ── Build payment records ─────────────────────────────────────
+function buildPayRecords() {
+    const recs = [];
+
+    allBookings.forEach(b => {
+        const amount  = docAmount(b);
+        const advance = docAdvance(b);
+        const date    = docDate(b);
+        const cat     = docCategory(b);
+        const user    = docUser(b);
+        const prov    = docProvider(b);
+        const provId = docProviderId(b);
+
+        const status  = docStatus(b);
+
+        // 1. Advance Payment
+        if (advance > 0) {
+                       recs.push({ id:`${b.id}-adv`, bookingId:b.id, type:'advance',
+                amount:advance, date, category:cat, user, provider:prov,
+                providerId:provId, status:'paid', note:'Advance payment',
+                payoutStatus: b.payoutStatus || 'pending' });
+
+        }
+
+        // 2. Completion / Balance Payment
+        if (isCompleted(b)) {
+            const remaining = amount - advance;
+            if (remaining > 0) {
+                recs.push({ id:`${b.id}-bal`, bookingId:b.id, type:'balance',
+                    amount:remaining, date: parseTs(b.completedAt || b.updatedAt) || date,
+                    category:cat, user, provider:prov, providerId:provId,
+                    status:'paid', note:'Balance on completion',
+                    payoutStatus: b.payoutStatus || 'pending' });
+
+            } else if (amount > 0 && advance === 0) {
+                recs.push({ id:`${b.id}-full`, bookingId:b.id, type:'full',
+                    amount, date, category:cat, user, provider:prov,
+                    providerId:provId, status:'paid', note:'Full payment',
+                    payoutStatus: b.payoutStatus || 'pending' });
+
+            }
+        }
+
+        // 3. Refunds and Cancellations
+        const cr = b.cancellationRequest || b.cr || {};
+        const rs = b.refundStatus || b.refund || {};
+        const isRef = b.refunded || b.isRefunded || b.refundedStatus === 'refunded' || b.refundStatus === 'refunded' || 
+                      docStatus(b).includes('refund') || (typeof rs === 'string' && rs.includes('refund'));
+        
+        const rAmt = Number(
+            b.refundAmount || b.refundedAmount || b.refundedAmt || b.amountRefunded || 
+            (typeof rs === 'object' ? rs.amount : 0) ||
+            (b.refundStatus && typeof b.refundStatus === 'object' ? b.refundStatus.amount : 0) ||
+            cr.refundAmount || cr.finalRefundAmount || cr.approvedRefundAmount || 
+            b.adminRefundAmount || (b.admin && b.admin.refundAmount) ||
+            b.refundValue || (isRef ? (advance || amount) : 0)
+        );
+
+        if (isCancelled(b)) {
+            const cancelDate = parseTs(b.cancelledAt || b.updatedAt) || date;
+            recs.push({ id:`${b.id}-cancel`, bookingId:b.id, type:'cancellation',
+                amount: amount || advance, date:cancelDate, category:cat, user, provider:prov,
+                providerId:provId, status:'cancelled',
+                note: b.cancelReason || b.cancellationReason || 'Booking cancelled' });
+
+
+            if (rAmt > 0) {
+                recs.push({ id:`${b.id}-ref`, bookingId:b.id, type:'refund',
+                    amount:rAmt, date: parseTs(b.refundedAt || b.cancelledAt || b.updatedAt) || cancelDate,
+                    category:cat, user, provider:prov, providerId:provId,
+                    status:'refunded', note:'Booking refunded',
+                    refundStatus: b.adminRefundStatus || 'pending' });
+
+            }
+        } else if (isRef && rAmt > 0) {
+            recs.push({ id:`${b.id}-ref2`, bookingId:b.id, type:'refund',
+                amount:rAmt, date: parseTs(b.refundedAt || b.updatedAt) || date,
+                category:cat, user, provider:prov, providerId:provId,
+                status:'refunded', note: b.refundReason || 'Refund issued',
+                refundStatus: b.adminRefundStatus || 'pending' });
+
+        }
+    });
+
+    // Subscription records
+    allSubscriptions.forEach(s => {
+        const date = docDate(s);
+        const prov = provMap[s.id] || s.providerName || s.id || '—';
+        const plan = (s.plan || 'silver').toLowerCase();
+        const subAmt = Number(s.amount || s.price || s.planAmount || 0);
+        const subSt  = (s.status || 'active').toLowerCase();
+        if (date) {
+            recs.push({ id:`sub-${s.id}`, bookingId:null, type:'subscription',
+                amount:subAmt, date, category:'Subscription', user:'—', provider:prov,
+                status:subSt, note:`${plan.charAt(0).toUpperCase()+plan.slice(1)} Plan` });
+        }
+    });
+
+    return recs.sort((a, b) => (b.date || 0) - (a.date || 0));
+}
+
+// ── Render all tabs ───────────────────────────────────────────
+function renderAll() {
+    renderOverview();
+    applyPayFilter();
+    renderSubSection();
+    renderCatSection();
+    renderCollections();
+}
+
+// ── Collections & Payouts ─────────────────────────────────────
+let _cpFiltersWired = false;
+
+function renderCollections() {
+    if (!_cpFiltersWired) {
+        _cpFiltersWired = true;
+        const vf = document.getElementById('cp-view-filter');
+        const sr = document.getElementById('cp-search');
+        if (vf) vf.addEventListener('change', renderCollections);
+        if (sr) sr.addEventListener('input', renderCollections);
+    }
+
+    const viewFilter = document.getElementById('cp-view-filter')?.value || 'all';
+    const search     = (document.getElementById('cp-search')?.value || '').toLowerCase().trim();
+
+    let totalCollected = 0;
+    let totalOwedPending = 0;
+    let totalPaidOut = 0;
+    let totalRefundPending = 0;
+    let refundPendingCount = 0;
+    let payoutPendingCount = 0;
+    let collectedCount = 0;
+
+    const cards = [];
+
+    allBookings.forEach(b => {
+        const fullAmt   = docAmount(b);
+        if (fullAmt <= 0) return;
+
+        const rawAdv    = docAdvance(b);
+        const advAmt    = rawAdv > 0 ? rawAdv : Math.round(fullAmt * 0.10);
+        const owedAmt   = fullAmt - advAmt;
+        const date      = docDate(b);
+        const user      = esc(docUser(b));
+        const provider  = esc(docProvider(b));
+        const service   = esc(b.serviceName || b.title || b.type || '—');
+        const bookingId = b.bookingId || b.id || '—';
+        const bStatus   = docStatus(b);
+
+        // Was advance collected from user?
+        const isCollected =
+            b.paymentConfirmed === true ||
+            (b.paymentStatus && b.paymentStatus.advancePayment === true) ||
+            b.advancePaymentDone === true;
+
+        // Has provider been paid out?
+        const isPaidOut =
+            (b.paymentStatus && b.paymentStatus.finalPayment === true) ||
+            b.finalPaymentDone === true;
+
+        const isCompletedBooking = isCompleted(b);
+        const isCancelledBooking = isCancelled(b);
+
+        // Refund details
+        const rs = b.refundStatus || {};
+        const isRefunded =
+            b.refunded === true || b.isRefunded === true ||
+            (typeof rs === 'string' && rs.includes('refund')) ||
+            (typeof rs === 'object' && rs.status && rs.status.includes('refund'));
+        const refundAmt = Number(
+            b.refundAmount || b.refundedAmount ||
+            (typeof rs === 'object' ? rs.amount : 0) ||
+            (isCancelledBooking && isCollected ? advAmt : 0)
+        );
+        const needsRefund = isCancelledBooking && isCollected && !isRefunded;
+        const needsPayout = isCompletedBooking && !isCancelledBooking && !isPaidOut;
+
+        // Accumulate totals
+        if (isCollected) { totalCollected += advAmt; collectedCount++; }
+        if (isPaidOut)     totalPaidOut += owedAmt;
+        if (needsPayout) { totalOwedPending += owedAmt; payoutPendingCount++; }
+        if (needsRefund) { totalRefundPending += refundAmt || advAmt; refundPendingCount++; }
+
+        cards.push({
+            fullAmt, advAmt, owedAmt, refundAmt,
+            date, user, provider, service, bookingId, bStatus,
+            isCollected, isPaidOut, isRefunded, needsRefund, needsPayout,
+            isCompletedBooking, isCancelledBooking
+        });
+    });
+
+    // Sort newest first
+    cards.sort((a, b) => (b.date || 0) - (a.date || 0));
+
+    // Summary cards
+    document.getElementById('cp-total-collected').textContent  = INR(totalCollected);
+    document.getElementById('cp-collected-count').textContent  = collectedCount + ' advances received';
+    document.getElementById('cp-total-owed').textContent       = INR(totalOwedPending);
+    document.getElementById('cp-owed-count').textContent       = payoutPendingCount + ' pending payouts';
+    document.getElementById('cp-refund-pending').textContent   = INR(totalRefundPending);
+    document.getElementById('cp-refund-count').textContent     = refundPendingCount + ' refunds to process';
+    document.getElementById('cp-net-retained').textContent     = INR(Math.max(0, totalCollected - totalPaidOut));
+
+    // Attention banner
+    const alertBar  = document.getElementById('cp-alert-bar');
+    const alertText = document.getElementById('cp-alert-text');
+    const alertItems = [];
+    if (payoutPendingCount)  alertItems.push(`${payoutPendingCount} completed booking${payoutPendingCount > 1 ? 's' : ''} need provider payout`);
+    if (refundPendingCount)  alertItems.push(`${refundPendingCount} cancellation${refundPendingCount > 1 ? 's' : ''} need refund to user`);
+    if (alertItems.length) {
+        alertBar.style.display = 'flex';
+        alertText.textContent  = alertItems.join('  ·  ');
+    } else {
+        alertBar.style.display = 'none';
+    }
+
+    // Apply filter
+    const filtered = cards.filter(c => {
+        if (viewFilter === 'needs_payout' && !c.needsPayout)                            return false;
+        if (viewFilter === 'needs_refund' && !c.needsRefund)                            return false;
+        if (viewFilter === 'done'         && (c.needsPayout || c.needsRefund))          return false;
+        if (viewFilter === 'active'       && (c.isCompletedBooking || c.isCancelledBooking)) return false;
+        if (search) {
+            const hay = [c.user, c.provider, c.service, String(c.bookingId)].join(' ').toLowerCase();
+            if (!hay.includes(search)) return false;
+        }
+        return true;
+    });
+
+    document.getElementById('cp-count-lbl').textContent = filtered.length + ' record' + (filtered.length !== 1 ? 's' : '');
+
+    const list = document.getElementById('cp-card-list');
+    if (filtered.length === 0) {
+        list.innerHTML = `<div class="empty-state"><p>No records match the current filter.</p></div>`;
+        return;
+    }
+
+    list.innerHTML = filtered.map(c => {
+        const sid = String(c.bookingId).slice(-8).toUpperCase();
+
+        // Booking status badge class and label
+        let bsClass = 'tx-bs-default', bsLabel = c.bStatus || 'Pending';
+        if (c.isCancelledBooking)      { bsClass = 'tx-bs-cancelled'; bsLabel = 'Cancelled'; }
+        else if (c.isCompletedBooking) { bsClass = 'tx-bs-completed'; bsLabel = 'Completed'; }
+        else if (c.bStatus === 'accepted' || c.bStatus === 'confirmed') { bsClass = 'tx-bs-active'; bsLabel = 'Accepted'; }
+        else if (c.bStatus)            { bsClass = 'tx-bs-active'; bsLabel = c.bStatus.charAt(0).toUpperCase() + c.bStatus.slice(1); }
+
+        // Card border class
+        let cardClass = 'tx-active';
+        if (c.needsPayout || c.needsRefund) cardClass = 'tx-needs-action';
+        else if (c.isCancelledBooking && c.isRefunded) cardClass = 'tx-done';
+        else if (c.isCompletedBooking && c.isPaidOut)  cardClass = 'tx-done';
+        else if (c.isCancelledBooking)                 cardClass = 'tx-cancelled';
+
+        // Left block: money received from user
+        const leftLabel = c.isCancelledBooking ? '💳 Advance Collected' : '💳 Received from User';
+        const leftAmt   = INR(c.advAmt);
+        const leftPct   = `${Math.round((c.advAmt / c.fullAmt) * 100)}% of ${INR(c.fullAmt)}`;
+        let leftStatus;
+        if (c.isCollected)
+            leftStatus = `<span class="tx-money-status mst-collected">✓ Collected</span>`;
+        else
+            leftStatus = `<span class="tx-money-status mst-pending">⏳ Not Yet Received</span>`;
+
+        // Right block: payout to provider OR refund to user
+        let rightLabel, rightAmt, rightPct, rightStatus;
+        if (c.isCancelledBooking) {
+            const rAmt = c.refundAmt || c.advAmt;
+            rightLabel  = '🔄 Refund to User';
+            rightAmt    = INR(rAmt);
+            rightPct    = `Return of advance paid`;
+            if (c.isRefunded)
+                rightStatus = `<span class="tx-money-status mst-refunded">✓ Refunded</span>`;
+            else if (c.isCollected)
+                rightStatus = `<span class="tx-money-status mst-refpending">⚠️ Refund Pending</span>`;
+            else
+                rightStatus = `<span class="tx-money-status mst-notdue">— Nothing Collected</span>`;
+        } else {
+            rightLabel  = '📤 Pay to Provider';
+            rightAmt    = INR(c.owedAmt);
+            rightPct    = `${Math.round((c.owedAmt / c.fullAmt) * 100)}% of ${INR(c.fullAmt)}`;
+            if (c.isPaidOut)
+                rightStatus = `<span class="tx-money-status mst-paidout">✓ Paid Out</span>`;
+            else if (c.isCompletedBooking)
+                rightStatus = `<span class="tx-money-status mst-action">⚠️ Pay Now</span>`;
+            else
+                rightStatus = `<span class="tx-money-status mst-notdue">— Service Not Done</span>`;
+        }
+
+        return `
+        <div class="tx-card ${cardClass}">
+            <div class="tx-top">
+                <span class="tx-bid">#${sid}</span>
+                <span class="tx-date-lbl">${fmtDate(c.date)}</span>
+                <span class="tx-bstatus ${bsClass}">${bsLabel}</span>
+            </div>
+            <div class="tx-parties">
+                <span class="tx-customer">${c.user}</span>
+                <span class="tx-arrow-sm">→</span>
+                <span class="tx-provname">${c.provider}</span>
+                <span class="tx-svc" title="${c.service}">${c.service}</span>
+            </div>
+            <div class="tx-money-row">
+                <div class="tx-money-block">
+                    <div class="tx-money-block-label">${leftLabel}</div>
+                    <div class="tx-money-amt">${leftAmt}</div>
+                    <div class="tx-money-pct">${leftPct}</div>
+                    ${leftStatus}
+                </div>
+                <div class="tx-money-block">
+                    <div class="tx-money-block-label">${rightLabel}</div>
+                    <div class="tx-money-amt">${rightAmt}</div>
+                    <div class="tx-money-pct">${rightPct}</div>
+                    ${rightStatus}
+                </div>
+            </div>
+            <div class="tx-footer">
+                <span>Full Booking Value: <strong>${INR(c.fullAmt)}</strong></span>
+                ${c.isCompletedBooking && c.isPaidOut ? `<span style="color:var(--success)">✓ Fully settled</span>` : ''}
+                ${c.isCancelledBooking && c.isRefunded ? `<span style="color:var(--success)">✓ Refund processed</span>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OVERVIEW TAB
+// ═══════════════════════════════════════════════════════════════
+function renderOverview() {
+    const earned = payRecords.filter(r =>
+        r.type !== 'refund' && r.type !== 'cancellation' && r.status !== 'cancelled'
+    ).reduce((s, r) => s + r.amount, 0);
+
+    const refundTotal  = payRecords.filter(r => r.type === 'refund').reduce((s,r) => s+r.amount, 0);
+    const refundCount  = payRecords.filter(r => r.type === 'refund').length;
+    const netRevenue   = earned - refundTotal;
+    const commAmt      = netRevenue * PLATFORM_COMMISSION_PCT;
+
+    const completedBk  = allBookings.filter(b => isCompleted(b)).length;
+    const cancelCount  = allBookings.filter(b => isCancelled(b)).length;
+    const cancelAtRisk = payRecords.filter(r => r.type === 'cancellation').reduce((s,r) => s+r.amount, 0);
+    const activeSubs   = allSubscriptions.filter(s => { const st = (s.status||'').toLowerCase(); return st === 'active' || !st; });
+    const goldCt       = activeSubs.filter(s => (s.plan||'').toLowerCase() === 'gold').length;
+    const platCt       = activeSubs.filter(s => (s.plan||'').toLowerCase() === 'platinum').length;
+    const avgVal       = completedBk > 0 ? earned / completedBk : 0;
+
+    const now = new Date();
+    const curMonth = now.getMonth();
+    const curYear = now.getFullYear();
+    const monthName = now.toLocaleString('default', { month: 'long' });
+
+    const monthRev = payRecords.filter(r => 
+        r.type !== 'refund' && r.type !== 'cancellation' && r.status !== 'cancelled' &&
+        r.date && r.date.getMonth() === curMonth && r.date.getFullYear() === curYear
+    ).reduce((s, r) => s + r.amount, 0);
+
+    const yearRev = payRecords.filter(r => 
+        r.type !== 'refund' && r.type !== 'cancellation' && r.status !== 'cancelled' &&
+        r.date && r.date.getFullYear() === curYear
+    ).reduce((s, r) => s + r.amount, 0);
+
+    document.getElementById('s-net-rev').textContent    = INR(netRevenue);
+    document.getElementById('s-net-sub').textContent    = `Comm: ${INR(commAmt)} (15%)`;
+    document.getElementById('s-book-rev').textContent   = INR(earned);
+    document.getElementById('s-book-sub').textContent   = `${completedBk} completed bookings`;
+    document.getElementById('s-refunds').textContent    = INR(refundTotal);
+    document.getElementById('s-refunds-sub').textContent= `${refundCount} refund records`;
+    document.getElementById('s-month-rev').textContent  = INR(monthRev);
+    document.getElementById('s-month-sub').textContent  = `Revenue in ${monthName}`;
+    document.getElementById('s-year-rev').textContent   = INR(yearRev);
+    document.getElementById('s-year-sub').textContent   = `Total in ${curYear}`;
+    document.getElementById('s-subs').textContent       = activeSubs.length;
+    document.getElementById('s-subs-sub').textContent   = `${goldCt} Gold · ${platCt} Platinum`;
+    document.getElementById('s-cancel').textContent     = cancelCount;
+    document.getElementById('s-cancel-sub').textContent = `${INR(cancelAtRisk)} at risk`;
+    document.getElementById('s-avg').textContent        = INR(avgVal);
+    document.getElementById('s-avg-sub').textContent    = 'Per completed booking';
+
+    renderWeeklyChart();
+    renderMonthlyChart();
+    renderTypeChart();
+    renderCatDonut();
+    renderRecentList();
+    renderTopProviders();
+}
+
+function renderTopProviders() {
+    const pMap = {};
+    payRecords.filter(r => r.type !== 'refund' && r.type !== 'cancellation' && r.status !== 'cancelled' && r.bookingId)
+        .forEach(r => {
+            const pid = r.providerId || r.provider;
+            if (!pMap[pid]) pMap[pid] = { name: r.provider, revenue: 0, count: 0 };
+            pMap[pid].revenue += r.amount;
+            pMap[pid].count++;
+        });
+
+    const sorted = Object.values(pMap).sort((a,b) => b.revenue - a.revenue).slice(0, 5);
+    const el = document.getElementById('top-providers-list');
+    if (!el) return;
+
+    if (!sorted.length) {
+        el.innerHTML = '<div class="empty-state"><p>No provider data yet.</p></div>';
+        return;
+    }
+
+    el.innerHTML = sorted.map((p, i) => `
+        <div class="top-prov-item">
+            <div class="tp-rank">${i+1}</div>
+            <div class="tp-info">
+                <div class="tp-name">${esc(p.name)}</div>
+                <div class="tp-meta">${p.count} bookings</div>
+            </div>
+            <div class="tp-revenue">${INR(p.revenue)}</div>
+        </div>
+    `).join('');
+}
+
+// ── Weekly bar chart ──────────────────────────────────────────
+function renderWeeklyChart() {
+    const labels = [], data = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+        const day  = new Date(now); day.setDate(day.getDate() - i); day.setHours(0,0,0,0);
+        const next = new Date(day); next.setDate(next.getDate() + 1);
+        labels.push(day.toLocaleDateString('en-IN', { weekday:'short', day:'numeric' }));
+        data.push(payRecords.filter(r =>
+            r.date >= day && r.date < next &&
+            r.type !== 'refund' && r.type !== 'cancellation' && r.status !== 'cancelled'
+        ).reduce((s,r) => s+r.amount, 0));
+    }
+    buildChart('weeklyChart', 'bar', labels, [{
+        label:'Revenue (₹)', data,
+        backgroundColor:'rgba(102,126,234,0.7)', borderColor:'#667eea',
+        borderWidth:2, borderRadius:8
+    }], { prefix:'₹' });
+}
+
+// ── Monthly line chart ────────────────────────────────────────
+function renderMonthlyChart() {
+    const labels = [], data = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+        const m    = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const next = new Date(m.getFullYear(), m.getMonth() + 1, 1);
+        labels.push(m.toLocaleDateString('en-IN', { month:'short', year:'2-digit' }));
+        data.push(payRecords.filter(r =>
+            r.date >= m && r.date < next &&
+            r.type !== 'refund' && r.type !== 'cancellation' && r.status !== 'cancelled'
+        ).reduce((s,r) => s+r.amount, 0));
+    }
+    buildChart('monthlyChart', 'line', labels, [{
+        label:'Revenue (₹)', data,
+        fill:true, backgroundColor:'rgba(102,126,234,0.1)',
+        borderColor:'#667eea', borderWidth:2.5,
+        pointBackgroundColor:'#667eea', pointRadius:4, tension:0.4
+    }], { prefix:'₹' });
+}
+
+// ── Payment type doughnut ─────────────────────────────────────
+function renderTypeChart() {
+    const types = ['advance','balance','full','subscription','refund','cancellation'];
+    const data  = types.map(t => payRecords.filter(r => r.type === t).reduce((s,r) => s+r.amount, 0));
+    const labels = types.map(t => TYPE_LABELS[t]);
+    buildDoughnut('typeChart', labels, data, Object.values(TYPE_COLORS));
+}
+
+// ── Category doughnut ─────────────────────────────────────────
+function renderCatDonut() {
+    const map = {};
+    payRecords.filter(r => r.type !== 'refund' && r.type !== 'cancellation' && r.status !== 'cancelled')
+        .forEach(r => { map[r.category] = (map[r.category] || 0) + r.amount; });
+    const sorted  = Object.entries(map).sort((a,b) => b[1]-a[1]).slice(0,8);
+    const palette = ['#667eea','#f59e0b','#10b981','#ef4444','#a855f7','#3b82f6','#f97316','#14b8a6'];
+    buildDoughnut('catDonutChart', sorted.map(e=>e[0]), sorted.map(e=>e[1]), palette);
+}
+
+// ── Recent transactions list ──────────────────────────────────
+function renderRecentList() {
+    const el = document.getElementById('recent-list');
+    const recent = payRecords.slice(0, 12);
+    if (!recent.length) { el.innerHTML = '<div class="empty-state"><p>No transactions yet.</p></div>'; return; }
+    el.innerHTML = recent.map(r => {
+        const isNeg = r.type === 'refund';
+        return `
+        <div class="recent-item">
+            <div class="ri-left">
+                <div class="ri-dot" style="background:${TYPE_COLORS[r.type]||'#94a3b8'};"></div>
+                <div>
+                    <div class="ri-name">
+                        ${r.user !== '—' ? r.user : r.provider}
+                        <span style="font-weight:400;color:var(--text-tertiary);font-size:0.72rem;margin-left:4px;">via ${r.category}</span>
+                    </div>
+                    <div class="ri-meta">${fmtDate(r.date)} · ${TYPE_LABELS[r.type]||r.type}${r.bookingId ? ' · #'+r.bookingId.slice(0,8)+'…' : ''}</div>
+                </div>
+            </div>
+            <div class="ri-amount ${isNeg ? 'amount-neg' : 'amount-pos'}">${isNeg ? '−' : '+'}${INR(r.amount)}</div>
+        </div>`;
+    }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PAYMENTS LOG TAB
+// ═══════════════════════════════════════════════════════════════
+function applyPayFilter() {
+    const search  = (document.getElementById('f-search').value || '').toLowerCase();
+    const type    = document.getElementById('f-type').value;
+    const status  = document.getElementById('f-status').value;
+    const cat     = document.getElementById('f-cat').value;
+    const fromStr = document.getElementById('f-from').value;
+    const toStr   = document.getElementById('f-to').value;
+    const from    = fromStr ? new Date(fromStr) : null;
+    const to      = toStr   ? new Date(toStr + 'T23:59:59') : null;
+
+    filteredPay = payRecords.filter(r => {
+        if (type   !== 'all' && r.type     !== type)   return false;
+        if (status !== 'all' && r.status   !== status)  return false;
+        if (cat    !== 'all' && r.category !== cat)     return false;
+        if (from && r.date && r.date < from) return false;
+        if (to   && r.date && r.date > to)   return false;
+        if (search) {
+            const hay = `${r.user} ${r.provider} ${r.bookingId||''} ${r.note} ${r.category}`.toLowerCase();
+            if (!hay.includes(search)) return false;
+        }
+        return true;
+    });
+
+    payPage = 1;
+    populateCatDropdown();
+    renderPaySummary();
+    renderPayTable();
+}
+
+function resetPayFilter() {
+    ['f-search','f-from','f-to'].forEach(id => document.getElementById(id).value = '');
+    ['f-type','f-status','f-cat'].forEach(id => document.getElementById(id).value = 'all');
+    applyPayFilter();
+}
+
+function populateCatDropdown() {
+    const cats   = [...new Set(payRecords.map(r => r.category))].sort();
+    const sel    = document.getElementById('f-cat');
+    const cur    = sel.value;
+    sel.innerHTML = '<option value="all">All Categories</option>' +
+        cats.map(c => `<option value="${c}"${c===cur?' selected':''}>${c}</option>`).join('');
+}
+
+function renderPaySummary() {
+    const totalAmt = filteredPay.filter(r => r.type !== 'refund' && r.type !== 'cancellation' && r.status !== 'cancelled').reduce((s,r) => s+r.amount, 0);
+    const refAmt   = filteredPay.filter(r => r.type === 'refund').reduce((s,r) => s+r.amount, 0);
+    const netAmt   = totalAmt - refAmt;
+    const el = document.getElementById('pay-summary-row');
+    el.innerHTML = `
+        <div class="stat-card"><div class="stat-label">Matched Records</div><div class="stat-value">${filteredPay.length}</div></div>
+        <div class="stat-card"><div class="stat-label">Gross Amount</div><div class="stat-value">${INR(totalAmt)}</div></div>
+        <div class="stat-card"><div class="stat-label">Refunds</div><div class="stat-value" style="color:var(--danger);">${INR(refAmt)}</div></div>
+        <div class="stat-card"><div class="stat-label">Net Amount</div><div class="stat-value" style="color:var(--success);">${INR(netAmt)}</div></div>
+    `;
+}
+
+function renderPayTable() {
+    const total = filteredPay.length;
+    const start = (payPage - 1) * PER_PAGE;
+    const end   = Math.min(start + PER_PAGE, total);
+    const page  = filteredPay.slice(start, end);
+    document.getElementById('pay-count-lbl').textContent = `${total.toLocaleString()} records`;
+    document.getElementById('pay-page-info').textContent = total ? `Showing ${start+1}–${end} of ${total}` : 'No records';
+    const grid = document.getElementById('pay-cards-grid');
+    if (!page.length) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;padding:48px 24px;text-align:center;"><p>No payment records match.</p></div>`;
+        document.getElementById('pay-page-btns').innerHTML = '';
+        return;
+    }
+    grid.innerHTML = page.map(r => buildPayCard(r)).join('');
+    renderPagination(total);
+}
+
+function buildPayCard(r) {
+    const isRefund    = r.type === 'refund';
+    const isCancelled = r.type === 'cancellation' || r.status === 'cancelled';
+    const isSub       = r.type === 'subscription';
+    const totalAmt    = r.amount || 0;
+    const commission  = (isRefund || isCancelled) ? 0 : +(totalAmt * PLATFORM_COMMISSION_PCT).toFixed(2);
+    const providerAmt = (isRefund || isCancelled) ? 0 : +(totalAmt - commission).toFixed(2);
+
+    // Payout status: stored on the record itself via Firestore, default pending
+    const payoutDone  = r.payoutStatus === 'paid';
+    const refundDone  = r.refundStatus === 'paid';
+
+    const typeLabel = { advance:'Advance', balance:'Balance', full:'Full Payment',
+        subscription:'Subscription', refund:'Refund', cancellation:'Cancellation' }[r.type] || r.type;
+
+    // Card accent colour per type
+    const accentMap = {
+        advance:'#f59e0b', balance:'#3b82f6', full:'#10b981',
+        subscription:'#a855f7', refund:'#ef4444', cancellation:'#f97316'
+    };
+    const accent = accentMap[r.type] || '#6d45ff';
+
+    // Flow status pill
+    let flowPill = '';
+    if (isRefund) {
+        flowPill = refundDone
+            ? `<span class="pcard-flow-pill pill-done">✔ Refund Issued</span>`
+            : `<span class="pcard-flow-pill pill-pending">⏳ Refund Pending</span>`;
+    } else if (!isCancelled && !isSub) {
+        flowPill = payoutDone
+            ? `<span class="pcard-flow-pill pill-done">✔ Paid to Provider</span>`
+            : `<span class="pcard-flow-pill pill-pending">⏳ Payout Pending</span>`;
+    }
+
+    const amtColour = isRefund ? '#ef4444' : isCancelled ? '#f97316' : '#10b981';
+    const amtPrefix = isRefund ? '↩ −' : '+';
+    const shortId   = r.bookingId ? r.bookingId.slice(0,10)+'…' : '—';
+
+    return `
+    <div class="pay-card" style="--card-accent:${accent};"
+         onclick="openPayModal(this)" data-pay='${esc(JSON.stringify(r))}'>
+        <div class="pcard-accent-bar"></div>
+        <div class="pcard-top">
+            <div class="pcard-left">
+                <span class="pcard-type-label">${typeLabel}</span>
+                <span class="pcard-date">${r.date ? fmtDateTime(r.date) : '—'}</span>
+            </div>
+            <div class="pcard-amount" style="color:${amtColour};">${amtPrefix}${INR(totalAmt)}</div>
+        </div>
+        <div class="pcard-flow">
+            <div class="pcard-person">
+                <div class="pcard-person-icon">👤</div>
+                <div>
+                    <div class="pcard-person-role">Customer</div>
+                    <div class="pcard-person-name">${esc(r.user || '—')}</div>
+                </div>
+            </div>
+            <div class="pcard-flow-arrow">
+                <span>→</span><span class="pcard-flow-label">via Admin</span><span>→</span>
+            </div>
+            <div class="pcard-person">
+                <div class="pcard-person-icon">🔧</div>
+                <div>
+                    <div class="pcard-person-role">Provider</div>
+                    <div class="pcard-person-name">${esc(r.provider || '—')}</div>
+                </div>
+            </div>
+        </div>
+        ${(!isRefund && !isCancelled && !isSub) ? `
+        <div class="pcard-split-bar">
+            <div class="pcard-split-item split-platform">💼 Pro X ${(PLATFORM_COMMISSION_PCT*100)|0}% — ${INR(commission)}</div>
+            <div class="pcard-split-item split-provider">🏦 Provider ${(100-(PLATFORM_COMMISSION_PCT*100))|0}% — ${INR(providerAmt)}</div>
+        </div>` : ''}
+        <div class="pcard-footer">
+            <span class="pcard-booking-chip">🔖 ${shortId}</span>
+            <span class="pcard-cat-chip">📂 ${esc(r.category || '—')}</span>
+            ${flowPill}
+        </div>
+    </div>`;
+}
+
+window.openPayModal = function(cardEl) {
+    let r; try { r = JSON.parse(cardEl.getAttribute('data-pay')); } catch(e) { return; }
+    showPayModal(r);
+};
+
+function showPayModal(r) {
+    const isRefund    = r.type === 'refund';
+    const isCancelled = r.type === 'cancellation' || r.status === 'cancelled';
+    const isSub       = r.type === 'subscription';
+    const totalAmt    = r.amount || 0;
+    const commission  = (isRefund || isCancelled) ? 0 : +(totalAmt * PLATFORM_COMMISSION_PCT).toFixed(2);
+    const providerAmt = (isRefund || isCancelled) ? 0 : +(totalAmt - commission).toFixed(2);
+    const payoutDone  = r.payoutStatus === 'paid';
+    const refundDone  = r.refundStatus === 'paid';
+    const typeLabel   = { advance:'Advance', balance:'Balance Payment', full:'Full Payment',
+        subscription:'Subscription', refund:'Refund', cancellation:'Cancellation' }[r.type] || r.type;
+
+    // Provider bank details from provMap
+    const pd  = getProviderData(r.providerId);
+    const bankHtml = pd ? `
+        <div class="pmodal-section pmodal-bank">
+            <div class="pmodal-section-title">🏦 Provider Bank Account</div>
+            <div class="pmodal-row"><span>Account Name</span><span>${pd.acctName}</span></div>
+            <div class="pmodal-row"><span>Account Number</span><span class="mono">${pd.acctNumber}</span></div>
+            <div class="pmodal-row"><span>Bank Name</span><span>${pd.bankName}</span></div>
+            <div class="pmodal-row"><span>IFSC Code</span><span class="mono">${pd.ifsc}</span></div>
+            <div class="pmodal-row"><span>UPI ID</span><span class="mono">${pd.upi}</span></div>
+            <div class="pmodal-row"><span>Currency</span><span>${pd.currency}</span></div>
+        </div>` : '';
+
+    // Booking raw data for extra fields
+    const raw = allBookings.find(b => b.id === r.bookingId) || {};
+
+    // Action button
+    let actionBtn = '';
+    if (isRefund && !refundDone) {
+        actionBtn = `<button class="pmodal-action-btn btn-refund-pay" onclick="markRefundPaid('${r.id}','${r.bookingId}')">
+            ↩ Mark Refund as Issued to Customer
+        </button>`;
+    } else if (isRefund && refundDone) {
+        actionBtn = `<div class="pmodal-done-badge">✔ Refund Issued on ${r.refundPaidAt ? fmtDateTime(parseTs(r.refundPaidAt)) : 'N/A'}</div>`;
+    } else if (!isCancelled && !isSub && !payoutDone) {
+        actionBtn = `<button class="pmodal-action-btn btn-provider-pay" onclick="markProviderPaid('${r.id}','${r.bookingId}')">
+            🏦 Mark as Paid to Provider — ${INR(providerAmt)}
+        </button>`;
+    } else if (!isCancelled && !isSub && payoutDone) {
+        actionBtn = `<div class="pmodal-done-badge">✔ Paid to Provider on ${r.payoutPaidAt ? fmtDateTime(parseTs(r.payoutPaidAt)) : 'N/A'}</div>`;
+    }
+
+    // Flow status section
+    const flowStatus = (!isSub) ? `
+        <div class="pmodal-section pmodal-flow-status">
+            <div class="pmodal-section-title">📋 Payment Flow Status</div>
+            <div class="pmodal-flow-steps">
+                <div class="pflow-step done">
+                    <div class="pflow-dot"></div>
+                    <div class="pflow-text">
+                        <strong>Customer → Pro X Admin</strong>
+                        <span>${INR(totalAmt)} collected ✔</span>
+                    </div>
+                </div>
+                <div class="pflow-line"></div>
+                <div class="pflow-step ${isRefund ? '' : (payoutDone ? 'done' : 'pending')}">
+                    <div class="pflow-dot"></div>
+                    <div class="pflow-text">
+                        <strong>${isRefund ? 'Pro X Admin → Customer (Refund)' : 'Pro X Admin → Provider'}</strong>
+                        <span>${isRefund
+                            ? (refundDone ? `${INR(totalAmt)} refunded ✔` : `${INR(totalAmt)} — Pending`)
+                            : (payoutDone ? `${INR(providerAmt)} paid ✔` : `${INR(providerAmt)} — Awaiting admin action`)
+                        }</span>
+                    </div>
+                </div>
+            </div>
+        </div>` : '';
+
+    document.getElementById('payModalContent').innerHTML = `
+        <div class="pmodal-header">
+            <div>
+                <span class="pmodal-type-label">${typeLabel}</span>
+                <div class="pmodal-date">${r.date ? fmtDateTime(r.date) : '—'}</div>
+            </div>
+            <div class="pmodal-amount ${isRefund ? 'neg' : isCancelled ? 'cancel' : 'pos'}">${isRefund ? '↩ −' : '+'}${INR(totalAmt)}</div>
+        </div>
+
+        ${flowStatus}
+
+        ${actionBtn}
+
+        <div class="pmodal-section">
+            <div class="pmodal-section-title">👤 Customer</div>
+            <div class="pmodal-row"><span>Name</span><span>${esc(r.user || '—')}</span></div>
+            <div class="pmodal-row"><span>Email</span><span>${esc(raw.userEmail || raw.customerEmail || '—')}</span></div>
+            <div class="pmodal-row"><span>Phone</span><span>${esc(raw.userPhone || raw.customerPhone || '—')}</span></div>
+        </div>
+
+        <div class="pmodal-section">
+            <div class="pmodal-section-title">🔧 Provider</div>
+            <div class="pmodal-row"><span>Name</span><span>${esc(r.provider || '—')}</span></div>
+            ${pd ? `<div class="pmodal-row"><span>Email</span><span>${pd.email}</span></div>
+            <div class="pmodal-row"><span>Phone</span><span>${pd.phone}</span></div>` : ''}
+        </div>
+
+        ${bankHtml}
+
+        <div class="pmodal-section">
+            <div class="pmodal-section-title">📋 Booking</div>
+            <div class="pmodal-row"><span>Booking ID</span><span class="mono">${r.bookingId || '—'}</span></div>
+            <div class="pmodal-row"><span>Service</span><span>${esc(raw.serviceName || raw.serviceTitle || raw.bookingName || r.category || '—')}</span></div>
+            <div class="pmodal-row"><span>Category</span><span>${esc(r.category || '—')}</span></div>
+            <div class="pmodal-row"><span>Note</span><span>${esc(r.note || '—')}</span></div>
+        </div>
+
+        ${(!isRefund && !isCancelled && !isSub) ? `
+        <div class="pmodal-section pmodal-split">
+            <div class="pmodal-section-title">💰 Revenue Split</div>
+            <div class="pmodal-split-grid">
+                <div class="pmodal-split-card platform">
+                    <div>Pro X Commission (${(PLATFORM_COMMISSION_PCT*100)|0}%)</div>
+                    <div class="pmodal-split-val">${INR(commission)}</div>
+                </div>
+                <div class="pmodal-split-card provider">
+                    <div>Provider Payout (${(100-(PLATFORM_COMMISSION_PCT*100))|0}%)</div>
+                    <div class="pmodal-split-val">${INR(providerAmt)}</div>
+                </div>
+            </div>
+            <div class="pmodal-row" style="margin-top:8px;font-weight:700;"><span>Total Collected</span><span>${INR(totalAmt)}</span></div>
+        </div>` : ''}
+
+        ${isRefund ? `
+        <div class="pmodal-section pmodal-refund-box">
+            <div class="pmodal-section-title">↩ Refund Details</div>
+            <div class="pmodal-row"><span>Refund Amount</span><span style="color:#ef4444;font-weight:800;">${INR(totalAmt)}</span></div>
+            <div class="pmodal-row"><span>Reason</span><span>${esc(raw.cancelReason || raw.refundReason || r.note || '—')}</span></div>
+            <div class="pmodal-row"><span>Status</span><span>${refundDone ? '✔ Issued' : '⏳ Pending'}</span></div>
+        </div>` : ''}
+    `;
+    document.getElementById('payDetailModal').style.display = 'flex';
+}
+
+window.markProviderPaid = function(recId, bookingId) {
+    if (!confirm('Mark this payout as PAID to provider? This cannot be undone.')) return;
+    const now = firebase.firestore.FieldValue.serverTimestamp();
+    const updates = { payoutStatus:'paid', payoutPaidAt:now, payoutPaidByAdmin:true };
+    const p1 = bookingId ? db.collection('bookings').doc(bookingId).update(updates) : Promise.resolve();
+    p1.then(() => {
+        // update local record
+        const rec = payRecords.find(r => r.id === recId);
+        if (rec) { rec.payoutStatus = 'paid'; rec.payoutPaidAt = new Date(); }
+        showToast('Payout marked as paid ✔', 'success');
+        document.getElementById('payDetailModal').style.display = 'none';
+        renderPayTable();
+    }).catch(e => { console.error(e); showToast('Error updating payout', 'error'); });
+};
+
+window.markRefundPaid = function(recId, bookingId) {
+    if (!confirm('Mark this refund as ISSUED to customer? This cannot be undone.')) return;
+    const now = firebase.firestore.FieldValue.serverTimestamp();
+    const updates = { adminRefundStatus:'paid', adminRefundPaidAt:now };
+    const p1 = bookingId ? db.collection('bookings').doc(bookingId).update(updates) : Promise.resolve();
+    p1.then(() => {
+        const rec = payRecords.find(r => r.id === recId);
+        if (rec) { rec.refundStatus = 'paid'; rec.refundPaidAt = new Date(); }
+        showToast('Refund marked as issued ✔', 'success');
+        document.getElementById('payDetailModal').style.display = 'none';
+        renderPayTable();
+    }).catch(e => { console.error(e); showToast('Error updating refund', 'error'); });
+};
+
+window.closePayModal = function(e) {
+    if (e.target.id === 'payDetailModal') document.getElementById('payDetailModal').style.display = 'none';
+};
+
+function renderPagination(total) {
+    const pages = Math.ceil(total / PER_PAGE);
+    const el    = document.getElementById('pay-page-btns');
+    if (pages <= 1) { el.innerHTML = ''; return; }
+    let html = `<button class="page-btn" onclick="goPayPage(${payPage-1})" ${payPage<=1?'disabled':''}>‹</button>`;
+    const lo = Math.max(1, payPage-2), hi = Math.min(pages, payPage+2);
+    if (lo > 1) html += `<button class="page-btn" onclick="goPayPage(1)">1</button>${lo>2?'<span style="padding:0 3px;">…</span>':''}`;
+    for (let p = lo; p <= hi; p++) html += `<button class="page-btn ${p===payPage?'active':''}" onclick="goPayPage(${p})">${p}</button>`;
+    if (hi < pages) html += `${hi<pages-1?'<span style="padding:0 3px;">…</span>':''}<button class="page-btn" onclick="goPayPage(${pages})">${pages}</button>`;
+    html += `<button class="page-btn" onclick="goPayPage(${payPage+1})" ${payPage>=pages?'disabled':''}>›</button>`;
+    el.innerHTML = html;
+}
+
+window.goPayPage = function(p) {
+    const pages = Math.ceil(filteredPay.length / PER_PAGE);
+    if (p < 1 || p > pages) return;
+    payPage = p;
+    renderPayTable();
+    document.querySelector('#tab-payments .page-body').scrollIntoView({ behavior:'smooth', block:'start' });
+};
+
+
+// ═══════════════════════════════════════════════════════════════
+// SUBSCRIPTIONS TAB
+// ═══════════════════════════════════════════════════════════════
+function renderSubSection() {
+    const active = allSubscriptions.filter(s => {
+        const st = (s.status || '').toLowerCase();
+        return st === 'active' || !st;
+    });
+    document.getElementById('ps-silver').textContent = active.filter(s => (s.plan||'silver').toLowerCase()==='silver').length;
+    document.getElementById('ps-gold').textContent   = active.filter(s => (s.plan||'').toLowerCase()==='gold').length;
+    document.getElementById('ps-plat').textContent   = active.filter(s => (s.plan||'').toLowerCase()==='platinum').length;
+    renderSubTrendChart();
+    renderSubTable();
+}
+
+function renderSubTrendChart() {
+    const labels = [], silverD = [], goldD = [], platD = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+        const m    = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const next = new Date(m.getFullYear(), m.getMonth() + 1, 1);
+        labels.push(m.toLocaleDateString('en-IN', { month:'short', year:'2-digit' }));
+        const inMonth = s => { const d = docDate(s); return d && d >= m && d < next; };
+        silverD.push(allSubscriptions.filter(s => (s.plan||'silver').toLowerCase()==='silver' && inMonth(s)).length);
+        goldD.push(allSubscriptions.filter(s   => (s.plan||'').toLowerCase()==='gold'          && inMonth(s)).length);
+        platD.push(allSubscriptions.filter(s   => (s.plan||'').toLowerCase()==='platinum'       && inMonth(s)).length);
+    }
+    const isDark = document.documentElement.classList.contains('dark-mode');
+    const gc = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+    const tc = isDark ? '#94a3b8' : '#666';
+    const opts = {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+            legend:{ labels:{ color:tc, font:{size:11}, boxWidth:12 } },
+            tooltip:{ backgroundColor:isDark?'#1e293b':'#fff', borderColor:isDark?'#334155':'#e2e8f0', borderWidth:1, titleColor:isDark?'#f1f5f9':'#1a1a1a', bodyColor:tc }
+        },
+        scales:{
+            x:{ stacked:true, grid:{color:gc}, ticks:{color:tc,font:{size:11}} },
+            y:{ stacked:true, grid:{color:gc}, ticks:{color:tc,font:{size:11},stepSize:1} }
+        }
+    };
+    if (charts.subTrend) charts.subTrend.destroy();
+    charts.subTrend = new Chart(document.getElementById('subTrendChart'), {
+        type:'bar', data:{ labels, datasets:[
+            { label:'Silver',   data:silverD, backgroundColor:'#94a3b8', borderRadius:4 },
+            { label:'Gold',     data:goldD,   backgroundColor:'#f59e0b', borderRadius:4 },
+            { label:'Platinum', data:platD,   backgroundColor:'#a855f7', borderRadius:4 }
+        ]}, options:opts
+    });
+}
+
+window.renderSubTable = function() {
+    const planF   = document.getElementById('sub-plan-filter').value;
+    const statusF = document.getElementById('sub-status-filter').value;
+    let subs = allSubscriptions.slice();
+    if (planF   !== 'all') subs = subs.filter(s => (s.plan||'silver').toLowerCase() === planF);
+    if (statusF !== 'all') subs = subs.filter(s => (s.status||'active').toLowerCase() === statusF);
+    document.getElementById('sub-count-lbl').textContent = `${subs.length} records`;
+    const tbody = document.getElementById('sub-tbody');
+    if (!subs.length) {
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><p>No subscription records found.</p></div></td></tr>`;
+        return;
+    }
+    tbody.innerHTML = subs.map(s => {
+        const plan     = (s.plan || 'silver').toLowerCase();
+        const st       = (s.status || 'active').toLowerCase();
+        const stClass  = st === 'active' ? 's-active' : st === 'cancel_requested' ? 's-pending' : 's-cancelled';
+        const stLabel  = st === 'cancel_requested' ? 'Cancel Req.' : st.charAt(0).toUpperCase()+st.slice(1);
+        const prov     = provMap[s.id] || s.providerName || s.id || '—';
+        const assignee = s.tierAssignedByName || s.tierAssignedBy || '—';
+        const forced   = s.forcedUpgrade ? `<span style="color:var(--warning);">⚠️ Yes</span>` : '—';
+        return `
+        <tr>
+            <td>${esc(prov)}</td>
+            <td><span class="badge tier-${plan}">${plan.charAt(0).toUpperCase()+plan.slice(1)}</span></td>
+            <td><span class="badge ${stClass}">${stLabel}</span></td>
+            <td>${fmtDate(docDate(s))}</td>
+            <td>${fmtDate(parseTs(s.renewalDate || s.nextRenewal))}</td>
+            <td>${(s.amount||s.price||s.planAmount) ? INR(s.amount||s.price||s.planAmount) : '—'}</td>
+            <td>${forced}</td>
+            <td style="color:var(--text-secondary);">${esc(assignee)}</td>
+        </tr>`;
+    }).join('');
+};
+
+// ═══════════════════════════════════════════════════════════════
+// CATEGORY EARNINGS TAB
+// ═══════════════════════════════════════════════════════════════
+function renderCatSection() {
+    const map = buildCatMap();
+    const sorted  = Object.entries(map).sort((a,b) => b[1].revenue - a[1].revenue);
+    const palette = ['#667eea','#f59e0b','#10b981','#ef4444','#a855f7','#3b82f6','#f97316','#14b8a6','#ec4899','#84cc16'];
+
+    renderCatBar(sorted, palette);
+    renderCatWeekly(sorted, palette);
+    renderCatMonthly(sorted, palette);
+    renderCatCards(sorted, palette);
+}
+
+function buildCatMap() {
+    const map = {};
+    payRecords.filter(r => r.type !== 'refund' && r.type !== 'cancellation' && r.status !== 'cancelled')
+        .forEach(r => {
+            if (!map[r.category]) map[r.category] = { revenue:0, count:0, refunds:0, cancellations:0 };
+            map[r.category].revenue += r.amount;
+            map[r.category].count++;
+        });
+    payRecords.filter(r => r.type === 'refund').forEach(r => {
+        if (!map[r.category]) map[r.category] = { revenue:0, count:0, refunds:0, cancellations:0 };
+        map[r.category].refunds += r.amount;
+    });
+    payRecords.filter(r => r.type === 'cancellation').forEach(r => {
+        if (!map[r.category]) map[r.category] = { revenue:0, count:0, refunds:0, cancellations:0 };
+        map[r.category].cancellations++;
+    });
+    return map;
+}
+
+function renderCatBar(sorted, palette) {
+    const isDark = document.documentElement.classList.contains('dark-mode');
+    const gc = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+    const tc = isDark ? '#94a3b8' : '#666';
+    if (charts.catBar) charts.catBar.destroy();
+    charts.catBar = new Chart(document.getElementById('catBarChart'), {
+        type:'bar',
+        data:{
+            labels: sorted.map(e=>e[0]),
+            datasets:[{ label:'Revenue', data:sorted.map(e=>e[1].revenue),
+                backgroundColor:palette.slice(0,sorted.length), borderWidth:0, borderRadius:8 }]
+        },
+        options:{
+            indexAxis:'y', responsive:true, maintainAspectRatio:false,
+            plugins:{
+                legend:{display:false},
+                tooltip:{ backgroundColor:isDark?'#1e293b':'#fff', borderColor:isDark?'#334155':'#e2e8f0', borderWidth:1,
+                    titleColor:isDark?'#f1f5f9':'#1a1a1a', bodyColor:tc,
+                    callbacks:{ label: ctx => ` ${INR(ctx.raw)}` }
+                }
+            },
+            scales:{
+                x:{ grid:{color:gc}, ticks:{ color:tc, font:{size:11}, callback:v => '₹'+Number(v).toLocaleString('en-IN') } },
+                y:{ grid:{display:false}, ticks:{ color:tc, font:{size:11} } }
+            }
+        }
+    });
+}
+
+function renderCatWeekly(sorted, palette) {
+    const topCats = sorted.slice(0,5).map(e=>e[0]);
+    const labels  = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
+        labels.push(d.toLocaleDateString('en-IN', { weekday:'short', day:'numeric' }));
+    }
+    const datasets = topCats.map((cat, ci) => {
+        const data = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(now); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
+            const next = new Date(d); next.setDate(next.getDate()+1);
+            data.push(payRecords.filter(r =>
+                r.category===cat && r.date>=d && r.date<next &&
+                r.type!=='refund' && r.type!=='cancellation' && r.status!=='cancelled'
+            ).reduce((s,r)=>s+r.amount,0));
+        }
+        return { label:cat, data, borderColor:palette[ci], backgroundColor:palette[ci]+'22',
+            fill:true, tension:0.4, borderWidth:2, pointRadius:3 };
+    });
+    buildChart('catWeeklyChart','line',labels,datasets,{prefix:'₹',legend:true});
+}
+
+function renderCatMonthly(sorted, palette) {
+    const topCats = sorted.slice(0,5).map(e=>e[0]);
+    const labels  = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+        const m = new Date(now.getFullYear(), now.getMonth()-i, 1);
+        labels.push(m.toLocaleDateString('en-IN', { month:'short', year:'2-digit' }));
+    }
+    const datasets = topCats.map((cat, ci) => {
+        const data = [];
+        for (let i = 5; i >= 0; i--) {
+            const m    = new Date(now.getFullYear(), now.getMonth()-i, 1);
+            const next = new Date(m.getFullYear(), m.getMonth()+1, 1);
+            data.push(payRecords.filter(r =>
+                r.category===cat && r.date>=m && r.date<next &&
+                r.type!=='refund' && r.type!=='cancellation' && r.status!=='cancelled'
+            ).reduce((s,r)=>s+r.amount,0));
+        }
+        return { label:cat, data, backgroundColor:palette[ci]+'bb',
+            borderColor:palette[ci], borderWidth:0, borderRadius:6 };
+    });
+    buildChart('catMonthlyChart','bar',labels,datasets,{prefix:'₹',legend:true,stacked:true});
+}
+
+function renderCatCards(sorted, palette) {
+    const el = document.getElementById('cat-cards');
+    if (!sorted.length) { el.innerHTML='<div class="empty-state"><p>No category data yet.</p></div>'; return; }
+    el.innerHTML = sorted.map(([cat, st], i) => {
+        const color = palette[i % palette.length];
+        const avg   = st.count > 0 ? st.revenue / st.count : 0;
+        return `
+        <div class="cat-card" style="border-top:4px solid ${color};">
+            <div class="cat-name" style="color:${color};">${esc(cat)}</div>
+            <div class="cat-stats">
+                <div><div class="cat-val">${INR(st.revenue)}</div><div class="cat-lbl">Revenue</div></div>
+                <div><div class="cat-val">${st.count}</div><div class="cat-lbl">Txns</div></div>
+                <div><div class="cat-val">${INR(avg)}</div><div class="cat-lbl">Avg Value</div></div>
+            </div>
+            ${st.cancellations>0 ? `<div style="font-size:0.75rem;color:var(--text-tertiary);margin-top:0.5rem;">❌ ${st.cancellations} cancellation${st.cancellations>1?'s':''}</div>` : ''}
+            ${st.refunds>0 ? `<div class="cat-refund-note">↩ ${INR(st.refunds)} refunded</div>` : ''}
+        </div>`;
+    }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHART HELPERS
+// ═══════════════════════════════════════════════════════════════
+function buildChart(id, type, labels, datasets, opts = {}) {
+    const isDark = document.documentElement.classList.contains('dark-mode');
+    const gc = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+    const tc = isDark ? '#94a3b8' : '#666';
+    const cfg = {
+        type,
+        data: { labels, datasets },
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins:{
+                legend: opts.legend
+                    ? { labels:{ color:tc, font:{size:11}, boxWidth:10 } }
+                    : { display:false },
+                tooltip:{
+                    backgroundColor:isDark?'#1e293b':'#fff',
+                    borderColor:isDark?'#334155':'#e2e8f0', borderWidth:1,
+                    titleColor:isDark?'#f1f5f9':'#1a1a1a', bodyColor:tc,
+                    callbacks:{ label: ctx => ` ${opts.prefix||''}${Number(ctx.raw).toLocaleString('en-IN')}` }
+                }
+            },
+            scales:{
+                x:{ stacked:!!opts.stacked, grid:{color:gc}, ticks:{color:tc,font:{size:11}} },
+                y:{ stacked:!!opts.stacked, grid:{color:gc}, ticks:{ color:tc, font:{size:11},
+                    callback:v => (opts.prefix||'') + Number(v).toLocaleString('en-IN') } }
+            }
+        }
+    };
+    if (charts[id]) charts[id].destroy();
+    charts[id] = new Chart(document.getElementById(id), cfg);
+}
+
+function buildDoughnut(id, labels, data, colors) {
+    const isDark = document.documentElement.classList.contains('dark-mode');
+    const tc = isDark ? '#94a3b8' : '#666';
+    if (charts[id]) charts[id].destroy();
+    charts[id] = new Chart(document.getElementById(id), {
+        type:'doughnut',
+        data:{ labels, datasets:[{ data, backgroundColor:colors, borderWidth:2,
+            borderColor: isDark ? '#1e293b' : '#ffffff' }] },
+        options:{
+            responsive:true, maintainAspectRatio:false,
+            plugins:{
+                legend:{ position:'right', labels:{ color:tc, font:{size:11}, boxWidth:11, padding:10 } },
+                tooltip:{ backgroundColor:isDark?'#1e293b':'#fff', borderColor:isDark?'#334155':'#e2e8f0',
+                    borderWidth:1, titleColor:isDark?'#f1f5f9':'#1a1a1a', bodyColor:tc,
+                    callbacks:{ label: ctx => ` ${ctx.label}: ${INR(ctx.raw)}` }
+                }
+            }
+        }
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════════════════
+function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b  => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    if (btn) btn.classList.add('active');
+
+    // Re-render charts after tab becomes visible (ensures correct canvas sizing)
+    setTimeout(() => {
+        if (tab === 'overview')     { renderWeeklyChart(); renderMonthlyChart(); renderTypeChart(); renderCatDonut(); }
+        if (tab === 'subscriptions') { renderSubTrendChart(); }
+        if (tab === 'categories')   { renderCatSection(); }
+        if (tab === 'collections')  { renderCollections(); }
+    }, 50);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════════════════
+const themeBtn = document.getElementById('themeBtn');
+function applyTheme(dark) {
+    document.documentElement.classList.toggle('dark-mode', dark);
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+    themeBtn.textContent = dark ? '☀️' : '🌙';
+    // Rebuild all charts with new theme colours
+    setTimeout(() => renderAll(), 30);
+}
+themeBtn.addEventListener('click', () =>
+    applyTheme(!document.documentElement.classList.contains('dark-mode'))
+);
+(function initTheme() {
+    const saved = localStorage.getItem('theme');
+    const dark  = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme:dark)').matches);
+    if (dark) { document.documentElement.classList.add('dark-mode'); themeBtn.textContent = '☀️'; }
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════════
+function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'show' + (type ? ' ' + type : '');
+    setTimeout(() => { t.className = ''; }, 3000);
+}
+</script>
+</body>
+</html>

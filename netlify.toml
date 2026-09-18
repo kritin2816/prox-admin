@@ -1,0 +1,6 @@
+[build]
+  publish = "."
+
+# Optional: redirects / custom routing can be placed here if needed.
+# Netlify automatically handles clean URLs (e.g. mapping /dashboard to /dashboard.html)
+# when "Pretty URLs" is enabled in the Netlify site settings.

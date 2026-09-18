@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro X Admin Dashboard - Login</title>
+    <link rel="stylesheet" href="/admin-styles.css">
+
+    <!-- Firebase SDK v8 (compat) - CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo-section">
+                <h1>Pro X</h1>
+                <h2>Admin Dashboard</h2>
+            </div>
+
+            <form id="admin-login-form" class="login-form">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your admin email">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="Enter your password">
+                </div>
+
+                <button type="submit" class="login-btn" id="login-btn">
+                    <span id="login-btn-text">Login to Dashboard</span>
+                    <span id="login-spinner" class="login-spinner" style="display: none;">Logging in...</span>
+                </button>
+
+                <div id="login-error" class="error-message" style="display: none;">
+                    <!-- Error message will be inserted here -->
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+            authDomain: "phototester555.firebaseapp.com",
+            projectId: "phototester555",
+            storageBucket: "phototester555.firebasestorage.app",
+            messagingSenderId: "953997763616",
+            appId: "1:953997763616:web:4ac177ad8e79c5f38b8845",
+            measurementId: "G-6VS0G0NQ7K"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        // Add this:
+        firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+            .then(() => {
+                console.log('Auth persistence enabled');
+            })
+            .catch((error) => {
+                console.error('Auth persistence error:', error);
+            });
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        class AdminAuth {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                // Check if already logged in
+                firebase.auth().onAuthStateChanged(async (user) => {
+                    if (user) {
+                        const isAdmin = await this.verifyAdminStatus(user);
+                        if (isAdmin) {
+                            window.location.href = '/dashboard.html';
+                        } else {
+                            await firebase.auth().signOut();
+                            this.showError('Access denied. Admin privileges required.');
+                        }
+                    }
+                });
+
+                // Initialize login form
+                this.initLoginForm();
+            }
+
+            initLoginForm() {
+                document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await this.handleLogin();
+                });
+            }
+
+            async handleLogin() {
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                const loginBtn = document.getElementById('login-btn');
+                const loginBtnText = document.getElementById('login-btn-text');
+                const loginSpinner = document.getElementById('login-spinner');
+
+                if (!email || !password) {
+                    this.showError('Please enter both email and password.');
+                    return;
+                }
+
+                // Show loading state
+                loginBtn.disabled = true;
+                loginBtnText.style.display = 'none';
+                loginSpinner.style.display = 'inline';
+                this.hideError();
+
+                try {
+                    // Sign in with Firebase Auth
+                    const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+                    const user = userCredential.user;
+
+                    // Verify admin status
+                    const isAdmin = await this.verifyAdminStatus(user);
+
+                    if (!isAdmin) {
+                        await firebase.auth().signOut();
+                        throw new Error('Access denied. This account does not have admin privileges.');
+                    }
+
+                    // Log successful login
+                    await this.logAdminAction(user.uid, 'login_success', null, {
+                        email: user.email,
+                        timestamp: new Date(),
+                        userAgent: navigator.userAgent
+                    });
+
+                    // Update last login time
+                    await this.updateLastLogin(user.uid);
+
+                    // Redirect to dashboard
+                    window.location.href = '/dashboard.html';
+
+                } catch (error) {
+                    console.error('Login error:', error);
+
+                    // Log failed login attempt
+                    if (email) {
+                        await this.logAdminAction(null, 'login_failed', null, {
+                            email: email,
+                            error: error.message,
+                            timestamp: new Date(),
+                            userAgent: navigator.userAgent
+                        });
+                    }
+
+                    // Show user-friendly error message
+                    let errorMessage = 'Login failed. Please try again.';
+                    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                        errorMessage = 'Invalid email or password.';
+                    } else if (error.code === 'auth/too-many-requests') {
+                        errorMessage = 'Too many failed attempts. Please try again later.';
+                    } else if (error.code === 'auth/user-disabled') {
+                        errorMessage = 'This account has been disabled.';
+                    } else if (error.message.includes('Access denied')) {
+                        errorMessage = error.message;
+                    }
+
+                    this.showError(errorMessage);
+                } finally {
+                    // Reset button state
+                    loginBtn.disabled = false;
+                    loginBtnText.style.display = 'inline';
+                    loginSpinner.style.display = 'none';
+                }
+            }
+
+            async verifyAdminStatus(user) {
+                try {
+                    const adminDoc = await db.collection('admin_users').doc(user.uid).get();
+
+                    if (!adminDoc.exists) {
+                        console.log('User not found in admin_users collection');
+                        return false;
+                    }
+
+                    const adminData = adminDoc.data();
+
+                    if (!adminData.isActive) {
+                        console.log('Admin account is inactive');
+                        return false;
+                    }
+
+                    console.log('Admin verification successful:', adminData.email, adminData.role);
+                    return true;
+
+                } catch (error) {
+                    console.error('Error verifying admin status:', error);
+                    return false;
+                }
+            }
+
+            async updateLastLogin(uid) {
+                try {
+                    await db.collection('admin_users').doc(uid).update({
+                        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch (error) {
+                    console.error('Error updating last login:', error);
+                }
+            }
+
+            async logAdminAction(adminUid, action, targetId, details) {
+                try {
+                    const logEntry = {
+                        adminUid: adminUid,
+                        adminEmail: details.email || null,
+                        action: action,
+                        targetId: targetId,
+                        details: details,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        userAgent: navigator.userAgent
+                    };
+
+                    await db.collection('admin_audit_logs').add(logEntry);
+                } catch (error) {
+                    console.error('Error logging admin action:', error);
+                }
+            }
+
+            showError(message) {
+                const errorDiv = document.getElementById('login-error');
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+            }
+
+            hideError() {
+                const errorDiv = document.getElementById('login-error');
+                errorDiv.style.display = 'none';
+            }
+        }
+
+        // Initialize admin authentication
+        const adminAuth = new AdminAuth();
+    </script>
+</body>
+
+</html>

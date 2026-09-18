@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro X - Push Notifications</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary:#ffffff;--bg-secondary:#f8f9fa;--bg-tertiary:#f1f3f5;
+            --text-primary:#1a1a1a;--text-secondary:#666;--text-tertiary:#999;
+            --border-color:#e0e0e0;--border-light:rgba(0,0,0,0.05);
+            --accent:#667eea;--accent2:#764ba2;--accent-light:rgba(102,126,234,0.1);
+            --success:#28a745;--warning:#ff9800;--danger:#dc3545;
+            --shadow-sm:0 4px 12px rgba(0,0,0,0.08);--shadow-md:0 8px 20px rgba(0,0,0,0.15);--shadow-lg:0 20px 60px rgba(0,0,0,0.3);
+        }
+        html.dark-mode {
+            --bg-primary:#0f172a;--bg-secondary:#1e293b;--bg-tertiary:rgba(30,41,59,0.8);
+            --text-primary:#f1f5f9;--text-secondary:#cbd5e1;--text-tertiary:#94a3b8;
+            --border-color:rgba(148,163,184,0.2);--border-light:rgba(148,163,184,0.1);
+            --accent:#60a5fa;--accent2:#3b82f6;--accent-light:rgba(96,165,250,0.1);
+            --success:#22c55e;--warning:#f97316;--danger:#ef4444;
+            --shadow-sm:0 4px 12px rgba(0,0,0,0.3);--shadow-md:0 8px 20px rgba(0,0,0,0.4);--shadow-lg:0 20px 60px rgba(0,0,0,0.5);
+        }
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);min-height:100vh;padding:20px;color:var(--text-primary);transition:all .3s;}
+        .container{max-width:1100px;margin:0 auto;background:var(--bg-primary);border-radius:20px;box-shadow:var(--shadow-lg);overflow:hidden;border:1px solid var(--border-color);}
+        .header{background:linear-gradient(135deg,#a044ff,#6a3093);color:#fff;padding:24px 30px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+        .header h1{font-size:24px;font-weight:700;}
+        .header .subtitle{font-size:13px;opacity:.9;margin-top:4px;}
+        .header-right{display:flex;align-items:center;gap:12px;}
+        .header-btn{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);padding:10px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;}
+        .header-btn:hover{background:rgba(255,255,255,.3);transform:translateY(-1px);}
+        .theme-btn{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:18px;padding:0;}
+        .content{display:grid;grid-template-columns:1fr 1fr;gap:0;min-height:500px;}
+        @media(max-width:768px){.content{grid-template-columns:1fr;}.header{flex-direction:column;text-align:center;}}
+
+        /* Compose */
+        .compose{padding:30px;border-right:1px solid var(--border-color);}
+        @media(max-width:768px){.compose{border-right:none;border-bottom:1px solid var(--border-color);}}
+        .compose h2{font-size:18px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+        .form-group{margin-bottom:20px;}
+        .form-group label{display:block;font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+        .form-group input,.form-group textarea{width:100%;padding:12px 14px;border:2px solid var(--border-color);border-radius:10px;font-size:14px;background:var(--bg-secondary);color:var(--text-primary);font-family:inherit;transition:border .3s;}
+        .form-group input:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);}
+        .form-group textarea{resize:vertical;min-height:100px;}
+        .char-count{font-size:11px;color:var(--text-tertiary);text-align:right;margin-top:4px;}
+
+        /* Audience */
+        .audience-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+        .audience-btn{padding:14px 10px;border:2px solid var(--border-color);border-radius:12px;background:var(--bg-secondary);cursor:pointer;text-align:center;transition:all .3s;position:relative;}
+        .audience-btn:hover{border-color:var(--accent);transform:translateY(-2px);}
+        .audience-btn.active{border-color:var(--accent);background:var(--accent-light);box-shadow:0 0 0 3px rgba(102,126,234,.15);}
+        .audience-btn .emoji{font-size:24px;display:block;margin-bottom:6px;}
+        .audience-btn .label{font-size:12px;font-weight:700;color:var(--text-primary);}
+        .audience-btn .sub{font-size:10px;color:var(--text-tertiary);margin-top:2px;}
+        .audience-count{margin-top:8px;font-size:11px;font-weight:600;color:var(--accent);background:var(--bg-tertiary);padding:6px 8px;border-radius:6px;display:inline-block;transition:all .3s;width:calc(100% - 16px);box-sizing:border-box;}
+        .audience-btn.active .audience-count{background:var(--accent);color:#fff;}
+
+        /* Send button */
+        .send-btn{width:100%;padding:14px;background:linear-gradient(135deg,#a044ff,#6a3093);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:8px;}
+        .send-btn:hover:not(:disabled){opacity:.9;transform:translateY(-2px);box-shadow:0 8px 25px rgba(106,48,147,.3);}
+        .send-btn:disabled{opacity:.5;cursor:not-allowed;}
+        .send-btn .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:none;}
+        .send-btn.loading .spinner{display:inline-block;}
+        .send-btn.loading .btn-text{display:none;}
+        @keyframes spin{to{transform:rotate(360deg);}}
+
+        /* History */
+        .history{padding:30px;overflow-y:auto;max-height:700px;}
+        .history h2{font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+        .history-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+        .hf-btn{padding:6px 14px;border:1px solid var(--border-color);border-radius:20px;background:var(--bg-secondary);font-size:12px;font-weight:600;cursor:pointer;color:var(--text-secondary);transition:all .2s;}
+        .hf-btn:hover,.hf-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+        .notif-card{background:var(--bg-secondary);border:1px solid var(--border-light);border-radius:12px;padding:16px;margin-bottom:12px;transition:all .2s;}
+        .notif-card:hover{box-shadow:var(--shadow-sm);transform:translateY(-1px);}
+        .notif-card .nc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;}
+        .notif-card .nc-title{font-size:14px;font-weight:700;color:var(--text-primary);}
+        .notif-card .nc-body{font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:8px;}
+        .notif-card .nc-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--text-tertiary);}
+        .nc-badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase;}
+        .nc-badge.all{background:rgba(102,126,234,.15);color:var(--accent);}
+        .nc-badge.user{background:rgba(40,167,69,.15);color:var(--success);}
+        .nc-badge.provider{background:rgba(255,152,0,.15);color:var(--warning);}
+        .nc-badge.sent{background:rgba(40,167,69,.1);color:var(--success);}
+        .nc-badge.failed{background:rgba(220,53,69,.1);color:var(--danger);}
+
+        .empty-state{text-align:center;padding:40px;color:var(--text-tertiary);}
+        .empty-state .icon{font-size:48px;margin-bottom:12px;opacity:.4;}
+        .loading-state{text-align:center;padding:40px;color:var(--text-tertiary);}
+
+        /* Confirm modal */
+        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:20px;}
+        .modal.show{display:flex;}
+        .modal-box{background:var(--bg-primary);border-radius:16px;max-width:440px;width:100%;box-shadow:var(--shadow-lg);animation:modalIn .25s ease;border:1px solid var(--border-color);overflow:hidden;}
+        @keyframes modalIn{from{transform:translateY(-30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+        .modal-box .mh{background:linear-gradient(135deg,#a044ff,#6a3093);color:#fff;padding:18px 24px;font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;}
+        .modal-box .mh button{background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;}
+        .modal-box .mb{padding:24px;}
+        .modal-box .preview-field{margin-bottom:14px;}
+        .modal-box .preview-label{font-size:11px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+        .modal-box .preview-value{font-size:14px;color:var(--text-primary);padding:10px 14px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border-light);}
+        .modal-box .mf{padding:16px 24px;background:var(--bg-secondary);display:flex;gap:10px;justify-content:flex-end;}
+        .modal-box .mf button{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;}
+        .btn-cancel{background:transparent;border:2px solid var(--border-color);color:var(--text-primary);}
+        .btn-confirm{background:linear-gradient(135deg,#a044ff,#6a3093);color:#fff;border:none;}
+        .btn-confirm:hover{opacity:.9;}
+
+        /* Toast */
+        .toast{position:fixed;top:20px;right:20px;padding:14px 22px;border-radius:12px;color:#fff;font-size:14px;font-weight:600;z-index:2000;animation:slideInRight .3s ease;box-shadow:var(--shadow-md);}
+        .toast.success{background:var(--success);}
+        .toast.error{background:var(--danger);}
+        @keyframes slideInRight{from{transform:translateX(360px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+        /* Back link */
+        .back-link{display:inline-flex;align-items:center;gap:6px;color:rgba(255,255,255,.9);font-size:13px;text-decoration:none;font-weight:500;margin-bottom:12px;}
+        .back-link:hover{color:#fff;}
+
+        /* Advanced Accordion styling */
+        .advanced-section {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            background: var(--bg-secondary);
+        }
+        .advanced-header {
+            padding: 14px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--text-primary);
+            user-select: none;
+            transition: background 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .advanced-header:hover {
+            background: var(--bg-tertiary);
+        }
+        .advanced-content {
+            border-top: 1px solid var(--border-light);
+            padding: 20px;
+            background: var(--bg-primary);
+        }
+        .advanced-content input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            box-sizing: border-box;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+        .advanced-content input[type="text"]:focus {
+            border-color: var(--accent);
+            background: var(--bg-primary);
+            outline: none;
+        }
+        .advanced-content select {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .preset-grid {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div style="max-width:1100px;margin:0 auto;">
+        <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
+    </div>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>📢 Push Notifications</h1>
+                <div class="subtitle">Send notifications to users and providers</div>
+            </div>
+            <div class="header-right">
+                <span id="adminWelcome" style="font-size:13px;opacity:.9;">Welcome, Admin</span>
+                <button class="header-btn theme-btn" id="themeToggle">☀️</button>
+                <button class="header-btn" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Compose -->
+            <div class="compose">
+                <h2>✏️ Compose Notification</h2>
+
+                <div class="form-group">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <label style="margin-bottom:0;">Audience</label>
+                        <span id="audienceLoading" style="font-size:11px; color:var(--text-secondary);">⚡ Loading counts...</span>
+                    </div>
+                    <div class="audience-grid">
+                        <div class="audience-btn active" data-audience="all" onclick="selectAudience('all')">
+                            <span class="emoji">👥</span>
+                            <span class="label">Everyone</span>
+                            <span class="sub">Users & Providers</span>
+                            <div class="audience-count" id="count-all">-</div>
+                        </div>
+                        <div class="audience-btn" data-audience="user" onclick="selectAudience('user')">
+                            <span class="emoji">🙋</span>
+                            <span class="label">Customers</span>
+                            <span class="sub">Users only</span>
+                            <div class="audience-count" id="count-user">-</div>
+                        </div>
+                        <div class="audience-btn" data-audience="provider" onclick="selectAudience('provider')">
+                            <span class="emoji">📸</span>
+                            <span class="label">Providers</span>
+                            <span class="sub">Providers only</span>
+                            <div class="audience-count" id="count-provider">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="notifTitle">Title</label>
+                    <input type="text" id="notifTitle" placeholder="e.g. 🎉 New Feature Available!" maxlength="100" oninput="updateForm()">
+                    <div class="char-count"><span id="titleCount">0</span>/100</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="notifBody">Message</label>
+                    <textarea id="notifBody" placeholder="Write your notification message..." maxlength="500" oninput="updateForm()"></textarea>
+                    <div class="char-count"><span id="bodyCount">0</span>/500</div>
+                </div>
+
+                <!-- Sleek Accordion for Advanced Customization -->
+                <div class="advanced-section">
+                    <div class="advanced-header" onclick="toggleAdvanced()" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+                        <span>⚙️ Advanced Customization (Optional)</span>
+                        <span id="advancedArrow" style="transition: transform 0.2s;">▶</span>
+                    </div>
+                    <div class="advanced-content" id="advancedContent" style="display:none;">
+                        
+                        <div class="form-group" style="margin-bottom:20px;">
+                            <label style="font-size:12px; font-weight:700; display:block; margin-bottom:4px;">🔗 Action Click Target Link</label>
+                            <span style="font-size:11px; color:var(--text-tertiary); display:block; margin-bottom:8px; line-height:1.4;">Where should the user navigate when they tap the notification card?</span>
+                            <div class="preset-grid">
+                                <select id="linkPreset" onchange="applyLinkPreset()" style="width:140px; flex-shrink:0;">
+                                    <option value="">Custom path...</option>
+                                    <option value="/user/notification.html">User Notifications</option>
+                                    <option value="/provider/notification.html">Provider Notifications</option>
+                                    <option value="/user/chatroom.html">User Chats</option>
+                                    <option value="/provider/chatroom.html">Provider Chats</option>
+                                    <option value="/">Home Dashboard</option>
+                                </select>
+                                <input type="text" id="customLink" placeholder="e.g. /user/chatroom.html" style="flex:1;">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-size:12px; font-weight:700; display:block; margin-bottom:4px;">🖼️ Marketing Campaign Banner Image URL</label>
+                            <span style="font-size:11px; color:var(--text-tertiary); display:block; margin-bottom:8px; line-height:1.4;">Provide an absolute HTTPS link or pick a preset branding image.</span>
+                            <div class="preset-grid">
+                                <select id="imagePreset" onchange="applyImagePreset()" style="width:140px; flex-shrink:0;">
+                                    <option value="">Custom URL...</option>
+                                    <option value="/assets/images/banner/Banner1alt.png">Default Purple</option>
+                                    <option value="/assets/images/banner/ban3.png">Gold Promo 1</option>
+                                    <option value="/assets/images/banner/ban4.png">Studio Promo 2</option>
+                                    <option value="/assets/images/banner/ban5.png">Camera Promo 3</option>
+                                </select>
+                                <input type="text" id="customImage" placeholder="e.g. /assets/images/banner/ban3.png" style="flex:1;">
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <button class="send-btn" id="sendBtn" disabled onclick="showConfirmModal()">
+                    <span class="btn-text">📤 Send Notification</span>
+                    <span class="spinner"></span>
+                </button>
+            </div>
+
+            <!-- History -->
+            <div class="history">
+                <h2>📋 Notification History</h2>
+                <div class="history-filters">
+                    <button class="hf-btn active" data-hf="all" onclick="setHistoryFilter('all')">All</button>
+                    <button class="hf-btn" data-hf="today" onclick="setHistoryFilter('today')">Today</button>
+                    <button class="hf-btn" data-hf="week" onclick="setHistoryFilter('week')">This Week</button>
+                </div>
+                <div id="historyLoading" class="loading-state">Loading notifications...</div>
+                <div id="historyEmpty" class="empty-state" style="display:none;">
+                    <div class="icon">📭</div>
+                    <div>No notifications sent yet</div>
+                </div>
+                <div id="historyList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-box">
+            <div class="mh">
+                <span>Confirm Send</span>
+                <button onclick="closeConfirmModal()">&times;</button>
+            </div>
+            <div class="mb">
+                <div class="preview-field">
+                    <div class="preview-label">Audience</div>
+                    <div class="preview-value" id="previewAudience">Everyone</div>
+                </div>
+                <div class="preview-field">
+                    <div class="preview-label">Title</div>
+                    <div class="preview-value" id="previewTitle"></div>
+                </div>
+                <div class="preview-field">
+                    <div class="preview-label">Message</div>
+                    <div class="preview-value" id="previewBody"></div>
+                </div>
+            </div>
+            <div class="mf">
+                <button class="btn-cancel" onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn-confirm" onclick="confirmSend()">🚀 Send Now</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pageToast" style="display:none;"></div>
+
+    <script>
+        // Firebase init
+        firebase.initializeApp({
+            apiKey:"AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+            authDomain:"phototester555.firebaseapp.com",
+            projectId:"phototester555",
+            storageBucket:"phototester555.firebasestorage.app",
+            messagingSenderId:"953997763616",
+            appId:"1:953997763616:web:4ac177ad8e79c5f38b8845"
+        });
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const functions = firebase.functions();
+
+        let currentAdmin = null;
+        let selectedAudience = 'all';
+        let historyFilter = 'all';
+        let allNotifications = [];
+
+        // Theme
+        (function(){
+            const s=localStorage.getItem('theme');
+            if(s==='dark'||(!s&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark-mode');
+        })();
+        document.getElementById('themeToggle').addEventListener('click',()=>{
+            document.documentElement.classList.toggle('dark-mode');
+            const isDark=document.documentElement.classList.contains('dark-mode');
+            localStorage.setItem('theme',isDark?'dark':'light');
+            document.getElementById('themeToggle').textContent=isDark?'🌙':'☀️';
+        });
+        if(document.documentElement.classList.contains('dark-mode'))document.getElementById('themeToggle').textContent='🌙';
+
+        // Audience Counts
+        async function fetchAudienceCounts() {
+            const loadingEl = document.getElementById('audienceLoading');
+            try {
+                const usersSnap = await db.collection('users').get();
+                const providersSnap = await db.collection('providers').get();
+                const tokensSnap = await db.collection('fcmTokens').get();
+
+                const totalUsers = usersSnap.size;
+                const totalProviders = providersSnap.size;
+                const totalEveryone = totalUsers + totalProviders;
+
+                const customerUids = new Set();
+                const providerUids = new Set();
+
+                tokensSnap.forEach(doc => {
+                    const data = doc.data();
+                    if (data.userId) {
+                        if (data.userType === 'provider') {
+                            providerUids.add(data.userId);
+                        } else {
+                            customerUids.add(data.userId);
+                        }
+                    }
+                });
+
+                const pushActiveCustomers = customerUids.size;
+                const pushActiveProviders = providerUids.size;
+                const pushActiveEveryone = pushActiveCustomers + pushActiveProviders;
+
+                document.getElementById('count-all').innerHTML = `
+                    <div style="font-weight:700; font-size:12px;">${totalEveryone} Reg.</div>
+                    <div style="font-size:9px; opacity:0.8; margin-top:2px;">📱 ${pushActiveEveryone} Push</div>
+                `;
+                
+                document.getElementById('count-user').innerHTML = `
+                    <div style="font-weight:700; font-size:12px;">${totalUsers} Reg.</div>
+                    <div style="font-size:9px; opacity:0.8; margin-top:2px;">📱 ${pushActiveCustomers} Push</div>
+                `;
+
+                document.getElementById('count-provider').innerHTML = `
+                    <div style="font-weight:700; font-size:12px;">${totalProviders} Reg.</div>
+                    <div style="font-size:9px; opacity:0.8; margin-top:2px;">📱 ${pushActiveProviders} Push</div>
+                `;
+
+                loadingEl.textContent = '✅ Live counts loaded';
+            } catch (err) {
+                console.error('Error fetching audience counts:', err);
+                loadingEl.textContent = '❌ Failed to load counts';
+            }
+        }
+
+        // Auth
+        auth.onAuthStateChanged(async user=>{
+            if(!user){window.location.href='index.html';return;}
+            const doc=await db.collection('admin_users').doc(user.uid).get();
+            if(!doc.exists||!doc.data().isActive){await auth.signOut();window.location.href='index.html';return;}
+            currentAdmin={uid:user.uid,email:user.email,...doc.data()};
+            document.getElementById('adminWelcome').textContent=`Welcome, ${currentAdmin.name||user.email}`;
+            document.getElementById('logoutBtn').addEventListener('click',()=>auth.signOut().then(()=>window.location.href='index.html'));
+            loadHistory();
+            fetchAudienceCounts();
+        });
+
+        // Audience selection
+        function selectAudience(a){
+            selectedAudience=a;
+            document.querySelectorAll('.audience-btn').forEach(b=>b.classList.toggle('active',b.dataset.audience===a));
+        }
+
+        // Form
+        function updateForm(){
+            const t=document.getElementById('notifTitle');
+            const b=document.getElementById('notifBody');
+            document.getElementById('titleCount').textContent=t.value.length;
+            document.getElementById('bodyCount').textContent=b.value.length;
+            document.getElementById('sendBtn').disabled=!(t.value.trim()&&b.value.trim());
+        }
+
+        // Advanced Accordion Toggles & Presets
+        function toggleAdvanced() {
+            const content = document.getElementById('advancedContent');
+            const arrow = document.getElementById('advancedArrow');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                arrow.style.transform = 'rotate(90deg)';
+            } else {
+                content.style.display = 'none';
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function applyLinkPreset() {
+            const select = document.getElementById('linkPreset');
+            const input = document.getElementById('customLink');
+            if (select.value) {
+                input.value = select.value;
+            }
+        }
+
+        function applyImagePreset() {
+            const select = document.getElementById('imagePreset');
+            const input = document.getElementById('customImage');
+            if (select.value) {
+                input.value = select.value;
+            }
+        }
+
+        // Confirm modal
+        function showConfirmModal(){
+            const t=document.getElementById('notifTitle').value.trim();
+            const b=document.getElementById('notifBody').value.trim();
+            if(!t||!b)return;
+            const names={all:'Everyone (Users & Providers)',user:'Customers Only',provider:'Providers Only'};
+            document.getElementById('previewAudience').textContent=names[selectedAudience];
+            document.getElementById('previewTitle').textContent=t;
+            document.getElementById('previewBody').textContent=b;
+            document.getElementById('confirmModal').classList.add('show');
+        }
+        function closeConfirmModal(){document.getElementById('confirmModal').classList.remove('show');}
+
+        // Send
+        async function confirmSend(){
+            closeConfirmModal();
+            const title=document.getElementById('notifTitle').value.trim();
+            const body=document.getElementById('notifBody').value.trim();
+            const customLink=document.getElementById('customLink').value.trim() || null;
+            const customImage=document.getElementById('customImage').value.trim() || null;
+            
+            const btn=document.getElementById('sendBtn');
+            btn.classList.add('loading');btn.disabled=true;
+
+            try{
+                const sendFn=functions.httpsCallable('sendAdminNotification');
+                const result=await sendFn({
+                    title,
+                    body,
+                    audience:selectedAudience,
+                    customLink,
+                    customImage
+                });
+                const d=result.data;
+                showToast(`✅ Sent to ${d.successCount} device(s)!`,'success');
+                document.getElementById('notifTitle').value='';
+                document.getElementById('notifBody').value='';
+                document.getElementById('customLink').value='';
+                document.getElementById('customImage').value='';
+                document.getElementById('linkPreset').value='';
+                document.getElementById('imagePreset').value='';
+                
+                // Reset accordion state
+                document.getElementById('advancedContent').style.display='none';
+                document.getElementById('advancedArrow').style.transform='rotate(0deg)';
+                
+                updateForm();
+            }catch(err){
+                console.error('Send error:',err);
+                showToast(err.message||'Failed to send notification','error');
+            }finally{
+                btn.classList.remove('loading');
+                updateForm();
+            }
+        }
+
+        // History
+        function loadHistory(){
+            db.collection('notifications')
+              .where('userId','==',null)
+              .orderBy('createdAt','desc')
+              .limit(50)
+              .onSnapshot(snap=>{
+                allNotifications=[];
+                snap.forEach(d=>{const data=d.data();allNotifications.push({id:d.id,...data,_time:data.createdAt?.toDate()||new Date()});});
+                renderHistory();
+            },err=>{
+                console.error('History error:',err);
+                document.getElementById('historyLoading').textContent='Error loading history.';
+            });
+        }
+
+        function setHistoryFilter(f){
+            historyFilter=f;
+            document.querySelectorAll('.hf-btn').forEach(b=>b.classList.toggle('active',b.dataset.hf===f));
+            renderHistory();
+        }
+
+        function renderHistory(){
+            const loading=document.getElementById('historyLoading');
+            const empty=document.getElementById('historyEmpty');
+            const list=document.getElementById('historyList');
+            loading.style.display='none';
+
+            let items=allNotifications;
+            if(historyFilter==='today'){
+                const today=new Date();today.setHours(0,0,0,0);
+                items=items.filter(n=>n._time>=today);
+            }else if(historyFilter==='week'){
+                const week=new Date();week.setDate(week.getDate()-7);
+                items=items.filter(n=>n._time>=week);
+            }
+
+            if(!items.length){empty.style.display='block';list.innerHTML='';return;}
+            empty.style.display='none';
+
+            list.innerHTML=items.map(n=>{
+                const aud=n.audience||'all';
+                const audNames={all:'Everyone',user:'Customers',provider:'Providers'};
+                const timeStr=formatTimeAgo(n._time);
+                return `<div class="notif-card">
+                    <div class="nc-top">
+                        <div class="nc-title">${esc(n.title||'')}</div>
+                        <span class="nc-badge ${aud}">${audNames[aud]||aud}</span>
+                    </div>
+                    <div class="nc-body">${esc(n.body||'')}</div>
+                    <div class="nc-meta">
+                        <span>📅 ${timeStr}</span>
+                        <span>👤 ${esc(n.sentByName||'System')}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function formatTimeAgo(d){
+            if(!d)return'';
+            const s=Math.floor((Date.now()-d.getTime())/1000);
+            if(s<60)return'Just now';
+            const m=Math.floor(s/60);if(m<60)return m+'m ago';
+            const h=Math.floor(m/60);if(h<24)return h+'h ago';
+            const dy=Math.floor(h/24);if(dy<7)return dy+'d ago';
+            return d.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+        }
+
+        function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+        function showToast(msg,type='success'){
+            const t=document.getElementById('pageToast');
+            t.textContent=msg;t.className='toast '+type;t.style.display='block';
+            clearTimeout(window._tt);
+            window._tt=setTimeout(()=>{t.style.display='none';},4000);
+        }
+    </script>
+</body>
+</html>

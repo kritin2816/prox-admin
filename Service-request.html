@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pro X Admin - Service Review</title>
+  <link rel="icon" href="../assets/images/logo/favicon.png" type="image/x-icon" />
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --prox-bg-primary: #0f1419;
+    --prox-bg-secondary: #1a1f2e;
+    --prox-bg-elevated: #242b3d;
+    --prox-bg-card: #1e2533;
+
+    --prox-text-primary: #e4e6eb;
+    --prox-text-secondary: #9ca3af;
+    --prox-text-muted: #6b7280;
+
+    --prox-blue: #3b82f6;
+    --prox-blue-hover: #2563eb;
+    --prox-success: #10b981;
+    --prox-success-hover: #059669;
+    --prox-danger: #ef4444;
+    --prox-danger-hover: #dc2626;
+    --prox-warning: #f59e0b;
+
+    --prox-border: #374151;
+    --prox-border-light: #2d3748;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: linear-gradient(135deg, var(--prox-bg-primary) 0%, #1a1f2e 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: var(--prox-text-primary);
+  }
+
+  .admin-header {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: white;
+    padding: 24px 30px;
+    border-radius: 16px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--prox-border);
+  }
+  .admin-header h1 { font-size: 28px; font-weight: 700; margin: 0 0 8px 0; }
+  .admin-header p { margin: 0; opacity: 0.85; font-size: 15px; color: var(--prox-text-secondary); }
+
+  .controls-bar {
+    background: var(--prox-bg-card);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--prox-border);
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .stats-container { display: flex; gap: 12px; margin-left: auto; }
+  .stat-badge {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid transparent;
+  }
+  .stat-badge.pending {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+  .stat-badge.approved {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+  .stat-badge.rejected {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  .filter-group { display: flex; gap: 12px; align-items: center; }
+  .filter-group select, .filter-group input {
+    padding: 10px 14px;
+    border: 1px solid var(--prox-border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    background: var(--prox-bg-elevated);
+    color: var(--prox-text-primary);
+  }
+  .filter-group select:focus, .filter-group input:focus {
+    outline: none;
+    border-color: var(--prox-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+
+  .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 24px; }
+
+  .service-card {
+    background: var(--prox-bg-card);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s, box-shadow 0.3s;
+    position: relative;
+    border: 1px solid var(--prox-border);
+  }
+  .service-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    border-color: var(--prox-border-light);
+  }
+  .service-card.pending { border-left: 4px solid var(--prox-warning); }
+  .service-card.pending-edit { border-left: 4px solid #8b5cf6; }
+  .service-card.approved { border-left: 4px solid var(--prox-success); }
+  .service-card.rejected { border-left: 4px solid var(--prox-danger); }
+
+  .card-cover { width: 100%; height: 200px; object-fit: cover; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+  .card-body-content { padding: 20px; }
+
+  .status-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+  .status-badge.pending { background: rgba(245, 158, 11, 0.95); color: #1f2937; }
+  .status-badge.pending-edit { background: rgba(139, 92, 246, 0.95); color: #ffffff; }
+  .status-badge.approved { background: rgba(16, 185, 129, 0.95); color: white; }
+  .status-badge.rejected { background: rgba(239, 68, 68, 0.95); color: white; }
+
+  .service-meta { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .meta-chip {
+    padding: 4px 10px;
+    background: var(--prox-bg-elevated);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--prox-text-secondary);
+    font-weight: 500;
+    border: 1px solid var(--prox-border);
+  }
+
+  .service-title { font-size: 18px; font-weight: 700; color: var(--prox-text-primary); margin: 0 0 8px 0; line-height: 1.4; }
+  .service-tagline { font-size: 14px; color: var(--prox-text-secondary); margin: 0 0 12px 0; line-height: 1.5; }
+  .service-pricing { font-size: 20px; font-weight: 700; color: var(--prox-blue); margin: 12px 0; }
+  .service-pricing-detail { font-size: 12px; font-weight: 500; color: var(--prox-text-muted); margin-top: 4px; }
+
+  .provider-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 0;
+    border-top: 1px solid var(--prox-border);
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--prox-text-secondary);
+  }
+
+  .provider-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--prox-blue) 0%, #1d4ed8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .card-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .btn-action {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-view { background: var(--prox-bg-elevated); color: var(--prox-text-primary); border: 1px solid var(--prox-border); }
+  .btn-view:hover { background: #2d3748; border-color: #4b5563; }
+
+  .btn-approve { background: var(--prox-success); color: white; }
+  .btn-approve:hover { background: var(--prox-success-hover); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
+
+  .btn-reject { background: var(--prox-danger); color: white; }
+  .btn-reject:hover { background: var(--prox-danger-hover); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    overflow-y: auto;
+    padding: 20px;
+  }
+  .modal-overlay.active { display: flex; align-items: flex-start; justify-content: center; padding-top: 40px; padding-bottom: 40px; }
+  .modal-content {
+    background: var(--prox-bg-card);
+    border-radius: 20px;
+    max-width: 900px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    position: relative;
+    border: 1px solid var(--prox-border);
+  }
+  .modal-header {
+    padding: 24px 30px;
+    border-bottom: 1px solid var(--prox-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-header h2 { margin: 0; font-size: 22px; font-weight: 700; color: var(--prox-text-primary); }
+  .btn-close-modal {
+    width: 36px; height: 36px;
+    border: none;
+    background: var(--prox-bg-elevated);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: var(--prox-text-secondary);
+    transition: all 0.2s;
+    border: 1px solid var(--prox-border);
+  }
+  .btn-close-modal:hover { background: #374151; transform: rotate(90deg); }
+
+  .modal-body { padding: 30px; max-height: 70vh; overflow-y: auto; }
+  .detail-section { margin-bottom: 28px; }
+  .section-title {
+    font-size: 16px; font-weight: 700; color: var(--prox-text-primary);
+    margin: 0 0 12px 0;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::before { content: ''; width: 4px; height: 18px; background: var(--prox-blue); border-radius: 2px; }
+
+  .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .info-item { background: var(--prox-bg-elevated); padding: 14px; border-radius: 8px; border: 1px solid var(--prox-border); }
+  .info-label {
+    font-size: 12px;
+    color: var(--prox-text-muted);
+    margin-bottom: 4px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .info-value { font-size: 15px; color: var(--prox-text-primary); font-weight: 600; }
+
+  .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .gallery-img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    border: 1px solid var(--prox-border);
+  }
+  .gallery-img:hover { transform: scale(1.05); }
+
+  .modal-footer {
+    padding: 20px 30px;
+    border-top: 1px solid var(--prox-border);
+    display: flex;
+    gap: 12px;
+    background: var(--prox-bg-elevated);
+    border-radius: 0 0 20px 20px;
+  }
+  .empty-state { text-align: center; padding: 60px 20px; }
+  .empty-state-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.3; }
+  .empty-state h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .empty-state p { color: var(--prox-text-secondary); font-size: 15px; }
+
+  @media (max-width: 768px) {
+    body { padding: 12px; }
+    .services-grid { grid-template-columns: 1fr; }
+    .controls-bar { flex-direction: column; align-items: stretch; }
+    .stats-container { margin-left: 0; flex-wrap: wrap; }
+    .info-grid { grid-template-columns: 1fr; }
+    .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+    .modal-footer { flex-direction: column; }
+  }
+
+  .reject-reason-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 14px;
+    border: 2px solid var(--prox-border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    resize: vertical;
+    transition: all 0.2s;
+    background: var(--prox-bg-elevated);
+    color: var(--prox-text-primary);
+  }
+</style>
+</head>
+
+<body>
+  <div class="admin-header">
+    <h1>🛡️ Service Review Dashboard</h1>
+    <p>Review and approve service submissions from providers</p>
+  </div>
+
+  <div class="controls-bar">
+    <div class="filter-group">
+      <select id="statusFilter">
+        <option value="all">All Services</option>
+        <option value="pending" selected>Pending Review</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+      </select>
+
+      <select id="categoryFilter">
+        <option value="all">All Categories</option>
+        <option value="Photographers">Photographers</option>
+        <option value="Videographers">Videographers</option>
+        <option value="Drone Operators">Drone Operators</option>
+        <option value="Web Developers">Web Developers</option>
+        <option value="Graphic Designers">Graphic Designers</option>
+        <option value="UI/UX Designers">UI/UX Designers</option>
+        <option value="Social Media Marketers">Social Media Marketers</option>
+        <option value="SEO Experts">SEO Experts</option>
+        <option value="Content Writers">Content Writers</option>
+        <option value="Video Editors">Video Editors</option>
+        <option value="Motion Graphics Artists">Motion Graphics Artists</option>
+      </select>
+
+      <input type="search" id="searchInput" placeholder="Search services...">
+    </div>
+
+    <div class="stats-container">
+      <div class="stat-badge pending"><span>⏳</span><span id="pendingCount">0</span></div>
+      <div class="stat-badge approved"><span>✓</span><span id="approvedCount">0</span></div>
+      <div class="stat-badge rejected"><span>✗</span><span id="rejectedCount">0</span></div>
+    </div>
+  </div>
+
+  <div class="services-grid" id="servicesGrid"></div>
+
+  <div class="empty-state" id="emptyState" style="display: none;">
+    <div class="empty-state-icon">📭</div>
+    <h3>No Services Found</h3>
+    <p>There are no services matching your current filters.</p>
+  </div>
+
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Service Details</h2>
+        <button class="btn-close-modal" onclick="closeDetailModal()">×</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="rejectModal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2>Reject Service</h2>
+        <button class="btn-close-modal" onclick="closeRejectModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 16px; color: var(--prox-text-secondary);">
+          Please provide a reason for rejection. This will be sent to the provider.
+        </p>
+        <textarea
+          class="reject-reason-textarea"
+          id="rejectReason"
+          placeholder="Enter rejection reason..."
+          maxlength="500"
+        ></textarea>
+        <p style="font-size: 12px; color: var(--prox-text-secondary); margin-top: 8px;">
+          <span id="reasonCharCount">0</span>/500 characters
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-action btn-view" onclick="closeRejectModal()">Cancel</button>
+        <button class="btn-action btn-reject" onclick="confirmReject()">Confirm Rejection</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+      authDomain: "phototester555.firebaseapp.com",
+      projectId: "phototester555",
+      storageBucket: "phototester555.firebasestorage.app",
+      messagingSenderId: "953997763616",
+      appId: "1:953997763616:web:4ac177ad8e79c5f38b8845",
+      measurementId: "G-6VS0G0NQ7K"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    let allServices = [];
+    let currentFilters = { status: 'pending', category: 'all', search: '' };
+    let selectedServiceId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      auth.onAuthStateChanged(async (user) => {
+        if (!user) {
+          console.log('No user logged in, redirecting to login');
+          window.location.href = 'index.html';
+          return;
+        }
+
+        try {
+          const adminDoc = await db.collection('admin_users').doc(user.uid).get();
+          if (!adminDoc.exists || !adminDoc.data().isActive) {
+            console.log('User is not an active admin, signing out');
+            await auth.signOut();
+            window.location.href = 'index.html';
+            return;
+          }
+        } catch (error) {
+          console.error('Error verifying admin status:', error);
+          await auth.signOut();
+          window.location.href = 'index.html';
+          return;
+        }
+
+        loadServices();
+        attachEventListeners();
+
+        document.getElementById('rejectReason').addEventListener('input', (e) => {
+          document.getElementById('reasonCharCount').textContent = e.target.value.length;
+        });
+      });
+    });
+
+    function formatDate(timestamp) {
+      if (!timestamp) return 'N/A';
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      return new Intl.DateTimeFormat('en-IN', {
+        day: 'numeric', month: 'short', year: 'numeric',
+        hour: 'numeric', minute: '2-digit', hour12: true
+      }).format(date);
+    }
+
+    function formatDateShort(timestamp) {
+      if (!timestamp) return 'N/A';
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      return new Intl.DateTimeFormat('en-IN', {
+        day: 'numeric', month: 'short', year: 'numeric'
+      }).format(date);
+    }
+
+    function getRelativeTime(timestamp) {
+      if (!timestamp) return 'N/A';
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      const now = new Date();
+      const diffInSeconds = Math.floor((now - date) / 1000);
+
+      if (diffInSeconds < 60) return 'Just now';
+      if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`;
+      }
+      if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
+      }
+      if (diffInSeconds < 604800) {
+        const days = Math.floor(diffInSeconds / 86400);
+        if (days === 1) return 'Yesterday';
+        return `${days} days ago`;
+      }
+      const weeks = Math.floor(diffInSeconds / 604800);
+      return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
+    }
+
+    async function loadServices() {
+      try {
+        const servicesSnapshot = await db.collection('services').orderBy('createdAt', 'desc').get();
+        allServices = servicesSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        // Fetch pending review requests to overlay proposedData for edit requests
+        const pendingReviewReqs = await db.collection('servicereviewrequests').where('status', '==', 'pending').get();
+        const pendingMap = {};
+        pendingReviewReqs.forEach(doc => {
+          const data = doc.data();
+          if (data.serviceId && data.proposedData) {
+            pendingMap[data.serviceId] = data.proposedData;
+          }
+        });
+
+        allServices.forEach(s => {
+           if (s.status === 'pending_review' && pendingMap[s.id]) {
+             s._proposedData = pendingMap[s.id];
+           }
+        });
+
+        // 🔍 DEBUG: Log first service's pricing structure
+        if (allServices.length > 0) {
+          console.log('=== SAMPLE SERVICE DATA ===');
+          console.log('Title:', allServices[0].title);
+          console.log('Pricing:', allServices[0].pricing);
+          console.log('Packages:', allServices[0].pricing?.packages);
+          console.log('Hourly:', allServices[0].pricing?.hourly);
+          console.log('Calculated Price:', getLowestPrice(allServices[0].pricing));
+          console.log('========================');
+        }
+        
+        updateStats();
+        renderServices();
+      } catch (error) {
+        console.error('Error loading services:', error);
+
+        try {
+          const fallbackSnapshot = await db.collection('services').get();
+          allServices = fallbackSnapshot.docs
+            .map(d => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => {
+              const dateA = a.createdAt?.toDate?.() || a.review?.submittedAt?.toDate?.() || new Date(0);
+              const dateB = b.createdAt?.toDate?.() || b.review?.submittedAt?.toDate?.() || new Date(0);
+              return dateB - dateA;
+            });
+
+          updateStats();
+          renderServices();
+        } catch (fallbackError) {
+          alert('Failed to load services. Please refresh the page.');
+        }
+      }
+    }
+
+    function handleImageError(img) {
+      if (img.dataset.errorHandled) return;
+      img.dataset.errorHandled = 'true';
+      img.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22200%22%3E%3Crect width=%22400%22 height=%22200%22 fill=%22%23374151%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22DM Sans, Arial%22 font-size=%2218%22 fill=%22%239ca3af%22%3ENo Image%3C/text%3E%3C/svg%3E';
+      img.onerror = null;
+    }
+
+    function isVideoUrl(url) {
+      if (!url || typeof url !== 'string') return false;
+      const cleanUrl = url.split('?')[0].toLowerCase();
+      return cleanUrl.endsWith('.mp4') || 
+             cleanUrl.endsWith('.webm') || 
+             cleanUrl.endsWith('.ogg') || 
+             cleanUrl.endsWith('.mov') || 
+             cleanUrl.endsWith('.quicktime') || 
+             url.includes('_720p');
+    }
+
+  function normalizeServiceMedia(service = {}) {
+  console.log('🔍 Raw service media:', service.media);
+  
+  const coverUrl = 
+    service?.media?.coverUrl || 
+    service?.coverUrl || 
+    service?.coverImage ||
+    null;
+
+  // Handle multiple gallery field variations + FIX BROKEN URLS
+  let gallery = 
+    (Array.isArray(service?.media?.gallery) && service.media.gallery) ||
+    (Array.isArray(service?.media?.galleryUrls) && service.media.galleryUrls) ||
+    (Array.isArray(service?.galleryUrls) && service.galleryUrls) ||
+    (Array.isArray(service?.gallery) && service.gallery) ||
+    (Array.isArray(service?.portfolioImages) && service.portfolioImages) ||
+    [];
+
+  // 🔧 FIX BROKEN URLS
+  gallery = gallery.map((url, index) => {
+    let fixed = url;
+    
+    // Fix 1: Remove .webp prefix that got prepended
+    if (url.includes('.webpservices')) {
+      fixed = url.replace('.webpservices', 'services');
+      console.log(`🔧 Fixed path issue for image ${index + 1}`);
+    }
+    
+    if (fixed !== url) {
+      console.log(`   Original: ${url}`);
+      console.log(`   Fixed:    ${fixed}`);
+    }
+    
+    return fixed;
+  });
+
+  // Handle video URL + fix if needed
+  let promoUrl = 
+    service?.media?.promoUrl || 
+    service?.media?.videoUrl ||
+    service?.videoUrl || 
+    service?.promoVideo ||
+    null;
+    
+  if (promoUrl) {
+    console.log('🎥 Video URL found:', promoUrl);
+    
+    // Fix video URL if it has the same issue
+    if (promoUrl.includes('.webpservices')) {
+      promoUrl = promoUrl.replace('.webpservices', 'services');
+      console.log('🔧 Fixed video URL path');
+    }
+  } else {
+    console.log('⚠️ No video URL found in service data');
+  }
+
+  const result = { coverUrl, gallery, promoUrl };
+  console.log('✅ Normalized media:', result);
+  
+  return result;
+}
+
+
+    function createMediaGalleryHTML(media, service) {
+  let html = '';
+  
+  // Cover Image Section
+  if (media.coverUrl) {
+    html += `
+      <div class="detail-section">
+        <div class="section-title">Cover Image</div>
+        <div style="margin-top: 12px;">
+          <img src="${media.coverUrl}" 
+               alt="Service cover" 
+               style="width: 100%; max-height: 400px; object-fit: cover; border-radius: 12px; border: 1px solid var(--prox-border); cursor: pointer;"
+               referrerpolicy="no-referrer"
+               onerror="handleImageError(this)"
+               onclick="window.open('${media.coverUrl}', '_blank')"
+               title="Click to view full size">
+        </div>
+      </div>
+    `;
+  }
+  
+  // Portfolio Gallery Section
+  if (media.gallery && media.gallery.length > 0) {
+    const videoCount = media.gallery.filter(isVideoUrl).length;
+    const imageCount = media.gallery.length - videoCount;
+    let label = 'files';
+    if (videoCount > 0 && imageCount > 0) {
+      label = `${videoCount} videos, ${imageCount} images`;
+    } else if (videoCount > 0) {
+      label = `${videoCount} videos`;
+    } else {
+      label = `${imageCount} images`;
+    }
+    html += `
+      <div class="detail-section">
+        <div class="section-title">Portfolio Gallery (${label})</div>
+        <div class="gallery-grid">
+          ${media.gallery.map((url, index) => {
+            if (isVideoUrl(url)) {
+              return `
+                <div style="position: relative; border-radius: 8px; overflow: hidden; border: 1px solid var(--prox-border); background: #000; min-height: 120px;">
+                  <video controls playsinline preload="metadata" style="width: 100%; height: 100%; object-fit: cover; aspect-ratio: 16/9; display: block;">
+                    <source src="${url}" type="video/mp4">
+                  </video>
+                </div>
+              `;
+            } else {
+              return `
+                <img src="${url}"
+                     alt="Portfolio image ${index + 1}"
+                     class="gallery-img"
+                     referrerpolicy="no-referrer"
+                     onerror="handleImageError(this)"
+                     onclick="window.open('${url}', '_blank')"
+                     title="Click to view full size">
+              `;
+            }
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  // Promotional Video Section
+  if (media.promoUrl) {
+    const isYouTube = media.promoUrl.includes('youtube.com') || media.promoUrl.includes('youtu.be');
+    const isVimeo = media.promoUrl.includes('vimeo.com');
+    
+    html += `
+      <div class="detail-section">
+        <div class="section-title">Promotional Video</div>
+        <div style="margin-top: 12px;">
+    `;
+    
+    if (isYouTube || isVimeo) {
+      // Embed video player for YouTube/Vimeo
+      html += `
+        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; border: 1px solid var(--prox-border);">
+          <iframe src="${media.promoUrl}" 
+                  style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                  frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowfullscreen>
+          </iframe>
+        </div>
+      `;
+    } else {
+      // Direct video file
+      html += `
+        <video controls 
+               style="width: 100%; max-height: 400px; border-radius: 12px; border: 1px solid var(--prox-border); background: #000;"
+               preload="metadata">
+          <source src="${media.promoUrl}" type="video/mp4">
+          <source src="${media.promoUrl}" type="video/webm">
+          <source src="${media.promoUrl}" type="video/mov">
+          Your browser does not support the video tag.
+          <a href="${media.promoUrl}" target="_blank" style="color: var(--prox-blue);">Download Video</a>
+        </video>
+        <div style="margin-top: 8px; font-size: 12px; color: var(--prox-text-muted);">
+          <a href="${media.promoUrl}" target="_blank" style="color: var(--prox-blue); text-decoration: none;">
+            📥 Download Video
+          </a>
+        </div>
+      `;
+    }
+    
+    html += `
+        </div>
+      </div>
+    `;
+  }
+  
+  // Show debug info if no media found
+  if (!media.coverUrl && (!media.gallery || media.gallery.length === 0) && !media.promoUrl) {
+    html += `
+      <div class="detail-section">
+        <div class="section-title">Media Files</div>
+        <p style="color: var(--prox-text-muted); font-style: italic;">
+          No media files uploaded for this service.
+        </p>
+      </div>
+    `;
+  }
+  
+  return html;
+}
+
+
+    function updateStats() {
+      const pending = allServices.filter(s => s.status === 'pending_review').length;
+      const approved = allServices.filter(s => s.status === 'approved').length;
+      const rejected = allServices.filter(s => s.status === 'rejected').length;
+
+      document.getElementById('pendingCount').textContent = pending;
+      document.getElementById('approvedCount').textContent = approved;
+      document.getElementById('rejectedCount').textContent = rejected;
+    }
+
+    function renderServices() {
+      const filteredServices = allServices.filter(service => {
+        const statusMatch =
+          currentFilters.status === 'all' ||
+          (currentFilters.status === 'pending' && service.status === 'pending_review') ||
+          (currentFilters.status === 'approved' && service.status === 'approved') ||
+          (currentFilters.status === 'rejected' && service.status === 'rejected');
+
+        const categoryMatch = currentFilters.category === 'all' || service.category === currentFilters.category;
+
+        const s = (currentFilters.search || '').toLowerCase();
+        const searchMatch =
+          !s ||
+          service.title?.toLowerCase().includes(s) ||
+          service.tagline?.toLowerCase().includes(s) ||
+          service.category?.toLowerCase().includes(s);
+
+        return statusMatch && categoryMatch && searchMatch;
+      });
+
+      const grid = document.getElementById('servicesGrid');
+      const emptyState = document.getElementById('emptyState');
+
+      if (filteredServices.length === 0) {
+        grid.style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      grid.style.display = 'grid';
+      emptyState.style.display = 'none';
+      grid.innerHTML = filteredServices.map(service => createServiceCard(service)).join('');
+    }
+
+    // ===== ENHANCED PRICING FUNCTIONS =====
+    
+    function getLowestPrice(pricing) {
+      if (!pricing) return 0;
+      const prices = [];
+
+      // Handle package pricing
+      if (pricing.packages && Array.isArray(pricing.packages)) {
+        pricing.packages.forEach(pkg => {
+          if (pkg.enabled === false) return;
+          const price = Number(pkg.price || 0);
+          if (price > 0) prices.push(price);
+        });
+      }
+
+      // Handle hourly pricing
+      if (pricing.hourly && pricing.hourly.enabled !== false) {
+        const rate = Number(pricing.hourly.rate || 0);
+        const minHours = Number(pricing.hourly.minHours || 1);
+        if (rate > 0) prices.push(rate * minHours);
+      }
+
+      return prices.length > 0 ? Math.min(...prices) : 0;
+    }
+
+    function formatPricingDetailsSimple(service) {
+      const pricing = service.pricing;
+      if (!pricing) return 'No pricing';
+      
+      let items = [];
+      
+      // Count packages
+      if (pricing.packages && pricing.packages.length > 0) {
+        const enabledPkgs = pricing.packages.filter(p => p.enabled !== false);
+        if (enabledPkgs.length > 0) {
+          items.push(`${enabledPkgs.length} package${enabledPkgs.length > 1 ? 's' : ''}`);
+        }
+      }
+      
+      // Check hourly
+      if (pricing.hourly && pricing.hourly.enabled !== false && pricing.hourly.rate > 0) {
+        items.push(`₹${Number(pricing.hourly.rate).toLocaleString('en-IN')}/hr`);
+      }
+      
+      return items.length > 0 ? items.join(' • ') : 'No pricing set';
+    }
+
+    function formatPricingDetails(service) {
+      const pricing = service.pricing;
+      if (!pricing) return '<p style="color: var(--prox-text-muted);">No pricing information available</p>';
+      
+      let html = '';
+      
+      // Display Packages
+      if (pricing.packages && pricing.packages.length > 0) {
+        html += '<div style="margin-bottom: 20px;"><strong style="color: var(--prox-text-primary); font-size: 15px;">📦 Packages:</strong><div style="margin-top: 12px; display: flex; flex-direction: column; gap: 12px;">';
+        
+        pricing.packages.forEach(pkg => {
+          if (pkg.enabled === false) return;
+          
+          const price = Number(pkg.price || 0);
+          const deliverables = pkg.deliverables || pkg.count || 'N/A';
+          const tatDays = pkg.tatDays || 'N/A';
+          const revisions = pkg.revisions !== undefined ? pkg.revisions : 'N/A';
+          const duration = pkg.duration || 'N/A';
+          
+          html += `
+            <div style="background: var(--prox-bg-elevated); padding: 14px; border-radius: 8px; border: 1px solid var(--prox-border);">
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                <div>
+                  <strong style="color: var(--prox-text-primary); font-size: 15px;">${pkg.name || 'Package'}</strong>
+                  ${duration !== 'N/A' ? `<div style="color: var(--prox-text-muted); font-size: 12px; margin-top: 2px;">⏱️ ${duration}</div>` : ''}
+                </div>
+                <div style="color: var(--prox-blue); font-weight: 700; font-size: 16px;">₹${price.toLocaleString('en-IN')}</div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 13px; color: var(--prox-text-secondary);">
+                <div><span style="color: var(--prox-text-muted);">📄</span> ${deliverables} files</div>
+                <div><span style="color: var(--prox-text-muted);">⏰</span> ${tatDays} days</div>
+                <div><span style="color: var(--prox-text-muted);">🔄</span> ${revisions} revisions</div>
+              </div>
+              ${pkg.deliverableTitle ? `<div style="margin-top: 8px; font-size: 12px; color: var(--prox-text-secondary);">Deliverable: ${pkg.deliverableTitle}</div>` : ''}
+              ${pkg.description || pkg.desc ? `<div style="margin-top: 6px; font-size: 12px; color: var(--prox-text-muted); font-style: italic;">${pkg.description || pkg.desc}</div>` : ''}
+              ${pkg.fileTypes && pkg.fileTypes.length > 0 ? `
+                <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px;">
+                  ${pkg.fileTypes.map(ft => `<span style="background: rgba(59, 130, 246, 0.1); color: var(--prox-blue); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">${ft}</span>`).join('')}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        });
+        
+        html += '</div></div>';
+      }
+      
+      // Display Hourly Pricing
+      if (pricing.hourly && pricing.hourly.enabled !== false) {
+        const rate = Number(pricing.hourly.rate || 0);
+        const minHours = Number(pricing.hourly.minHours || 1);
+        const tatDays = pricing.hourly.tatDays || 'N/A';
+        const revisions = pricing.hourly.revisions !== undefined ? pricing.hourly.revisions : 'N/A';
+        
+        if (rate > 0) {
+          html += `
+            <div style="margin-bottom: 20px;">
+              <strong style="color: var(--prox-text-primary); font-size: 15px;">⏰ Hourly Pricing:</strong>
+              <div style="margin-top: 12px; background: var(--prox-bg-elevated); padding: 14px; border-radius: 8px; border: 1px solid var(--prox-border);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <strong style="color: var(--prox-text-primary); font-size: 15px;">Hourly Rate</strong>
+                  <div style="color: var(--prox-blue); font-weight: 700; font-size: 16px;">₹${rate.toLocaleString('en-IN')}/hr</div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 13px; color: var(--prox-text-secondary);">
+                  <div><span style="color: var(--prox-text-muted);">⏱️</span> Min ${minHours}h</div>
+                  <div><span style="color: var(--prox-text-muted);">⏰</span> ${tatDays} days TAT</div>
+                  <div><span style="color: var(--prox-text-muted);">🔄</span> ${revisions} revisions</div>
+                </div>
+                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--prox-border); font-size: 13px; color: var(--prox-text-muted);">
+                  Minimum booking: ₹${(rate * minHours).toLocaleString('en-IN')} (${minHours} hours)
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }
+      
+      return html || '<p style="color: var(--prox-text-muted);">No pricing details available</p>';
+    }
+
+    function createServiceCard(service) {
+      const isEdit = service.review?.type === 'edit' || (service.review && service.review.proposedData) || !!service._proposedData;
+      
+      const statusClass = service.status === 'pending_review' ? (isEdit ? 'pending-edit' : 'pending')
+                        : service.status === 'approved' ? 'approved'
+                        : 'rejected';
+
+      const statusText = service.status === 'pending_review' ? (isEdit ? '✏️ Edit Request' : 'Pending')
+                       : service.status === 'approved' ? 'Approved'
+                       : 'Rejected';
+
+      const p = service._proposedData || {};
+      const serviceTitle = p.title || service.title || 'Untitled Service';
+      const serviceCategory = p.category || service.category || 'N/A';
+      const serviceCity = p.city || service.city;
+      const serviceTagline = p.tagline || service.tagline || 'No tagline provided';
+
+      const m = normalizeServiceMedia(p.media ? { media: p.media, coverUrl: p.media.coverUrl } : service);
+      const lowestPrice = getLowestPrice(p.pricing || service.pricing);
+      const pricingDetail = formatPricingDetailsSimple(p.pricing ? { pricing: p.pricing } : service);
+
+      const providerName = service.review?.providerName || service.providerName || 'Unknown Provider';
+      const providerInitial = (providerName || 'P').charAt(0).toUpperCase();
+
+      const submittedAt = service.review?.submittedAt || service.submittedAt || service.createdAt;
+      const submittedTime = getRelativeTime(submittedAt);
+      const submittedDate = formatDateShort(submittedAt);
+
+      const cityChip = serviceCity ? `<span class="meta-chip">📍 ${serviceCity}</span>` : '';
+
+      const defaultImage = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22200%22%3E%3Crect width=%22400%22 height=%22200%22 fill=%22%23374151%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22DM Sans, Arial%22 font-size=%2218%22 fill=%22%239ca3af%22%3ENo Image%3C/text%3E%3C/svg%3E';
+
+      const coverSrc = m.coverUrl || defaultImage;
+
+      return `
+        <div class="service-card ${statusClass}">
+          <img src="${coverSrc}"
+               alt="${serviceTitle}"
+               class="card-cover"
+               referrerpolicy="no-referrer"
+               onerror="handleImageError(this)">
+
+          <span class="status-badge ${statusClass}">${statusText}</span>
+
+          <div class="card-body-content">
+            <div class="service-meta">
+              <span class="meta-chip">🏷️ ${serviceCategory}</span>
+              ${cityChip}
+            </div>
+
+            <h3 class="service-title">${serviceTitle}</h3>
+            <p class="service-tagline">${serviceTagline}</p>
+
+            <div class="service-pricing">
+              ${lowestPrice > 0 ? '₹' + Number(lowestPrice).toLocaleString('en-IN') : 'Price not set'}
+              <div class="service-pricing-detail">${pricingDetail}</div>
+            </div>
+
+            <div class="provider-info">
+              <div class="provider-avatar">${providerInitial}</div>
+              <div>
+                <strong>${providerName}</strong><br>
+                <span style="color: var(--prox-text-muted);">${submittedTime}</span>
+                <span style="color: var(--prox-text-muted); font-size: 11px; display: block; margin-top: 2px;">${submittedDate}</span>
+              </div>
+            </div>
+
+            <div class="card-actions">
+              <button class="btn-action btn-view" onclick="viewServiceDetail('${service.id}')">👁️ View Details</button>
+              ${service.status === 'pending_review' ? `
+                <button class="btn-action btn-approve" onclick="approveService('${service.id}')">✓ Approve</button>
+                <button class="btn-action btn-reject" onclick="openRejectModal('${service.id}')">✗ Reject</button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function viewServiceDetail(serviceId) {
+  const service = allServices.find(s => s.id === serviceId);
+  if (!service) return;
+
+  const reviewReqSnap = await db.collection('servicereviewrequests')
+    .where('serviceId', '==', serviceId)
+    .where('status', '==', 'pending')
+    .limit(1)
+    .get();
+
+  let proposedData = null;
+  let comparisonHTML = '';
+  if (!reviewReqSnap.empty && reviewReqSnap.docs[0].data().proposedData) {
+    proposedData = reviewReqSnap.docs[0].data().proposedData;
+    
+    comparisonHTML = `
+      <div class="detail-section" style="background: rgba(245,158,11,0.1); border: 1px solid #f59e0b; padding: 16px; border-radius: 8px;">
+        <div class="section-title" style="color: #b45309; margin-bottom: 12px;">⚠️ Edit Request (Pending Review)</div>
+        <p style="font-size: 13px; color: #b45309; margin-bottom: 16px;">This service has pending edits. The details below reflect the <strong>Proposed</strong> version. Approving this request will apply these changes to the live service.</p>
+        <div class="info-grid" style="border-top: 1px solid rgba(245,158,11,0.3); padding-top: 12px;">
+          ${proposedData.title && proposedData.title !== service.title ? `
+            <div class="info-item">
+              <div class="info-label" style="color: #b45309;">Title Changed From:</div>
+              <div class="info-value" style="text-decoration: line-through; color: var(--prox-text-muted);">${service.title || '(none)'}</div>
+            </div>
+          ` : ''}
+          ${proposedData.pricing ? `
+            <div class="info-item">
+              <div class="info-label" style="color: #b45309;">Pricing</div>
+              <div class="info-value">Pricing packages have been modified.</div>
+            </div>
+          ` : ''}
+          ${proposedData.media ? `
+            <div class="info-item">
+              <div class="info-label" style="color: #b45309;">Media</div>
+              <div class="info-value">Images or video have been modified.</div>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+
+    // Apply proposed properties to the local service object for rendering
+    if (proposedData.title !== undefined) service.title = proposedData.title;
+    if (proposedData.tagline !== undefined) service.tagline = proposedData.tagline;
+    if (proposedData.description !== undefined) service.description = proposedData.description;
+    if (proposedData.category !== undefined) service.category = proposedData.category;
+    if (proposedData.city !== undefined) service.city = proposedData.city;
+    if (proposedData.pricing !== undefined) service.pricing = proposedData.pricing;
+    if (proposedData.highlights !== undefined) service.highlights = proposedData.highlights;
+    if (proposedData.tags !== undefined) service.tags = proposedData.tags;
+    if (proposedData.media !== undefined) service.media = proposedData.media;
+  }
+
+  const m = normalizeServiceMedia(service);
+
+  // 🔍 DEBUG
+   console.log('📸 Media Debug:', {
+    service: service.title,
+    rawMedia: service.media,
+    normalized: m,
+    coverUrl: m.coverUrl,
+    galleryCount: m.gallery?.length || 0,
+    galleryUrls: m.gallery,
+    videoUrl: m.promoUrl,
+    hasVideo: !!m.promoUrl
+  })
+
+  const providerName = service.review?.providerName || service.providerName || 'N/A';
+  const providerEmail = service.review?.providerEmail || service.providerEmail || 'N/A';
+  const submittedAt = service.review?.submittedAt || service.submittedAt || service.createdAt;
+
+  const modal = document.getElementById('detailModal');
+  const modalBody = document.getElementById('modalBody');
+  const modalFooter = document.getElementById('modalFooter');
+
+  // Build the complete modal body HTML
+  let modalHTML = comparisonHTML + `
+    <div class="detail-section">
+      <div class="section-title">Basic Information</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">Category</div>
+          <div class="info-value">${service.category || 'N/A'}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Service Type</div>
+          <div class="info-value">${service.pricing?.type || 'N/A'}</div>
+        </div>
+        ${service.city ? `
+        <div class="info-item">
+          <div class="info-label">Location</div>
+          <div class="info-value">${service.city}</div>
+        </div>
+        ` : ''}
+        <div class="info-item">
+          <div class="info-label">Status</div>
+          <div class="info-value">${service.status || 'N/A'}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="section-title">Service Details</div>
+      <div style="margin-bottom: 12px;">
+        <div class="info-label">Title</div>
+        <div class="info-value" style="font-size: 18px;">${service.title || 'N/A'}</div>
+      </div>
+      <div style="margin-bottom: 12px;">
+        <div class="info-label">Tagline</div>
+        <div class="info-value">${service.tagline || 'N/A'}</div>
+      </div>
+      <div>
+        <div class="info-label">Description</div>
+        <p style="color: var(--prox-text-secondary); line-height: 1.6; margin-top: 8px;">
+          ${service.description || 'N/A'}
+        </p>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="section-title">Pricing Details</div>
+      ${formatPricingDetails(service)}
+    </div>
+
+    ${service.highlights && service.highlights.length > 0 ? `
+    <div class="detail-section">
+      <div class="section-title">Highlights</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        ${service.highlights.map(h => `<span style="background: var(--prox-bg-elevated); color: var(--prox-text-primary); padding: 8px 14px; border-radius: 20px; font-size: 13px; border: 1px solid var(--prox-border);">✨ ${h}</span>`).join('')}
+      </div>
+    </div>
+    ` : ''}
+  `;
+
+  // ========== ADD COVER IMAGE ==========
+  if (m.coverUrl) {
+    modalHTML += `
+      <div class="detail-section">
+        <div class="section-title">Cover Image</div>
+        <div style="margin-top: 12px;">
+          <img src="${m.coverUrl}" 
+               alt="Service cover" 
+               style="width: 100%; max-height: 400px; object-fit: cover; border-radius: 12px; border: 1px solid var(--prox-border); cursor: pointer;"
+               referrerpolicy="no-referrer"
+               onerror="handleImageError(this)"
+               onclick="window.open('${m.coverUrl}', '_blank')"
+               title="Click to view full size">
+        </div>
+      </div>
+    `;
+  }
+
+  // ========== ADD GALLERY IMAGES ==========
+  if (m.gallery && m.gallery.length > 0) {
+    const videoCount = m.gallery.filter(isVideoUrl).length;
+    const imageCount = m.gallery.length - videoCount;
+    let label = 'files';
+    if (videoCount > 0 && imageCount > 0) {
+      label = `${videoCount} videos, ${imageCount} images`;
+    } else if (videoCount > 0) {
+      label = `${videoCount} videos`;
+    } else {
+      label = `${imageCount} images`;
+    }
+    console.log(`🖼️ Rendering gallery with ${m.gallery.length} media items (${videoCount} videos, ${imageCount} images)`);
+    
+    modalHTML += `
+      <div class="detail-section">
+        <div class="section-title">Portfolio Gallery (${label})</div>
+        <div class="gallery-grid">
+    `;
+    
+    m.gallery.forEach((url, index) => {
+      console.log(`  - Media ${index + 1}:`, url);
+      if (isVideoUrl(url)) {
+        modalHTML += `
+          <div style="position: relative; border-radius: 8px; overflow: hidden; border: 1px solid var(--prox-border); background: #000; min-height: 120px;">
+            <video controls playsinline preload="metadata" style="width: 100%; height: 100%; object-fit: cover; aspect-ratio: 16/9; display: block;">
+              <source src="${url}" type="video/mp4">
+            </video>
+          </div>
+        `;
+      } else {
+        modalHTML += `
+          <img src="${url}"
+               alt="Portfolio image ${index + 1}"
+               class="gallery-img"
+               referrerpolicy="no-referrer"
+               onerror="handleImageError(this)"
+               onclick="window.open('${url}', '_blank')"
+               title="Click to view full size"
+               style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; cursor: pointer; border: 1px solid var(--prox-border);">
+        `;
+      }
+    });
+    
+    modalHTML += `
+        </div>
+      </div>
+    `;
+  } else {
+    console.log('⚠️ No gallery images/videos found');
+  }
+
+  // ========== ADD VIDEO ==========
+  if (m.promoUrl) {
+    const isYouTube = m.promoUrl.includes('youtube.com') || m.promoUrl.includes('youtu.be');
+    const isVimeo = m.promoUrl.includes('vimeo.com');
+    
+    modalHTML += `
+      <div class="detail-section">
+        <div class="section-title">Promotional Video</div>
+        <div style="margin-top: 12px;">
+    `;
+    
+    if (isYouTube || isVimeo) {
+      modalHTML += `
+        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; border: 1px solid var(--prox-border);">
+          <iframe src="${m.promoUrl}" 
+                  style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                  frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowfullscreen>
+          </iframe>
+        </div>
+      `;
+    } else {
+      modalHTML += `
+        <video controls 
+               style="width: 100%; max-height: 400px; border-radius: 12px; border: 1px solid var(--prox-border); background: #000;"
+               preload="metadata">
+          <source src="${m.promoUrl}" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      `;
+    }
+    
+    modalHTML += `
+        </div>
+      </div>
+    `;
+  }
+
+  // ========== PROVIDER INFO ==========
+  modalHTML += `
+    <div class="detail-section">
+      <div class="section-title">Provider Information</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">Name</div>
+          <div class="info-value">${providerName}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Email</div>
+          <div class="info-value">${providerEmail}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Provider ID</div>
+          <div class="info-value" style="font-size: 12px; word-break: break-all;">
+            ${service.providerId || 'N/A'}
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Submitted</div>
+          <div class="info-value" style="font-size: 13px;">
+            ${getRelativeTime(submittedAt)}<br>
+            <span style="color: var(--prox-text-muted); font-size: 11px;">
+              ${formatDate(submittedAt)}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Insert all HTML at once
+  modalBody.innerHTML = modalHTML;
+
+  if (service.status === 'pending_review') {
+    modalFooter.innerHTML = `
+      <button class="btn-action btn-approve" onclick="approveService('${service.id}')">✓ Approve Service</button>
+      <button class="btn-action btn-reject" onclick="openRejectModal('${service.id}')">✗ Reject Service</button>
+    `;
+  } else {
+    modalFooter.innerHTML = `<button class="btn-action btn-view" onclick="closeDetailModal()">Close</button>`;
+  }
+
+  modal.classList.add('active');
+}
+
+
+
+    function closeDetailModal() {
+      document.getElementById('detailModal').classList.remove('active');
+    }
+
+    function openRejectModal(serviceId) {
+      selectedServiceId = serviceId;
+      document.getElementById('rejectReason').value = '';
+      document.getElementById('reasonCharCount').textContent = '0';
+      document.getElementById('rejectModal').classList.add('active');
+      closeDetailModal();
+    }
+
+    function closeRejectModal() {
+      document.getElementById('rejectModal').classList.remove('active');
+      selectedServiceId = null;
+    }
+
+    async function approveService(serviceId) {
+      if (!confirm('Are you sure you want to approve this service?')) return;
+
+      try {
+        const batch = db.batch();
+        const serviceRef = db.collection('services').doc(serviceId);
+
+        // Base approval fields
+        const serviceUpdate = {
+          status: 'approved',
+          'review.status': 'approved',
+          'review.reviewedAt': firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        // Fetch all review requests for this service, pick the most recent
+        const reviewRequestQuery = await db.collection('servicereviewrequests')
+          .where('serviceId', '==', serviceId)
+          .get();
+
+        let reviewRequestRef = null;
+        if (!reviewRequestQuery.empty) {
+          // Sort client-side to get most recent
+          const sorted = reviewRequestQuery.docs.sort((a, b) => {
+            const ta = a.data().submittedAt?.toMillis?.() || 0;
+            const tb = b.data().submittedAt?.toMillis?.() || 0;
+            return tb - ta;
+          });
+          const reviewDoc = sorted[0];
+          reviewRequestRef = reviewDoc.ref;
+          const reviewData = reviewDoc.data();
+
+          // Apply proposed changes from edit requests to the service document
+          if (reviewData.proposedData) {
+            const p = reviewData.proposedData;
+            if (p.title       !== undefined) serviceUpdate.title       = p.title;
+            if (p.tagline     !== undefined) serviceUpdate.tagline     = p.tagline;
+            if (p.description !== undefined) serviceUpdate.description = p.description;
+            if (p.highlights  !== undefined) serviceUpdate.highlights  = p.highlights;
+            if (p.city        !== undefined) serviceUpdate.city        = p.city;
+            if (p.pricing     !== undefined) serviceUpdate.pricing     = p.pricing;
+            if (p.tags        !== undefined) serviceUpdate.tags        = p.tags;
+            if (p.media) {
+              if (p.media.coverUrl  !== undefined) {
+                serviceUpdate['media.coverUrl']  = p.media.coverUrl;
+                serviceUpdate.coverUrl = p.media.coverUrl;
+                serviceUpdate.coverImageUrl = p.media.coverUrl;
+                serviceUpdate.imageUrl = p.media.coverUrl;
+                serviceUpdate.serviceImageUrl = p.media.coverUrl;
+              }
+              if (p.media.gallery   !== undefined) {
+                serviceUpdate['media.gallery']   = p.media.gallery;
+                serviceUpdate.gallery = p.media.gallery;
+                serviceUpdate.imageUrls = p.media.gallery;
+                serviceUpdate.images = p.media.gallery;
+              }
+              if (p.media.promoUrl  !== undefined) {
+                serviceUpdate['media.promoUrl']  = p.media.promoUrl;
+                serviceUpdate.videoUrl = p.media.promoUrl;
+                serviceUpdate.promoUrl = p.media.promoUrl;
+              }
+            }
+          }
+        }
+
+        batch.update(serviceRef, serviceUpdate);
+
+        if (reviewRequestRef) {
+          batch.update(reviewRequestRef, {
+            status: 'approved',
+            message: 'Service approved and published',
+            reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        await batch.commit();
+        alert('✓ Service approved successfully!');
+        closeDetailModal();
+        await loadServices();
+      } catch (error) {
+        console.error('Error approving service:', error);
+        alert('Failed to approve service. Please try again.');
+      }
+    }
+
+    async function confirmReject() {
+      const reason = document.getElementById('rejectReason').value.trim();
+      if (!reason) return alert('Please provide a reason for rejection.');
+      if (reason.length < 10) return alert('Please provide a more detailed reason (at least 10 characters).');
+
+      try {
+        const batch = db.batch();
+
+        const serviceRef = db.collection('services').doc(selectedServiceId);
+        batch.update(serviceRef, {
+          status: 'rejected',
+          'review.status': 'rejected',
+          'review.rejectionReason': reason,
+          'review.reviewedAt': firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        const reviewRequestQuery = await db.collection('servicereviewrequests')
+          .where('serviceId', '==', selectedServiceId)
+          .where('status', '==', 'pending')
+          .limit(1)
+          .get();
+
+        if (!reviewRequestQuery.empty) {
+          const reviewRequestRef = reviewRequestQuery.docs[0].ref;
+          batch.update(reviewRequestRef, {
+            status: 'rejected',
+            message: reason,
+            reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        await batch.commit();
+        alert('✗ Service rejected.');
+        closeRejectModal();
+        await loadServices();
+      } catch (error) {
+        console.error('Error rejecting service:', error);
+        alert('Failed to reject service. Please try again.');
+      }
+    }
+
+    function attachEventListeners() {
+      document.getElementById('statusFilter').addEventListener('change', (e) => {
+        currentFilters.status = e.target.value;
+        renderServices();
+      });
+
+      document.getElementById('categoryFilter').addEventListener('change', (e) => {
+        currentFilters.category = e.target.value;
+        renderServices();
+      });
+
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        currentFilters.search = e.target.value;
+        renderServices();
+      });
+
+      document.getElementById('detailModal').addEventListener('click', (e) => {
+        if (e.target.id === 'detailModal') closeDetailModal();
+      });
+
+      document.getElementById('rejectModal').addEventListener('click', (e) => {
+        if (e.target.id === 'rejectModal') closeRejectModal();
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro X Admin - Deletion Requests</title>
+    
+    <!-- Firebase SDK v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-color: #e2e8f0;
+            --accent: #667eea;
+            --accent-dark: #5568d3;
+            --accent2: #764ba2;
+            --accent-light: rgba(102, 126, 234, 0.1);
+            --success: #10b981;
+            --success-light: rgba(16, 185, 129, 0.1);
+            --warning: #f59e0b;
+            --warning-light: rgba(245, 158, 11, 0.1);
+            --danger: #ef4444;
+            --danger-light: rgba(239, 68, 68, 0.1);
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+
+        html.dark-mode {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --border-color: #334155;
+            --accent: #60a5fa;
+            --accent-dark: #3b82f6;
+            --accent-light: rgba(96, 165, 250, 0.1);
+            --success: #22c55e;
+            --success-light: rgba(34, 197, 94, 0.15);
+            --warning: #f97316;
+            --warning-light: rgba(249, 115, 22, 0.15);
+            --danger: #ef4444;
+            --danger-light: rgba(239, 68, 68, 0.15);
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.3);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.3);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 12px;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: #ffffff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #a044ff 0%, #6a3093 100%);
+            color: white;
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            border-bottom: 4px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .header .subtitle {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-btn {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .theme-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            padding: 0;
+            border-radius: 50%;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            padding: 25px 40px;
+            background: var(--bg-tertiary);
+            border-bottom: 1.5px solid var(--border-color);
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stat-icon.pending { background: var(--warning-light); color: var(--warning); }
+        .stat-icon.approved { background: var(--success-light); color: var(--success); }
+        .stat-icon.rejected { background: var(--danger-light); color: var(--danger); }
+
+        .stat-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .filters-section {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 10px 20px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .filter-tab:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .filter-tab.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 12px var(--accent-light);
+        }
+
+        .search-box {
+            position: relative;
+            max-width: 350px;
+            width: 100%;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px 12px 40px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 14px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        .requests-table-wrapper {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            overflow-x: auto;
+        }
+
+        .requests-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .requests-table th {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            font-weight: 700;
+            padding: 16px 20px;
+            border-bottom: 1.5px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        .requests-table td {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            vertical-align: top;
+        }
+
+        .requests-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .requests-table tr:hover td {
+            background: rgba(var(--accent-light), 0.02);
+        }
+
+        .user-info-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .user-name {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .user-email-phone {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .user-id-badge {
+            font-family: monospace;
+            font-size: 11px;
+            color: var(--text-tertiary);
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 4px;
+            max-width: fit-content;
+        }
+
+        .reason-cell {
+            max-width: 300px;
+        }
+
+        .reason-category {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .reason-details {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .date-cell {
+            font-size: 13px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-pending { background: var(--warning-light); color: var(--warning); }
+        .status-approved { background: var(--success-light); color: var(--success); }
+        .status-rejected { background: var(--danger-light); color: var(--danger); }
+        .status-deleted { background: var(--border-color); color: var(--text-secondary); }
+
+        .admin-note-area {
+            width: 100%;
+            min-width: 180px;
+            max-width: 280px;
+            height: 70px;
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 12px;
+            outline: none;
+            resize: none;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            transition: border-color 0.2s;
+        }
+
+        .admin-note-area:focus {
+            border-color: var(--accent);
+            background: var(--bg-secondary);
+        }
+
+        .actions-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 150px;
+        }
+
+        .action-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .action-btn.approve {
+            background: var(--success);
+            color: white;
+        }
+
+        .action-btn.approve:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .action-btn.reject {
+            background: var(--warning);
+            color: white;
+        }
+
+        .action-btn.reject:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .action-btn.delete {
+            background: var(--danger);
+            color: white;
+        }
+
+        .action-btn.delete:hover {
+            opacity: 0.9;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 40px;
+            color: var(--text-tertiary);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* Confirmation Dialog Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            animation: modalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes modalIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #a044ff 0%, #6a3093 100%);
+            color: white;
+            padding: 18px 24px;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-body {
+            padding: 24px;
+            color: var(--text-primary);
+        }
+
+        .modal-body p {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .modal-body .warning-box {
+            background: var(--danger-light);
+            border-left: 4px solid var(--danger);
+            padding: 12px 16px;
+            border-radius: 6px;
+            color: var(--danger);
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-family: inherit;
+            outline: none;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .modal-input:focus {
+            border-color: var(--accent);
+            background: var(--bg-secondary);
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            background: var(--bg-tertiary);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .modal-btn.cancel {
+            background: transparent;
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .modal-btn.confirm {
+            background: var(--danger);
+            color: white;
+        }
+
+        .modal-btn.confirm:hover {
+            opacity: 0.9;
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 14px 22px;
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 2000;
+            box-shadow: var(--shadow-lg);
+            animation: slideInRight 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: none;
+        }
+
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+
+        @keyframes slideInRight {
+            from { transform: translateX(360px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @media (max-width: 992px) {
+            .header { padding: 20px 25px; }
+            .stats-bar { padding: 20px 25px; }
+            .content { padding: 20px 25px; }
+            .filters-section { flex-direction: column; align-items: stretch; }
+            .search-box { max-width: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div style="max-width: 1400px; margin: 0 auto;">
+        <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>⚠️ Account Deletion Requests</h1>
+                <div class="subtitle">Review, approve, reject, or perform admin account deletions</div>
+            </div>
+            <div class="header-right">
+                <span id="adminWelcome" style="font-size: 13px; opacity: 0.9; font-weight: 500;">Welcome, Admin</span>
+                <button class="header-btn theme-btn" id="themeToggle">☀️</button>
+                <button class="header-btn" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-icon pending">⏳</div>
+                <div class="stat-info">
+                    <div class="stat-number" id="stat-pending">0</div>
+                    <div class="stat-label">Pending Requests</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon approved">✅</div>
+                <div class="stat-info">
+                    <div class="stat-number" id="stat-approved">0</div>
+                    <div class="stat-label">Approved</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon rejected">❌</div>
+                <div class="stat-info">
+                    <div class="stat-number" id="stat-rejected">0</div>
+                    <div class="stat-label">Rejected</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="filters-section">
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-status="pending">⏳ Pending</button>
+                    <button class="filter-tab" data-status="approved">✅ Approved</button>
+                    <button class="filter-tab" data-status="rejected">❌ Rejected</button>
+                    <button class="filter-tab" data-status="deleted">🗑️ Deleted</button>
+                    <button class="filter-tab" data-status="all">📋 All Requests</button>
+                </div>
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search by name, email, uid, reason...">
+                </div>
+            </div>
+
+            <div class="loading-state" id="loadingState">
+                <div class="spinner"></div>
+                <div>Loading deletion requests...</div>
+            </div>
+
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-state-icon">📭</div>
+                <h3 id="emptyStateTitle">No requests found</h3>
+                <p id="emptyStateSub">Requests will appear here when users submit them.</p>
+            </div>
+
+            <div class="requests-table-wrapper" id="tableWrapper" style="display: none;">
+                <table class="requests-table">
+                    <thead>
+                        <tr>
+                            <th>User Info</th>
+                            <th>Reason & Details</th>
+                            <th>Requested At</th>
+                            <th>Status / Review</th>
+                            <th>Admin Notes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requestsTableBody">
+                        <!-- Table rows injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Action Modal -->
+    <div class="modal" id="actionModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span id="modalTitle">Confirm Review Action</span>
+                <button onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="modalDescription">Are you sure you want to review this request?</p>
+                <div id="modalWarning" class="warning-box" style="display: none;">
+                    ⚠️ Warning: This will permanently delete the user document from the users collection!
+                </div>
+                <div style="margin-top: 12px;">
+                    <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 6px;">
+                        Add Administrative Notes (Optional):
+                    </label>
+                    <textarea id="modalAdminNote" class="modal-input" placeholder="Enter notes here..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+                <button class="modal-btn confirm" id="modalConfirmBtn" onclick="submitAction()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Done.</div>
+
+    <script>
+        // Config matching environment
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+            authDomain: "phototester555.firebaseapp.com",
+            projectId: "phototester555",
+            storageBucket: "phototester555.firebasestorage.app",
+            messagingSenderId: "953997763616",
+            appId: "1:953997763616:web:4ac177ad8e79c5f38b8845"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentAdmin = null;
+        let activeTab = 'pending';
+        let searchQuery = '';
+        let allRequests = [];
+
+        // Modal State variables
+        let targetRequestId = null;
+        let targetActionType = null; // 'approve', 'reject', 'delete'
+
+        // Theme management
+        (function() {
+            const savedTheme = localStorage.getItem('adminTheme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark-mode');
+            }
+        })();
+
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark-mode');
+            const isDark = document.documentElement.classList.contains('dark-mode');
+            localStorage.setItem('adminTheme', isDark ? 'dark' : 'light');
+            document.getElementById('themeToggle').textContent = isDark ? '🌙' : '☀️';
+        });
+        if (document.documentElement.classList.contains('dark-mode')) {
+            document.getElementById('themeToggle').textContent = '🌙';
+        }
+
+        // Auth check guard
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                console.log('No admin session found, redirecting to login');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                // Try adminusers first, fall back to admin_users to prevent logouts due to collection mismatches
+                let adminDoc = await db.collection('adminusers').doc(user.uid).get();
+                if (!adminDoc.exists) {
+                    adminDoc = await db.collection('admin_users').doc(user.uid).get();
+                }
+
+                if (!adminDoc.exists || !adminDoc.data().isActive) {
+                    console.log('User is not an active admin, signing out');
+                    await auth.signOut();
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                currentAdmin = { uid: user.uid, email: user.email, ...adminDoc.data() };
+                document.getElementById('adminWelcome').textContent = `Welcome, ${currentAdmin.name || user.email}`;
+                document.getElementById('logoutBtn').onclick = () => auth.signOut().then(() => window.location.href = 'index.html');
+
+                initDashboard();
+            } catch (error) {
+                console.error('Error verifying admin session:', error);
+                await auth.signOut();
+                window.location.href = 'index.html';
+            }
+        });
+
+        function initDashboard() {
+            // Listen to tab clicks
+            document.querySelectorAll('.filter-tab').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    activeTab = e.target.dataset.status;
+                    renderTable();
+                });
+            });
+
+            // Listen to search
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                searchQuery = (e.target.value || '').toLowerCase();
+                renderTable();
+            });
+
+            // Set up real-time listener for requests
+            db.collection('accountDeletionRequests')
+              .orderBy('requestedAt', 'desc')
+              .onSnapshot(snapshot => {
+                  allRequests = [];
+                  snapshot.forEach(doc => {
+                      allRequests.push({ id: doc.id, ...doc.data() });
+                  });
+                  updateStats();
+                  renderTable();
+                  document.getElementById('loadingState').style.display = 'none';
+              }, error => {
+                  console.error('Error listening to deletion requests:', error);
+                  showToast('Error loading requests list.', 'error');
+                  document.getElementById('loadingState').textContent = 'Failed to load requests.';
+              });
+        }
+
+        function updateStats() {
+            let pending = 0;
+            let approved = 0;
+            let rejected = 0;
+
+            allRequests.forEach(req => {
+                const status = (req.status || 'pending').toLowerCase();
+                if (status === 'pending') pending++;
+                else if (status === 'approved') approved++;
+                else if (status === 'rejected') rejected++;
+            });
+
+            document.getElementById('stat-pending').textContent = pending;
+            document.getElementById('stat-approved').textContent = approved;
+            document.getElementById('stat-rejected').textContent = rejected;
+        }
+
+        function renderTable() {
+            const tableBody = document.getElementById('requestsTableBody');
+            const tableWrapper = document.getElementById('tableWrapper');
+            const emptyState = document.getElementById('emptyState');
+
+            // Filter logic
+            let filtered = allRequests;
+
+            // 1. Tab filter
+            if (activeTab !== 'all') {
+                filtered = filtered.filter(req => (req.status || 'pending').toLowerCase() === activeTab);
+            }
+
+            // 2. Search query filter
+            if (searchQuery) {
+                filtered = filtered.filter(req => {
+                    const name = (req.name || '').toLowerCase();
+                    const email = (req.email || '').toLowerCase();
+                    const uid = (req.userId || '').toLowerCase();
+                    const phone = (req.phone || '').toLowerCase();
+                    const reason = (req.reason || '').toLowerCase();
+                    const details = (req.reasonDetails || '').toLowerCase();
+                    return name.includes(searchQuery) || 
+                           email.includes(searchQuery) || 
+                           uid.includes(searchQuery) || 
+                           phone.includes(searchQuery) ||
+                           reason.includes(searchQuery) ||
+                           details.includes(searchQuery);
+                });
+            }
+
+            if (filtered.length === 0) {
+                tableWrapper.style.display = 'none';
+                emptyState.style.display = 'block';
+                if (searchQuery) {
+                    document.getElementById('emptyStateTitle').textContent = 'No matching requests';
+                    document.getElementById('emptyStateSub').textContent = 'Try checking spelling or changing filters.';
+                } else {
+                    document.getElementById('emptyStateTitle').textContent = `No ${activeTab} requests`;
+                    document.getElementById('emptyStateSub').textContent = `Requests marked as ${activeTab} will appear here.`;
+                }
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            tableWrapper.style.display = 'block';
+
+            tableBody.innerHTML = filtered.map(req => {
+                const status = (req.status || 'pending').toLowerCase();
+                const requestedDate = req.requestedAt ? req.requestedAt.toDate().toLocaleString('en-IN') : '—';
+                const reviewedDate = req.reviewedAt ? req.reviewedAt.toDate().toLocaleString('en-IN') : null;
+                const deletedDate = req.deletedAt ? req.deletedAt.toDate().toLocaleString('en-IN') : null;
+
+                let reviewMetaHtml = '';
+                if (status === 'approved' || status === 'rejected') {
+                    reviewMetaHtml = `
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">
+                            Reviewed: ${reviewedDate || '—'}<br>
+                            By: ${req.reviewedByEmail || req.reviewedBy || 'Admin'}
+                        </div>
+                    `;
+                } else if (status === 'deleted') {
+                    reviewMetaHtml = `
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">
+                            Deleted: ${deletedDate || '—'}<br>
+                            By: ${req.deletedByEmail || req.deletedBy || 'Admin'}
+                        </div>
+                    `;
+                }
+
+                // Render actions buttons
+                let actionsHtml = '';
+                const deleteLabel = req.role === 'provider' ? 'Delete Provider' : 'Delete User';
+                const roleParam = req.role || 'user';
+                if (status === 'pending') {
+                    actionsHtml = `
+                        <button class="action-btn approve" onclick="openActionModal('${req.id}', 'approve', '${roleParam}')">Approve</button>
+                        <button class="action-btn reject" onclick="openActionModal('${req.id}', 'reject', '${roleParam}')">Reject</button>
+                        <button class="action-btn delete" onclick="openActionModal('${req.id}', 'delete', '${roleParam}')">${deleteLabel}</button>
+                    `;
+                } else if (status === 'approved') {
+                    actionsHtml = `
+                        <button class="action-btn delete" onclick="openActionModal('${req.id}', 'delete', '${roleParam}')">${deleteLabel}</button>
+                    `;
+                } else if (status === 'rejected') {
+                    actionsHtml = `
+                        <button class="action-btn approve" onclick="openActionModal('${req.id}', 'approve', '${roleParam}')">Re-Approve</button>
+                    `;
+                } else {
+                    actionsHtml = `<span style="font-size: 12px; color: var(--text-tertiary); font-weight: 600;">No actions available</span>`;
+                }
+
+                return `
+                    <tr>
+                        <td>
+                            <div class="user-info-cell">
+                                <span class="user-name">${esc(req.name || 'Unnamed User')}</span>
+                                <div class="user-email-phone">
+                                    <span>📧 ${esc(req.email || '—')}</span>
+                                    <span>📞 ${esc(req.phone || '—')}</span>
+                                </div>
+                                <span class="user-id-badge">${esc(req.userId || req.id)}</span>
+                                <span class="user-id-badge" style="background: ${req.role === 'provider' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(59, 130, 246, 0.15)'}; color: ${req.role === 'provider' ? '#a78bfa' : '#3b82f6'}; border: 1px solid ${req.role === 'provider' ? 'rgba(139, 92, 246, 0.3)' : 'rgba(59, 130, 246, 0.3)'}; font-family: inherit; text-transform: uppercase; font-weight: 700;">${esc(req.role || 'user')}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="reason-cell">
+                                <div class="reason-category">${esc(req.reasonCategory || 'General Request')}</div>
+                                <div class="reason-details">${esc(req.reasonDetails || 'No details provided.')}</div>
+                            </div>
+                        </td>
+                        <td class="date-cell">${requestedDate}</td>
+                        <td>
+                            <span class="status-badge status-${status}">${status}</span>
+                            ${reviewMetaHtml}
+                        </td>
+                        <td>
+                            <textarea class="admin-note-area" id="note-${req.id}" placeholder="Save notes here..." onchange="saveNoteInline('${req.id}', this.value)">${esc(req.adminNote || '')}</textarea>
+                        </td>
+                        <td>
+                            <div class="actions-cell">
+                                ${actionsHtml}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function saveNoteInline(id, value) {
+            try {
+                await db.collection('accountDeletionRequests').doc(id).update({
+                    adminNote: value.trim()
+                });
+                showToast('Notes saved successfully');
+            } catch (err) {
+                console.error('Error saving note:', err);
+                showToast('Failed to save notes.', 'error');
+            }
+        }
+
+        function openActionModal(id, action, role = 'user') {
+            targetRequestId = id;
+            targetActionType = action;
+
+            const modal = document.getElementById('actionModal');
+            const title = document.getElementById('modalTitle');
+            const desc = document.getElementById('modalDescription');
+            const warning = document.getElementById('modalWarning');
+            const noteInput = document.getElementById('modalAdminNote');
+
+            // Prefill existing note if available
+            const inlineNote = document.getElementById(`note-${id}`);
+            noteInput.value = inlineNote ? inlineNote.value.trim() : '';
+
+            warning.style.display = 'none';
+
+            if (action === 'approve') {
+                title.textContent = role === 'provider' ? 'Approve Provider Deletion' : 'Approve User Deletion';
+                desc.textContent = 'Approving this request indicates that you acknowledge the account\'s intent to delete their profile. The user settings panel will display the "Approved" status banner.';
+            } else if (action === 'reject') {
+                title.textContent = role === 'provider' ? 'Reject Provider Deletion' : 'Reject User Deletion';
+                desc.textContent = 'Rejecting this request will mark it as Rejected. The profile settings banner will reflect the rejection so they can update details or resubmit.';
+            } else if (action === 'delete') {
+                const label = role === 'provider' ? 'PROVIDER' : 'USER';
+                title.textContent = `PERMANENTLY DELETE ${label}`;
+                desc.textContent = `WARNING: Clicking confirm will update the account status to "deleted". Note that to fully adhere to privacy requirements, this sets accountStatus = "deleted" and deletionRequest.status = "deleted" on the client side, and purges all related listings or records.`;
+                warning.style.display = 'block';
+            }
+
+            modal.classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('actionModal').classList.remove('show');
+            targetRequestId = null;
+            targetActionType = null;
+        }
+
+        async function submitAction() {
+            if (!targetRequestId || !targetActionType) return;
+
+            const note = document.getElementById('modalAdminNote').value.trim();
+            const confirmBtn = document.getElementById('modalConfirmBtn');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Processing...';
+
+            try {
+                const reqDoc = await db.collection('accountDeletionRequests').doc(targetRequestId).get();
+                if (!reqDoc.exists) throw new Error('Request doc not found');
+                const reqData = reqDoc.data();
+                const userId = reqData.userId || targetRequestId;
+
+                const requestUpdate = {
+                    adminNote: note,
+                    reviewedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    reviewedBy: currentAdmin.uid,
+                    reviewedByEmail: currentAdmin.email
+                };
+
+                if (targetActionType === 'approve') {
+                    requestUpdate.status = 'approved';
+                    // Update request doc
+                    await db.collection('accountDeletionRequests').doc(targetRequestId).update(requestUpdate);
+                    // Mirror to user doc
+                    await db.collection('users').doc(userId).set({
+                        deletionRequest: {
+                            status: 'approved',
+                            reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }
+                    }, { merge: true });
+
+                    // Mirror to provider doc if applicable
+                    if (reqData.role === 'provider') {
+                        await db.collection('providers').doc(userId).set({
+                            deletionRequest: {
+                                status: 'approved',
+                                reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            }
+                        }, { merge: true });
+                    }
+
+                    showToast('Deletion request approved');
+                } else if (targetActionType === 'reject') {
+                    requestUpdate.status = 'rejected';
+                    // Update request doc
+                    await db.collection('accountDeletionRequests').doc(targetRequestId).update(requestUpdate);
+                    // Mirror to user doc
+                    await db.collection('users').doc(userId).set({
+                        deletionRequest: {
+                            status: 'rejected',
+                            reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }
+                    }, { merge: true });
+
+                    // Mirror to provider doc if applicable
+                    if (reqData.role === 'provider') {
+                        await db.collection('providers').doc(userId).set({
+                            deletionRequest: {
+                                status: 'rejected',
+                                reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            }
+                        }, { merge: true });
+                    }
+
+                    showToast('Deletion request rejected');
+                } else if (targetActionType === 'delete') {
+                    // Delete action: status = "approved", sets user doc fields
+                    const deleteUpdate = {
+                        status: 'approved',
+                        adminNote: note,
+                        deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        deletedBy: currentAdmin.uid,
+                        deletedByEmail: currentAdmin.email
+                    };
+                    // Update request doc
+                    await db.collection('accountDeletionRequests').doc(targetRequestId).update(deleteUpdate);
+                    
+                    // Mark user as deleted in Firestore
+                    await db.collection('users').doc(userId).set({
+                        accountStatus: 'deleted',
+                        deletionRequest: {
+                            status: 'approved',
+                            deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }
+                    }, { merge: true });
+
+                    // Purge provider details, services, and availability slots if role is provider
+                    if (reqData.role === 'provider') {
+                        // 1. Delete providers doc
+                        await db.collection('providers').doc(userId).delete();
+
+                        // 2. Query services and delete via batch
+                        const servicesSnap = await db.collection('services').where('providerId', '==', userId).get();
+                        const batch = db.batch();
+                        servicesSnap.forEach(doc => {
+                            batch.delete(doc.ref);
+                        });
+
+                        const servicesSnap2 = await db.collection('services').where('userId', '==', userId).get();
+                        servicesSnap2.forEach(doc => {
+                            batch.delete(doc.ref);
+                        });
+
+                        // 3. Query availability and delete via batch
+                        const availabilitySnap = await db.collection('availability').where('userId', '==', userId).get();
+                        availabilitySnap.forEach(doc => {
+                            batch.delete(doc.ref);
+                        });
+
+                        const availabilitySnap2 = await db.collection('availability').where('providerId', '==', userId).get();
+                        availabilitySnap2.forEach(doc => {
+                            batch.delete(doc.ref);
+                        });
+
+                        await batch.commit();
+                    }
+
+                    // Write log entry to deletionHistory
+                    await db.collection('deletionHistory').doc(targetRequestId).set({
+                        requestId: targetRequestId,
+                        userId: userId,
+                        name: reqData.name || '',
+                        email: reqData.email || '',
+                        role: reqData.role || 'user',
+                        reasonCategory: reqData.reasonCategory || '',
+                        reasonDetails: reqData.reasonDetails || '',
+                        adminNote: note,
+                        deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        deletedBy: currentAdmin.uid,
+                        deletedByEmail: currentAdmin.email
+                    });
+
+                    showToast('User account status set to deleted and data purged successfully');
+                }
+
+                closeModal();
+            } catch (err) {
+                console.error(`Error in admin action ${targetActionType}:`, err);
+                showToast(`Failed to process action. Error: ${err.message}`, 'error');
+            } finally {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Confirm';
+            }
+        }
+
+        function esc(s) {
+            return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast ' + type;
+            toast.style.display = 'block';
+            clearTimeout(window._tTimer);
+            window._tTimer = setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin History Logs - Comprehensive View</title>
+    
+    <!-- Firebase SDK v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 40px;
+            border-bottom: 4px solid rgba(255,255,255,0.2);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 180px;
+            padding: 18px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            background: rgba(102, 126, 234, 0.05);
+            color: #667eea;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            background: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+            min-height: 500px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .log-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .log-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #333;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .card-info {
+            font-size: 13px;
+            color: #666;
+            margin: 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-date {
+            font-size: 12px;
+            color: #999;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        .badge-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-denied {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-action {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 25px 30px;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            line-height: 1;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .section {
+            background: linear-gradient(135deg, #f8f9fa, #ffffff);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #e8e8e8;
+        }
+
+        .section h3 {
+            font-size: 16px;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: #888;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .info-value.highlight {
+            font-size: 18px;
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .tier-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .tier-gold {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #b8860b;
+        }
+
+        .tier-silver {
+            background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+            color: #696969;
+        }
+
+        .tier-bronze {
+            background: linear-gradient(135deg, #cd7f32, #e6a874);
+            color: #8b4513;
+        }
+
+        .tier-platinum {
+            background: linear-gradient(135deg, #e5e5e5, #ffffff);
+            color: #666;
+            border: 2px solid #999;
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #667eea;
+        }
+
+        .user-avatar-placeholder {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .admin-avatar-placeholder {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+        }
+
+        .user-details h4 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        .user-details p {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .refund-box {
+            background: linear-gradient(135deg, #e8f5e9, #f1f8f4);
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #4caf50;
+        }
+
+        .refund-amount {
+            font-size: 36px;
+            font-weight: 700;
+            color: #2e7d32;
+        }
+
+        .refund-label {
+            font-size: 13px;
+            color: #66bb6a;
+            margin-top: 6px;
+        }
+
+        .admin-note {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+            margin-top: 15px;
+        }
+
+        .rating-display {
+            font-size: 24px;
+            color: #ffa500;
+            margin: 10px 0;
+        }
+
+        .review-comment {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            font-style: italic;
+            color: #1565c0;
+            border-left: 4px solid #2196f3;
+        }
+
+        .service-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .service-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .service-image:hover {
+            transform: scale(1.05);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 0;
+                margin: 0;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .tab-content {
+                padding: 15px;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                margin: 0;
+                border-radius: 0;
+                max-height: 100vh;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Admin History Logs</h1>
+            <p>Comprehensive view of all admin actions and decisions</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="cancellation-logs">Cancellation History</button>
+            <button class="tab-btn" data-tab="audit-logs">Audit Logs</button>
+            <button class="tab-btn" data-tab="service-review-logs">Service Reviews</button>
+        </div>
+
+        <div id="cancellation-logs" class="tab-content active">
+            <div class="loading" id="cancel-loading">
+                <div class="spinner"></div>
+                <div>Loading cancellation logs...</div>
+            </div>
+            <div id="cancel-cards" class="cards-grid"></div>
+        </div>
+
+        <div id="audit-logs" class="tab-content">
+            <div class="loading" id="audit-loading">
+                <div class="spinner"></div>
+                <div>Loading audit logs...</div>
+            </div>
+            <div id="audit-cards" class="cards-grid"></div>
+        </div>
+
+        <div id="service-review-logs" class="tab-content">
+            <div class="loading" id="review-loading">
+                <div class="spinner"></div>
+                <div>Loading service review logs...</div>
+            </div>
+            <div id="review-cards" class="cards-grid"></div>
+        </div>
+    </div>
+
+    <div id="detail-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-title">Details</div>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+            authDomain: "phototester555.firebaseapp.com",
+            projectId: "phototester555",
+            storageBucket: "phototester555.firebasestorage.app",
+            messagingSenderId: "953997763616",
+            appId: "1:953997763616:web:4ac177ad8e79c5f38b8845",
+            measurementId: "G-6VS0G0NQ7K"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const cache = {
+            bookings: {},
+            users: {},
+            providers: {},
+            services: {},
+            admins: {}
+        };
+
+        let modalData = {};
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        function openModal(dataId) {
+            const data = modalData[dataId];
+            if (!data) return;
+            document.getElementById('modal-title').textContent = data.title;
+            document.getElementById('modal-body').innerHTML = data.content;
+            document.getElementById('detail-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('detail-modal').classList.remove('active');
+        }
+
+        document.getElementById('detail-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'detail-modal') closeModal();
+        });
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(timestamp) {
+            if (!timestamp) return 'N/A';
+            try {
+                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                return date.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch {
+                return 'Invalid Date';
+            }
+        }
+
+        function getInitials(firstName, lastName) {
+            if (!firstName && !lastName) return '?';
+            const first = firstName ? firstName[0] : '';
+            const last = lastName ? lastName[0] : '';
+            return (first + last).toUpperCase() || '?';
+        }
+
+        async function getBooking(bookingId) {
+            if (!bookingId) return null;
+            if (cache.bookings[bookingId]) return cache.bookings[bookingId];
+            try {
+                const doc = await db.collection('bookings').doc(bookingId).get();
+                if (doc.exists) {
+                    cache.bookings[bookingId] = doc.data();
+                    return doc.data();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+            return null;
+        }
+
+        async function getUser(userId) {
+            if (!userId) return null;
+            if (cache.users[userId]) return cache.users[userId];
+            try {
+                const doc = await db.collection('users').doc(userId).get();
+                if (doc.exists) {
+                    cache.users[userId] = doc.data();
+                    return doc.data();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+            return null;
+        }
+
+        async function getProvider(providerId) {
+            if (!providerId) return null;
+            if (cache.providers[providerId]) return cache.providers[providerId];
+            try {
+                const doc = await db.collection('providers').doc(providerId).get();
+                if (doc.exists) {
+                    cache.providers[providerId] = doc.data();
+                    return doc.data();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+            return null;
+        }
+
+        async function getService(serviceId) {
+            if (!serviceId) return null;
+            if (cache.services[serviceId]) return cache.services[serviceId];
+            try {
+                const doc = await db.collection('services').doc(serviceId).get();
+                if (doc.exists) {
+                    cache.services[serviceId] = doc.data();
+                    return doc.data();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+            return null;
+        }
+
+        async function getAdmin(adminUid) {
+            if (!adminUid) return null;
+            if (cache.admins[adminUid]) return cache.admins[adminUid];
+            try {
+                const doc = await db.collection('admin_users').doc(adminUid).get();
+                if (doc.exists) {
+                    cache.admins[adminUid] = doc.data();
+                    return doc.data();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+            return null;
+        }
+
+        function renderUserSection(user, title = '👤 Customer Information') {
+            if (!user) return '';
+            const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.fullName || 'Unknown User';
+            const email = user.email || user.identity?.email || 'N/A';
+            const phone = user.phone || user.identity?.phone || 'N/A';
+            const username = user.username || 'N/A';
+            
+            return `
+                <div class="section">
+                    <h3>${title}</h3>
+                    <div class="user-card">
+                        ${user.profilePhoto ? 
+                            `<img src="${user.profilePhoto}" class="user-avatar" onerror="this.outerHTML='<div class=user-avatar-placeholder>${getInitials(user.firstName, user.lastName)}</div>'">` :
+                            `<div class="user-avatar-placeholder">${getInitials(user.firstName, user.lastName)}</div>`
+                        }
+                        <div class="user-details">
+                            <h4>${escapeHtml(fullName)}</h4>
+                            <p>📧 ${escapeHtml(email)}</p>
+                            <p>📞 ${escapeHtml(phone)} • @${escapeHtml(username)}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderProviderSection(provider) {
+            if (!provider) return '';
+            const fullName = `${provider.firstName || ''} ${provider.lastName || ''}`.trim() || provider.fullName || 'Unknown Provider';
+            const email = provider.email || provider.identity?.email || 'N/A';
+            const phone = provider.phone || provider.identity?.phone || 'N/A';
+            const username = provider.username || 'N/A';
+            const tierClass = `tier-${(provider.tier || 'bronze').toLowerCase()}`;
+            const domain = provider.profile?.primaryDomain || provider.profile?.mediaSpecialization || 'N/A';
+            const experience = provider.profile?.experience || 0;
+            
+            return `
+                <div class="section">
+                    <h3>🏢 Provider Information ${provider.tier ? `<span class="tier-badge ${tierClass}">${provider.tier}</span>` : ''}</h3>
+                    <div class="user-card">
+                        ${provider.profilePhoto ? 
+                            `<img src="${provider.profilePhoto}" class="user-avatar" onerror="this.outerHTML='<div class=user-avatar-placeholder>${getInitials(provider.firstName, provider.lastName)}</div>'">` :
+                            `<div class="user-avatar-placeholder">${getInitials(provider.firstName, provider.lastName)}</div>`
+                        }
+                        <div class="user-details">
+                            <h4>${escapeHtml(fullName)}</h4>
+                            <p>📧 ${escapeHtml(email)}</p>
+                            <p>📞 ${escapeHtml(phone)} • @${escapeHtml(username)}</p>
+                            <p>🎯 ${escapeHtml(domain)} • Experience: ${experience} years</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAdminSection(admin, adminEmail) {
+            const firstName = admin?.firstName || '';
+            const lastName = admin?.lastName || '';
+            const fullName = `${firstName} ${lastName}`.trim() || adminEmail?.split('@')[0] || 'Admin';
+            const email = admin?.email || adminEmail || 'N/A';
+            const role = admin?.role || 'Administrator';
+            
+            return `
+                <div class="section">
+                    <h3>🛡️ Admin Information</h3>
+                    <div class="user-card">
+                        <div class="admin-avatar-placeholder">${getInitials(firstName, lastName)}</div>
+                        <div class="user-details">
+                            <h4>${escapeHtml(fullName)}</h4>
+                            <p>📧 ${escapeHtml(email)}</p>
+                            <p>Role: ${escapeHtml(role)}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderBookingSection(booking) {
+            if (!booking) return '';
+            const amount = booking.estimatedSubtotal || booking.selectedPricing?.price || 0;
+            
+            return `
+                <div class="section">
+                    <h3>📋 Booking Details</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Booking ID</div>
+                            <div class="info-value">${escapeHtml(booking.bookingId || 'N/A')}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Service</div>
+                            <div class="info-value">${escapeHtml(booking.serviceName || 'N/A')}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Category</div>
+                            <div class="info-value">${escapeHtml(booking.category || 'N/A')}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Date</div>
+                            <div class="info-value">${escapeHtml(booking.selectedDate || 'N/A')}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Time</div>
+                            <div class="info-value">${escapeHtml(booking.selectedTime || 'N/A')}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Amount</div>
+                            <div class="info-value highlight">₹${amount}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Location</div>
+                            <div class="info-value">${escapeHtml(booking.location || 'N/A')}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Status</div>
+                            <div class="info-value">${escapeHtml(booking.status || 'N/A')}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Payment Method</div>
+                            <div class="info-value">${escapeHtml(booking.paymentMethod || 'N/A')}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Payment Status</div>
+                            <div class="info-value">${booking.paymentConfirmed ? '✓ Confirmed' : '⏳ Pending'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderServiceSection(service) {
+            if (!service) return '';
+            const previewPrice = service.previewPrice || service.pricing?.hourly?.rate || 0;
+            
+            return `
+                <div class="section">
+                    <h3>🎨 Service Details</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Service Name</div>
+                            <div class="info-value">${escapeHtml(service.title || service.name || 'N/A')}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Category</div>
+                            <div class="info-value">${escapeHtml(service.category || 'N/A')}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Status</div>
+                            <div class="info-value">${escapeHtml(service.status || 'N/A')}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Preview Price</div>
+                            <div class="info-value highlight">₹${previewPrice}</div>
+                        </div>
+                        ${service.tagline ? `
+                            <div class="info-item" style="grid-column: 1/-1;">
+                                <div class="info-label">Tagline</div>
+                                <div class="info-value">${escapeHtml(service.tagline)}</div>
+                            </div>
+                        ` : ''}
+                        ${service.description ? `
+                            <div class="info-item" style="grid-column: 1/-1;">
+                                <div class="info-label">Description</div>
+                                <div class="info-value">${escapeHtml(service.description)}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    ${service.media?.gallery && service.media.gallery.length > 0 ? `
+                        <div class="service-images">
+                            ${service.media.gallery.map(img => `
+                                <img src="${img}" class="service-image" onclick="window.open('${img}', '_blank')" onerror="this.style.display='none'">
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        async function loadCancellationLogs() {
+            const loadingEl = document.getElementById('cancel-loading');
+            const cardsEl = document.getElementById('cancel-cards');
+
+            try {
+                const snapshot = await db.collection('admin_cancellation_logs')
+                    .orderBy('decidedAt', 'desc')
+                    .limit(100)
+                    .get();
+
+                loadingEl.style.display = 'none';
+
+                if (snapshot.empty) {
+                    cardsEl.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><h3>No Cancellation Logs</h3></div>`;
+                    return;
+                }
+
+                let html = '';
+                
+                for (const doc of snapshot.docs) {
+                    const data = doc.data();
+                    const dataId = `cancel-${doc.id}`;
+                    const badgeClass = data.decision === 'approved' ? 'badge-approved' : 'badge-denied';
+                    
+                    const booking = await getBooking(data.bookingId);
+                    const customer = booking ? await getUser(booking.customerId) : null;
+                    const provider = booking ? await getProvider(booking.providerId) : null;
+                    const service = booking ? await getService(booking.serviceId) : null;
+                    const admin = await getAdmin(data.adminUid);
+                    
+                    const serviceName = service?.title || service?.name || booking?.serviceName || 'Unknown Service';
+                    const customerName = customer ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim() : booking?.customerName || 'Unknown';
+                    const amount = booking ? (booking.estimatedSubtotal || booking.selectedPricing?.price || 0) : 0;
+                    
+                    html += `
+                        <div class="log-card" onclick="openModal('${dataId}')">
+                            <div class="card-header">
+                                <div class="card-title">${escapeHtml(serviceName)}</div>
+                                <span class="badge ${badgeClass}">${data.decision}</span>
+                            </div>
+                            <div class="card-info">👤 ${escapeHtml(customerName)}</div>
+                            <div class="card-info">💰 Refund: ₹${(data.refundAmount || 0).toFixed(2)}</div>
+                            <div class="card-date">🕐 ${formatDate(data.decidedAt)}</div>
+                        </div>
+                    `;
+                    
+                    modalData[dataId] = {
+                        title: `Cancellation - ${serviceName}`,
+                        content: `
+                            ${renderBookingSection(booking)}
+                            ${renderServiceSection(service)}
+                            ${renderUserSection(customer)}
+                            ${renderProviderSection(provider)}
+                            ${renderAdminSection(admin, data.adminName)}
+                            ${data.refundAmount !== undefined ? `
+                                <div class="refund-box">
+                                    <div class="refund-amount">₹${data.refundAmount.toFixed(2)}</div>
+                                    <div class="refund-label">Refund: ${data.refundPercent || 0}% of ₹${amount}</div>
+                                </div>
+                            ` : ''}
+                            ${data.adminNote ? `<div class="admin-note"><strong>📝 Admin Note:</strong><br>${escapeHtml(data.adminNote)}</div>` : ''}
+                        `
+                    };
+                }
+
+                cardsEl.innerHTML = html;
+            } catch (error) {
+                console.error('Error:', error);
+                loadingEl.innerHTML = `<div class="empty-state"><h3>⚠️ Error</h3><p>${error.message}</p></div>`;
+            }
+        }
+
+        async function loadAuditLogs() {
+            const loadingEl = document.getElementById('audit-loading');
+            const cardsEl = document.getElementById('audit-cards');
+
+            try {
+                const snapshot = await db.collection('admin_audit_logs')
+                    .orderBy('timestamp', 'desc')
+                    .limit(100)
+                    .get();
+
+                loadingEl.style.display = 'none';
+
+                if (snapshot.empty) {
+                    cardsEl.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><h3>No Audit Logs</h3></div>`;
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const dataId = `audit-${doc.id}`;
+                    
+                    html += `
+                        <div class="log-card" onclick="openModal('${dataId}')">
+                            <div class="card-header">
+                                <div class="card-title">${escapeHtml(data.action || 'N/A')}</div>
+                                <span class="badge badge-action">Action</span>
+                            </div>
+                            <div class="card-info">👤 ${escapeHtml(data.adminName || 'N/A')}</div>
+                            <div class="card-date">🕐 ${formatDate(data.timestamp)}</div>
+                        </div>
+                    `;
+                    
+                    modalData[dataId] = {
+                        title: `Audit Log - ${data.action || 'Action'}`,
+                        content: `
+                            <div class="section">
+                                <h3>📋 Audit Details</h3>
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <div class="info-label">Action</div>
+                                        <div class="info-value">${escapeHtml(data.action || 'N/A')}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Admin</div>
+                                        <div class="info-value">${escapeHtml(data.adminName || 'N/A')}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Email</div>
+                                        <div class="info-value">${escapeHtml(data.adminEmail || 'N/A')}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Role</div>
+                                        <div class="info-value">${escapeHtml(data.adminRole || 'N/A')}</div>
+                                    </div>
+                                    ${data.targetId ? `
+                                        <div class="info-item">
+                                            <div class="info-label">Target ID</div>
+                                            <div class="info-value">${escapeHtml(data.targetId)}</div>
+                                        </div>
+                                    ` : ''}
+                                    <div class="info-item">
+                                        <div class="info-label">Timestamp</div>
+                                        <div class="info-value">${formatDate(data.timestamp)}</div>
+                                    </div>
+                                </div>
+                                ${data.details && Object.keys(data.details).length > 0 ? `
+                                    <div style="margin-top: 15px;">
+                                        <h4 style="font-size: 14px; color: #667eea; margin-bottom: 10px;">Additional Details:</h4>
+                                        ${Object.entries(data.details).map(([key, value]) => `
+                                            <div style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">
+                                                <strong>${escapeHtml(key)}:</strong> ${escapeHtml(String(value))}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `
+                    };
+                });
+
+                cardsEl.innerHTML = html;
+            } catch (error) {
+                console.error('Error:', error);
+                loadingEl.innerHTML = `<div class="empty-state"><h3>⚠️ Error</h3><p>${error.message}</p></div>`;
+            }
+        }
+
+        async function loadServiceReviewLogs() {
+            const loadingEl = document.getElementById('review-loading');
+            const cardsEl = document.getElementById('review-cards');
+
+            try {
+                const snapshot = await db.collection('admin_service_review_logs')
+                    .orderBy('decidedAt', 'desc')
+                    .limit(100)
+                    .get();
+
+                loadingEl.style.display = 'none';
+
+                if (snapshot.empty) {
+                    cardsEl.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><h3>No Service Review Logs</h3></div>`;
+                    return;
+                }
+
+                let html = '';
+                
+                for (const doc of snapshot.docs) {
+                    const data = doc.data();
+                    const dataId = `review-${doc.id}`;
+                    const badgeClass = data.decision === 'approved' ? 'badge-approved' : 'badge-denied';
+                    
+                    const service = await getService(data.serviceId);
+                    const provider = service ? await getProvider(service.providerId) : null;
+                    const admin = await getAdmin(data.adminUid);
+                    
+                    let reviewRequest = null;
+                    try {
+                        const reqDoc = await db.collection('service_review_requests').doc(data.requestId).get();
+                        if (reqDoc.exists) reviewRequest = reqDoc.data();
+                    } catch (e) {}
+                    
+                    const serviceName = service?.title || service?.name || 'Unknown Service';
+                    const providerName = provider ? `${provider.firstName || ''} ${provider.lastName || ''}`.trim() : 'Unknown';
+                    
+                    html += `
+                        <div class="log-card" onclick="openModal('${dataId}')">
+                            <div class="card-header">
+                                <div class="card-title">${escapeHtml(serviceName)}</div>
+                                <span class="badge ${badgeClass}">${data.decision}</span>
+                            </div>
+                            <div class="card-info">👤 ${escapeHtml(providerName)}</div>
+                            ${reviewRequest?.rating ? `<div class="card-info">⭐ ${reviewRequest.rating}/5</div>` : ''}
+                            <div class="card-date">🕐 ${formatDate(data.decidedAt)}</div>
+                        </div>
+                    `;
+                    
+                    modalData[dataId] = {
+                        title: `Service Review - ${serviceName}`,
+                        content: `
+                            ${renderServiceSection(service)}
+                            ${renderProviderSection(provider)}
+                            ${renderAdminSection(admin, data.adminName)}
+                            ${reviewRequest ? `
+                                <div class="section">
+                                    <h3>⭐ Review Details</h3>
+                                    ${reviewRequest.rating ? `<div class="rating-display">${'⭐'.repeat(reviewRequest.rating)} ${reviewRequest.rating}/5</div>` : ''}
+                                    ${reviewRequest.comment ? `<div class="review-comment">"${escapeHtml(reviewRequest.comment)}"</div>` : ''}
+                                </div>
+                            ` : ''}
+                            ${data.adminNote ? `<div class="admin-note"><strong>📝 Admin Note:</strong><br>${escapeHtml(data.adminNote)}</div>` : ''}
+                        `
+                    };
+                }
+
+                cardsEl.innerHTML = html;
+            } catch (error) {
+                console.error('Error:', error);
+                loadingEl.innerHTML = `<div class="empty-state"><h3>⚠️ Error</h3><p>${error.message}</p></div>`;
+            }
+        }
+
+        const auth = firebase.auth();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            auth.onAuthStateChanged(async (user) => {
+                if (!user) {
+                    console.log('No user logged in, redirecting to login');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                try {
+                    const adminDoc = await db.collection('admin_users').doc(user.uid).get();
+                    if (!adminDoc.exists || !adminDoc.data().isActive) {
+                        console.log('User is not an active admin, signing out');
+                        await auth.signOut();
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error verifying admin status:', error);
+                    await auth.signOut();
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                loadCancellationLogs();
+                loadAuditLogs();
+                loadServiceReviewLogs();
+            });
+        });
+    </script>
+</body>
+</html>

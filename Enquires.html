@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro X - Enquiries</title>
+
+    <!-- Firebase SDK v8 CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        /* ============================================
+           CSS VARIABLES - THEME SYSTEM
+           ============================================ */
+        :root {
+            /* Light Mode (Default) */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #f1f3f5;
+            --bg-gradient-1: #667eea;
+            --bg-gradient-2: #764ba2;
+            
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            
+            --border-color: #e0e0e0;
+            --border-light: rgba(0, 0, 0, 0.05);
+            
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
+            --accent-light: rgba(102, 126, 234, 0.1);
+            
+            --success: #28a745;
+            --warning: #ff9800;
+            --danger: #dc3545;
+            
+            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Dark Mode */
+        html.dark-mode {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: rgba(30, 41, 59, 0.8);
+            --bg-gradient-1: #1e293b;
+            --bg-gradient-2: #0f172a;
+            
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            
+            --border-color: rgba(148, 163, 184, 0.2);
+            --border-light: rgba(148, 163, 184, 0.1);
+            
+            --accent-primary: #60a5fa;
+            --accent-secondary: #3b82f6;
+            --accent-light: rgba(96, 165, 250, 0.1);
+            
+            --success: #22c55e;
+            --warning: #f97316;
+            --danger: #ef4444;
+            
+            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ============================================
+           RESET & BASE STYLES
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        /* ============================================
+           THEME TOGGLE BUTTON
+           ============================================ */
+        .theme-toggle-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .theme-toggle-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .theme-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        .theme-toggle-btn svg {
+            width: 24px;
+            height: 24px;
+            position: absolute;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .sun-icon {
+            opacity: 1;
+            transform: rotate(0deg);
+        }
+
+        .moon-icon {
+            opacity: 0;
+            transform: rotate(-180deg);
+        }
+
+        html.dark-mode .sun-icon {
+            opacity: 0;
+            transform: rotate(180deg);
+        }
+
+        html.dark-mode .moon-icon {
+            opacity: 1;
+            transform: rotate(0deg);
+        }
+
+        /* ============================================
+           CONTAINER & LAYOUT
+           ============================================ */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--bg-primary);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* ============================================
+           HEADER
+           ============================================ */
+        .header {
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header-left h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .header-left .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .admin-welcome {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* ============================================
+           STATS CARDS
+           ============================================ */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: var(--bg-secondary);
+            transition: background 0.3s ease;
+        }
+
+        .stat-card {
+            background: var(--bg-primary);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+            border: 1px solid var(--border-light);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-color);
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        /* ============================================
+           CONTROLS SECTION
+           ============================================ */
+        .controls {
+            padding: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-light);
+            background: var(--bg-primary);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .filter-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .filter-btn.active {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            border-color: var(--accent-primary);
+        }
+
+        /* ============================================
+           ENQUIRIES TABLE
+           ============================================ */
+        .enquiries-section {
+            padding: 30px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background: var(--bg-primary);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+            color: white;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border-light);
+            transition: background 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        td {
+            padding: 15px;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        /* ============================================
+           STATUS BADGES
+           ============================================ */
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        html:not(.dark-mode) .badge.new {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        html.dark-mode .badge.new {
+            background: rgba(234, 179, 8, 0.2);
+            color: #fbbf24;
+        }
+
+        html:not(.dark-mode) .badge.contacted {
+            background: #e7f3ff;
+            color: #004085;
+        }
+
+        html.dark-mode .badge.contacted {
+            background: rgba(96, 165, 250, 0.2);
+            color: #bfdbfe;
+        }
+
+        html:not(.dark-mode) .badge.quoted {
+            background: #f0e6ff;
+            color: #5a2d82;
+        }
+
+        html.dark-mode .badge.quoted {
+            background: rgba(168, 85, 247, 0.2);
+            color: #d8b4fe;
+        }
+
+        html:not(.dark-mode) .badge.converted {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        html.dark-mode .badge.converted {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+        }
+
+        html:not(.dark-mode) .badge.closed {
+            background: #e8e8e8;
+            color: #666;
+        }
+
+        html.dark-mode .badge.closed {
+            background: rgba(107, 114, 128, 0.2);
+            color: #d1d5db;
+        }
+
+        /* ============================================
+           TIER BADGES
+           ============================================ */
+        .tier-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        html:not(.dark-mode) .tier-silver {
+            background: #e8e8e8;
+            color: #666;
+        }
+
+        html.dark-mode .tier-silver {
+            background: rgba(107, 114, 128, 0.2);
+            color: #d1d5db;
+        }
+
+        html:not(.dark-mode) .tier-gold {
+            background: #ffd700;
+            color: #8b6914;
+        }
+
+        html.dark-mode .tier-gold {
+            background: rgba(234, 179, 8, 0.2);
+            color: #fbbf24;
+        }
+
+        html:not(.dark-mode) .tier-platinum {
+            background: #e5e4e2;
+            color: #434343;
+        }
+
+        html.dark-mode .tier-platinum {
+            background: rgba(148, 163, 184, 0.2);
+            color: #cbd5e1;
+        }
+
+        /* ============================================
+           ACTION BUTTONS
+           ============================================ */
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn.primary {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+        }
+
+        .action-btn.primary:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-2px);
+        }
+
+        .action-btn.success {
+            background: var(--success);
+            color: white;
+        }
+
+        .action-btn.success:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .action-btn.danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .action-btn.danger:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        /* ============================================
+           MODALS
+           ============================================ */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--bg-primary);
+            border-radius: 20px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            animation: modalSlideIn 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .info-section {
+            margin-bottom: 25px;
+        }
+
+        .info-section h3 {
+            font-size: 18px;
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-item label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .info-item value {
+            font-size: 14px;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            border-radius: 0 0 20px 20px;
+        }
+
+        /* ============================================
+           LOADING & EMPTY STATES
+           ============================================ */
+        .loading-state, .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
+        }
+
+        .loading-state p, .empty-state p {
+            font-size: 16px;
+            margin-top: 15px;
+        }
+
+        /* ============================================
+           SUCCESS MESSAGE
+           ============================================ */
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            z-index: 2000;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* ============================================
+           RESPONSIVE DESIGN
+           ============================================ */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                min-width: 100%;
+            }
+
+            .filter-group {
+                justify-content: center;
+            }
+
+            .table-container {
+                overflow-x: scroll;
+            }
+
+            table {
+                min-width: 800px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1>Enquiry Management</h1>
+                <div class="subtitle">Manage and track customer enquiries</div>
+            </div>
+            <div class="header-right">
+                <span class="admin-welcome">Welcome</span>
+                <button class="logout-btn" onclick="dashboard.handleLogout()">Logout</button>
+                <div class="theme-toggle-container">
+                    <button class="theme-toggle-btn" id="themeToggle" aria-label="Toggle Theme">
+                        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Container -->
+        <div class="stats-container" id="enquiry-stats">
+            <div class="stat-card">
+                <div class="label">Total Enquiries</div>
+                <div class="value" id="stat-total">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">New</div>
+                <div class="value" id="stat-new">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Contacted</div>
+                <div class="value" id="stat-contacted">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Quoted</div>
+                <div class="value" id="stat-quoted">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Converted</div>
+                <div class="value" id="stat-converted">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Closed</div>
+                <div class="value" id="stat-closed">0</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" 
+                       id="enquiry-search" 
+                       placeholder="Search by customer name, email, package..." 
+                       oninput="dashboard.handleSearch(this.value)">
+            </div>
+            <div class="filter-group">
+                <button class="filter-btn active" data-filter="all" onclick="dashboard.filterEnquiries('all')">
+                    All
+                </button>
+                <button class="filter-btn" data-filter="new" onclick="dashboard.filterEnquiries('new')">
+                    New
+                </button>
+                <button class="filter-btn" data-filter="contacted" onclick="dashboard.filterEnquiries('contacted')">
+                    Contacted
+                </button>
+                <button class="filter-btn" data-filter="quoted" onclick="dashboard.filterEnquiries('quoted')">
+                    Quoted
+                </button>
+                <button class="filter-btn" data-filter="converted" onclick="dashboard.filterEnquiries('converted')">
+                    Converted
+                </button>
+                <button class="filter-btn" data-filter="closed" onclick="dashboard.filterEnquiries('closed')">
+                    Closed
+                </button>
+            </div>
+        </div>
+
+        <!-- Enquiries Section -->
+        <div class="enquiries-section">
+            <div id="enquiries-loading-state" class="loading-state" style="display: none;">
+                <p>Loading enquiries from Firebase...</p>
+            </div>
+
+            <div id="enquiries-empty-state" class="empty-state" style="display: none;">
+                <p>No enquiries found matching your criteria.</p>
+            </div>
+
+            <div class="table-container" id="enquiries-table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Package</th>
+                            <th>Tier</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="enquiries-table-body">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enquiry Detail Modal -->
+    <div id="enquiry-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="enquiry-modal-title">Enquiry Details</h2>
+                <button class="close-btn" onclick="dashboard.closeModal('enquiry-modal')">&times;</button>
+            </div>
+            <div class="modal-body" id="enquiry-modal-body">
+                <!-- Populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn primary" onclick="dashboard.closeModal('enquiry-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Update Modal -->
+    <div id="status-update-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Update Status</h2>
+                <button class="close-btn" onclick="dashboard.closeModal('status-update-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="info-grid" style="gap: 20px;">
+                    <div class="info-item">
+                        <label>New Status</label>
+                        <select id="status-select" style="padding: 10px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px;">
+                            <option value="">Select a status...</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="quoted">Quoted</option>
+                            <option value="converted">Converted</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                    <div class="info-item">
+                        <label>Notes (Optional)</label>
+                        <textarea id="status-notes" placeholder="Add notes..." style="padding: 10px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px; min-height: 100px; font-family: inherit;"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn" onclick="dashboard.closeModal('status-update-modal')">Cancel</button>
+                <button class="action-btn success" onclick="dashboard.updateStatus()">Update</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme Toggle Handler
+        const themeToggle = document.getElementById('themeToggle');
+        const htmlElement = document.documentElement;
+
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                htmlElement.classList.add('dark-mode');
+            } else if (savedTheme === 'light') {
+                htmlElement.classList.remove('dark-mode');
+            } else {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    htmlElement.classList.add('dark-mode');
+                }
+            }
+        }
+
+        themeToggle.addEventListener('click', () => {
+            htmlElement.classList.toggle('dark-mode');
+            const currentTheme = htmlElement.classList.contains('dark-mode') ? 'dark' : 'light';
+            localStorage.setItem('theme', currentTheme);
+        });
+
+        initializeTheme();
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+            authDomain: "phototester555.firebaseapp.com",
+            projectId: "phototester555",
+            storageBucket: "phototester555.firebasestorage.app",
+            messagingSenderId: "953997763616",
+            appId: "1:953997763616:web:4ac177ad8e79c5f38b8845",
+            measurementId: "G-6VS0G0NQ7K"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ============================================
+        // ENQUIRY DASHBOARD CLASS
+        // ============================================
+        class EnquiryDashboard {
+            constructor() {
+                this.enquiries = [];
+                this.currentFilter = 'all';
+                this.currentEnquiry = null;
+                this.searchTerm = '';
+                this.currentAdmin = null;
+                this.init();
+            }
+
+            init() {
+                console.log('Initializing Enquiry Dashboard...');
+                this.checkAuthAndInit();
+            }
+
+            async checkAuthAndInit() {
+                firebase.auth().onAuthStateChanged(async (user) => {
+                    if (!user) {
+                        console.log('No user logged in, redirecting to login');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+
+                    const adminData = await this.verifyAdminAccess(user);
+                    if (!adminData) {
+                        console.log('User is not an admin');
+                        await firebase.auth().signOut();
+                        window.location.href = 'index.html';
+                        return;
+                    }
+
+                    this.currentAdmin = {
+                        uid: user.uid,
+                        email: user.email,
+                        ...adminData
+                    };
+
+                    this.updateAdminWelcome();
+                    await this.loadEnquiries();
+                    this.renderEnquiries();
+                    this.updateStats();
+                });
+            }
+
+            async verifyAdminAccess(user) {
+                try {
+                    const adminDoc = await db.collection('admin_users').doc(user.uid).get();
+                    return adminDoc.exists && adminDoc.data().isActive ? adminDoc.data() : null;
+                } catch (error) {
+                    console.error('Error verifying admin:', error);
+                    return null;
+                }
+            }
+
+            updateAdminWelcome() {
+                const welcomeElement = document.querySelector('.admin-welcome');
+                if (welcomeElement && this.currentAdmin) {
+                    welcomeElement.textContent = `Welcome, ${this.currentAdmin.name || this.currentAdmin.email}`;
+                }
+            }
+
+            async loadEnquiries() {
+                const loadingState = document.getElementById('enquiries-loading-state');
+                if (loadingState) loadingState.style.display = 'block';
+
+                try {
+                    const qs = await db.collection("enquiries").orderBy('createdAt', 'desc').limit(500).get();
+                    this.enquiries = [];
+
+                    const parseTs = (ts) => {
+                        if (!ts) return null;
+                        if (ts instanceof Date) return ts;
+                        if (typeof ts?.toDate === 'function') return ts.toDate();
+                        if (typeof ts === 'number') return new Date(ts);
+                        if (typeof ts === 'string') {
+                            const d = new Date(ts);
+                            return isNaN(d) ? null : d;
+                        }
+                        if (ts?.seconds != null) return new Date(ts.seconds * 1000 + (ts.nanoseconds || 0) / 1e6);
+                        return null;
+                    };
+
+                    qs.forEach(doc => {
+                        const data = doc.data() || {};
+                        this.enquiries.push({
+                            id: doc.id,
+                            customerName: data.customerName || 'Unknown',
+                            customerEmail: data.customerEmail || '',
+                            customerPhone: data.customerPhone || '',
+                            packageName: data.packageName || '',
+                            selectedTier: data.selectedTier || '',
+                            tierPrice: data.tierPrice || 0,
+                            status: data.status || 'new',
+                            createdAt: parseTs(data.createdAt) || new Date(0),
+                            updatedAt: parseTs(data.updatedAt) || new Date(0),
+                            source: data.source || 'Website',
+                            _fullData: data
+                        });
+                    });
+
+                    console.log(`Loaded ${this.enquiries.length} enquiries`);
+                } catch (err) {
+                    console.error('Error loading enquiries:', err);
+                    alert('Error loading enquiry data. Please try again.');
+                    this.enquiries = [];
+                } finally {
+                    if (loadingState) loadingState.style.display = 'none';
+                }
+            }
+
+            updateStats() {
+                const total = this.enquiries.length;
+                const newCount = this.enquiries.filter(e => e.status === 'new').length;
+                const contacted = this.enquiries.filter(e => e.status === 'contacted').length;
+                const quoted = this.enquiries.filter(e => e.status === 'quoted').length;
+                const converted = this.enquiries.filter(e => e.status === 'converted').length;
+                const closed = this.enquiries.filter(e => e.status === 'closed').length;
+
+                document.getElementById('stat-total').textContent = total;
+                document.getElementById('stat-new').textContent = newCount;
+                document.getElementById('stat-contacted').textContent = contacted;
+                document.getElementById('stat-quoted').textContent = quoted;
+                document.getElementById('stat-converted').textContent = converted;
+                document.getElementById('stat-closed').textContent = closed;
+            }
+
+            filterEnquiries(filter) {
+                this.currentFilter = filter;
+                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+                this.renderEnquiries();
+            }
+
+            handleSearch(term) {
+                this.searchTerm = term.toLowerCase();
+                this.renderEnquiries();
+            }
+
+            getFilteredEnquiries() {
+                let filtered = this.enquiries;
+
+                if (this.currentFilter !== 'all') {
+                    filtered = filtered.filter(e => e.status === this.currentFilter);
+                }
+
+                if (this.searchTerm) {
+                    filtered = filtered.filter(e => 
+                        e.customerName.toLowerCase().includes(this.searchTerm) ||
+                        e.customerEmail.toLowerCase().includes(this.searchTerm) ||
+                        e.packageName.toLowerCase().includes(this.searchTerm)
+                    );
+                }
+
+                return filtered;
+            }
+
+            renderEnquiries() {
+                const tbody = document.getElementById('enquiries-table-body');
+                const emptyState = document.getElementById('enquiries-empty-state');
+                const tableContainer = document.getElementById('enquiries-table-container');
+
+                const filtered = this.getFilteredEnquiries();
+
+                if (filtered.length === 0) {
+                    emptyState.style.display = 'block';
+                    tableContainer.style.display = 'none';
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+                tableContainer.style.display = 'block';
+
+                tbody.innerHTML = filtered.map(enquiry => `
+                    <tr>
+                        <td><strong>${this.escapeHtml(enquiry.customerName)}</strong></td>
+                        <td>${this.escapeHtml(enquiry.customerEmail)}</td>
+                        <td>${this.escapeHtml(enquiry.customerPhone)}</td>
+                        <td>${this.escapeHtml(enquiry.packageName)}</td>
+                        <td>${this.createTierBadge(enquiry.selectedTier)}</td>
+                        <td>₹${Number(enquiry.tierPrice).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                        <td><span class="badge ${enquiry.status}">${this.getStatusText(enquiry.status)}</span></td>
+                        <td>${this.formatDate(enquiry.createdAt)}</td>
+                        <td>
+                            <button class="action-btn primary" onclick="dashboard.showEnquiryModal(dashboard.enquiries.find(e => e.id === '${enquiry.id}'))">
+                                View
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            getStatusText(status) {
+                const statusMap = {
+                    'new': 'New',
+                    'contacted': 'Contacted',
+                    'quoted': 'Quoted',
+                    'converted': 'Converted',
+                    'closed': 'Closed'
+                };
+                return statusMap[status] || status;
+            }
+
+            createTierBadge(tier) {
+                if (!tier) return '<span style="color: #999;">—</span>';
+                const tierClass = `tier-badge tier-${tier.toLowerCase()}`;
+                const tierIcon = { 'Silver': '🥈', 'Gold': '🥇', 'Platinum': '💎' }[tier] || '';
+                return `<span class="${tierClass}">${tierIcon} ${tier}</span>`;
+            }
+
+            formatDate(date) {
+                if (!date) return 'N/A';
+                const d = new Date(date);
+                return d.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+            }
+
+            escapeHtml(text) {
+                if (!text) return '';
+                const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+                return text.toString().replace(/[&<>"']/g, m => map[m]);
+            }
+
+            showEnquiryModal(enquiry) {
+                this.currentEnquiry = enquiry;
+                const modal = document.getElementById('enquiry-modal');
+                const body = document.getElementById('enquiry-modal-body');
+
+                const isPackageEnquiry = enquiry.source === 'Service Package';
+                const messageHtml = enquiry._fullData.message 
+                    ? `<div class="info-section">
+                        <h3>Enquiry Message</h3>
+                        <div style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 14px; white-space: pre-wrap;">${this.escapeHtml(enquiry._fullData.message)}</div>
+                       </div>`
+                    : "";
+
+                body.innerHTML = `
+                    <div class="info-section">
+                        <h3>Customer Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Name</label>
+                                <value>${this.escapeHtml(enquiry.customerName)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Email</label>
+                                <value>${this.escapeHtml(enquiry.customerEmail)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Phone</label>
+                                <value>${this.escapeHtml(enquiry.customerPhone)}</value>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <h3>Service Details</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Package Name</label>
+                                <value>${this.escapeHtml(enquiry.packageName)}</value>
+                            </div>
+                            ${isPackageEnquiry ? `
+                            <div class="info-item">
+                                <label>Category</label>
+                                <value>${this.escapeHtml(enquiry._fullData.packageCategory || '')}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Type</label>
+                                <value style="text-transform: capitalize;">${this.escapeHtml(enquiry._fullData.packageType || '')}</value>
+                            </div>
+                            ` : `
+                            <div class="info-item">
+                                <label>Selected Tier</label>
+                                <value>${this.createTierBadge(enquiry.selectedTier)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Price</label>
+                                <value>₹${Number(enquiry.tierPrice).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</value>
+                            </div>
+                            `}
+                        </div>
+                    </div>
+
+                    ${messageHtml}
+
+                    <div class="info-section">
+                        <h3>Enquiry Status</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Current Status</label>
+                                <value><span class="badge ${enquiry.status}">${this.getStatusText(enquiry.status)}</span></value>
+                            </div>
+                            <div class="info-item">
+                                <label>Submitted</label>
+                                <value>${enquiry.createdAt.toLocaleString('en-IN')}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Source</label>
+                                <value>${this.escapeHtml(enquiry.source)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Enquiry ID</label>
+                                <value style="font-family: monospace; font-size: 12px;">${enquiry.id}</value>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <h3>Actions</h3>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="action-btn primary" onclick="dashboard.showStatusUpdateModal()">
+                                Update Status
+                            </button>
+                            ${enquiry.status === 'new' ? `
+                                <button class="action-btn success" onclick="dashboard.quickUpdate('contacted')">
+                                    Mark Contacted
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+
+                modal.style.display = 'flex';
+            }
+
+            showStatusUpdateModal() {
+                document.getElementById('status-update-modal').style.display = 'flex';
+            }
+
+            async updateStatus() {
+                const status = document.getElementById('status-select').value;
+                const notes = document.getElementById('status-notes').value.trim();
+
+                if (!status) {
+                    alert('Please select a status');
+                    return;
+                }
+
+                try {
+                    await db.collection('enquiries').doc(this.currentEnquiry.id).update({
+                        status,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        adminNotes: notes || null
+                    });
+
+                    this.closeModal('status-update-modal');
+                    await this.loadEnquiries();
+                    this.renderEnquiries();
+                    this.updateStats();
+                    this.showSuccessMessage('Status updated successfully!');
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                    alert('Error updating status. Please try again.');
+                }
+            }
+
+            async quickUpdate(status) {
+                try {
+                    await db.collection('enquiries').doc(this.currentEnquiry.id).update({
+                        status,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    await this.loadEnquiries();
+                    this.renderEnquiries();
+                    this.updateStats();
+                    this.closeModal('enquiry-modal');
+                    this.showSuccessMessage('Status updated!');
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                    alert('Error updating status. Please try again.');
+                }
+            }
+
+            closeModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = 'none';
+                    if (modalId === 'status-update-modal') {
+                        document.getElementById('status-select').value = '';
+                        document.getElementById('status-notes').value = '';
+                    }
+                }
+            }
+
+            showSuccessMessage(message) {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'success-message';
+                msgDiv.textContent = message;
+                document.body.appendChild(msgDiv);
+
+                setTimeout(() => {
+                    msgDiv.style.animation = 'slideInRight 0.3s ease reverse';
+                    setTimeout(() => msgDiv.remove(), 300);
+                }, 3000);
+            }
+
+            async handleLogout() {
+                try {
+                    await firebase.auth().signOut();
+                    window.location.href = 'index.html';
+                } catch (error) {
+                    console.error('Error during logout:', error);
+                    window.location.href = 'index.html';
+                }
+            }
+        }
+
+        // Initialize Dashboard
+        const dashboard = new EnquiryDashboard();
+    </script>
+</body>
+</html>

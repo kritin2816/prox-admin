@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Progress & SLA Monitor</title>
+
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Firebase SDK v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-color: #e2e8f0;
+            --table-header-bg: #f8fafc;
+
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        html.dark-mode,
+        html[data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #64748b;
+            --border-color: #334155;
+            --table-header-bg: #1e293b;
+
+            --glass-bg: rgba(30, 41, 59, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1600px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        /* Header Card */
+        .header-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 20px;
+            box-shadow: var(--shadow-xl);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
+            pointer-events: none;
+        }
+
+        .header-info h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-info p {
+            opacity: 0.85;
+            font-size: 13px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateX(-3px);
+        }
+
+        .theme-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: white;
+            cursor: pointer;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+        }
+
+        .theme-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.05);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+        }
+
+        .stat-icon {
+            width: 55px;
+            height: 55px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--primary);
+        }
+
+        .stat-icon.green {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .stat-icon.orange {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .stat-icon.red {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .stat-details h3 {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .stat-details p {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        /* Filter Controls */
+        .controls-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .search-input {
+            flex-grow: 1;
+            max-width: 400px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+        }
+
+        .filter-select {
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            min-width: 180px;
+        }
+
+        /* Active Progress Grid */
+        .table-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: var(--table-header-bg);
+            color: var(--text-secondary);
+            padding: 16px 20px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Premium progress visualizer inside table */
+        .progress-bar-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 180px;
+        }
+
+        .bar-container {
+            position: relative;
+            height: 8px;
+            background: rgba(120, 120, 120, 0.15);
+            border-radius: 4px;
+        }
+
+        .bar-actual {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 4px;
+        }
+
+        .marker-expected {
+            position: absolute;
+            top: -3px;
+            width: 14px;
+            height: 14px;
+            background: #ff7300;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+        }
+
+        .legend-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* Badge design */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-green {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .badge-orange {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .badge-red {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+        }
+
+        .badge-blue {
+            background-color: rgba(59, 130, 246, 0.15);
+            color: var(--info);
+        }
+
+        .delta-val {
+            font-weight: 700;
+        }
+
+        /* Detail popover panel */
+        .pts-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .pts-modal-content {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-xl);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pts-modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pts-modal-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .pts-modal-body {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .log-list {
+            list-style: none;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .log-list::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 5px;
+            bottom: 5px;
+            width: 2px;
+            background-color: var(--border-color);
+        }
+
+        .log-item {
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .log-item::before {
+            content: '';
+            position: absolute;
+            left: -19px;
+            top: 6px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--primary);
+        }
+
+        .action-button {
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .action-button:hover {
+            background-color: var(--border-color);
+        }
+
+        .action-button.primary {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .action-button.primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .action-button.danger {
+            background-color: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header-card">
+            <div class="header-info">
+                <h1>📈 Service Progress & SLA Monitor</h1>
+                <p>Real-time expected vs actual variance tracking to prevent delays and hidden inactivity</p>
+            </div>
+            <div class="header-actions">
+                <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+                <button class="theme-btn" id="themeToggleBtn">☀️</button>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-details">
+                    <h3>Total Active Jobs</h3>
+                    <p id="statTotalJobs">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">✓</div>
+                <div class="stat-details">
+                    <h3>On Track Deliveries</h3>
+                    <p id="statOnTrack">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">⚠️</div>
+                <div class="stat-details">
+                    <h3>Slight Delay Warnings</h3>
+                    <p id="statSlightDelay">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon red">🚨</div>
+                <div class="stat-details">
+                    <h3>Critical SLA Risks</h3>
+                    <p id="statCritical">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="controls-card">
+            <input type="text" class="search-input" id="adminSearchInput"
+                placeholder="Search by ID, Provider, Client...">
+            <div style="display:flex; gap:12px;">
+                <select class="filter-select" id="categoryFilter">
+                    <option value="all">All Categories</option>
+                    <option value="media">Media Services</option>
+                    <option value="tech">Tech Services</option>
+                    <option value="offline">Offline Services</option>
+                </select>
+                <select class="filter-select" id="riskFilter">
+                    <option value="all">All Risk Levels</option>
+                    <option value="critical">🚨 Critical Risk (ΔP < -25%)</option>
+                    <option value="warning">⚠️ Slight Delay (ΔP < -15%)</option>
+                    <option value="ontrack">✓ On Track</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Table Grid -->
+        <div class="table-card">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Service details</th>
+                            <th>Client & Provider</th>
+                            <th>Timeline Progress</th>
+                            <th>Risk status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookingsTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                Loading active bookings progress data...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Management Modal -->
+    <div class="pts-modal" id="adminPtsModal">
+        <div class="pts-modal-content animate__animated animate__fadeInUp">
+            <div class="pts-modal-header">
+                <h2 id="modalBookingIdShort">Manage Booking SLA</h2>
+                <button class="close-btn" id="modalCloseBtn">&times;</button>
+            </div>
+            <div class="pts-modal-body">
+                <!-- Overview Row -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                    <div>
+                        <p class="small text-muted" style="font-size:12px;">Service Name</p>
+                        <h4 id="modalServiceName" style="font-weight:700; margin-bottom:10px;">—</h4>
+                        <p class="small text-muted" style="font-size:12px;">Client & Provider</p>
+                        <p id="modalUserMeta" style="font-size:14px; font-weight:600;">—</p>
+                    </div>
+                    <div>
+                        <p class="small text-muted" style="font-size:12px;">Current SLA State</p>
+                        <div id="modalSlaState" class="badge badge-blue mb-2">—</div>
+                        <p class="small text-muted" style="font-size:12px;">SLA Deadline</p>
+                        <p id="modalDeadline" style="font-size:14px; font-weight:600;">—</p>
+                    </div>
+                </div>
+
+                <!-- Fast-Track Tracking Section -->
+                <div id="fastTrackSection" style="padding:16px; border-radius:12px; background:rgba(16, 185, 129, 0.08); border:1.5px solid rgba(16, 185, 129, 0.25); margin-bottom:16px; display:none;">
+                    <h5 style="margin-bottom:12px; font-weight:700; color:#0f766e;">
+                        ⚡ Fast-Track Delivery Status
+                    </h5>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div>
+                            <p style="font-size:11px; font-weight:600; color:#666; margin-bottom:2px;">Request Status</p>
+                            <p id="fastTrackStatusText" style="font-size:14px; font-weight:700; margin-bottom:0;">—</p>
+                        </div>
+                        <div>
+                            <p style="font-size:11px; font-weight:600; color:#666; margin-bottom:2px;">User Consent PIN</p>
+                            <p id="fastTrackPinText" style="font-size:16px; font-weight:800; letter-spacing:2px; color:#0f766e; margin-bottom:0;">—</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Extension Request Section -->
+                <div id="pendingExtensionSection"
+                    style="padding:16px; border-radius:12px; background:rgba(220,53,69,0.08); border:1.5px solid rgba(220,53,69,0.25); margin-bottom:16px; display:none;">
+                    <h5 style="margin-bottom:12px; font-weight:700; color:#dc3545;">
+                        🚨 Pending Extension Request
+                    </h5>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                        <div>
+                            <p style="font-size:11px; font-weight:600; color:#666; margin-bottom:2px;">Requested Days
+                            </p>
+                            <p id="pendingExtDays" style="font-size:14px; font-weight:700; margin-bottom:0;">—</p>
+                        </div>
+                        <div>
+                            <p style="font-size:11px; font-weight:600; color:#666; margin-bottom:2px;">Requested At</p>
+                            <p id="pendingExtDate" style="font-size:14px; font-weight:700; margin-bottom:0;">—</p>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <p style="font-size:11px; font-weight:600; color:#666; margin-bottom:2px;">Provider Reason</p>
+                        <p id="pendingExtReason" style="font-size:13px; font-style:italic; margin-bottom:0;">—</p>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button id="btnApproveExtension" class="action-button primary"
+                            style="background:#28a745; border-color:#28a745; border-radius:8px;">
+                            Approve Extension
+                        </button>
+                        <button id="btnRejectExtension" class="action-button outline"
+                            style="color:#dc3545; border-color:#dc3545; border-radius:8px;">
+                            Reject Request
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pending Milestone Verification Section -->
+                <div id="pendingMilestoneSection"
+                    style="padding:16px; border-radius:12px; background:rgba(255,193,7,0.08); border:1.5px solid rgba(255,193,7,0.25); margin-bottom:16px; display:none;">
+                    <h5 style="margin-bottom:12px; font-weight:700; color:#b45309;">
+                        ⏳ Pending Milestone Verification
+                    </h5>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                        <div>
+                            <p style="font-size:11px; font-weight:600; color:#666; margin-bottom:2px;">Milestone</p>
+                            <p id="pendingMsTitle" style="font-size:14px; font-weight:700; margin-bottom:0;">—</p>
+                        </div>
+                        <div>
+                            <p style="font-size:11px; font-weight:600; color:#666; margin-bottom:2px;">Progress Percent
+                            </p>
+                            <p id="pendingMsPercent" style="font-size:14px; font-weight:700; margin-bottom:0;">—</p>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <p style="font-size:11px; font-weight:600; color:#666; margin-bottom:2px;">Description</p>
+                        <p id="pendingMsDesc" style="font-size:13px; margin-bottom:0;">—</p>
+                    </div>
+                    <div style="display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
+                        <div>
+                            <p style="font-size:11px; font-weight:600; color:#666; margin-bottom:2px;">Submitted At</p>
+                            <p id="pendingMsDate" style="font-size:13px; margin-bottom:0;">—</p>
+                        </div>
+                        <div id="pendingMsProofContainer" style="display:none;">
+                            <p style="font-size:11px; font-weight:600; color:#666; margin-bottom:2px;">Proof Artifact
+                            </p>
+                            <a id="pendingMsProofLink" href="#" target="_blank" class="action-button primary"
+                                style="font-size:11px; padding:4px 12px; text-decoration:none;">View Proof</a>
+                        </div>
+                    </div>
+                    <div id="pendingMsComment"
+                        style="display:none; margin-bottom:12px; padding:8px; border-radius:8px; background:rgba(0,0,0,0.03);">
+                        <p style="font-size:11px; font-weight:600; color:#666; margin-bottom:2px;">Provider Comment</p>
+                        <p id="pendingMsCommentText" style="font-size:13px; font-style:italic; margin-bottom:0;">—</p>
+                    </div>
+                    <!-- Rejection reason input -->
+                    <div id="rejectReasonContainer" style="display:none; margin-bottom:12px;">
+                        <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Rejection
+                            Reason</label>
+                        <textarea id="rejectReasonInput" class="search-input" rows="2"
+                            placeholder="Why is this milestone being rejected?"
+                            style="width:100%; resize:vertical; border-radius:8px; padding:8px;"></textarea>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="action-button primary" id="btnVerifyMilestone" style="background:#198754;">✓
+                            Verify Milestone</button>
+                        <button class="action-button" id="btnShowRejectForm" style="background:#dc3545; color:#fff;">✗
+                            Reject</button>
+                        <button class="action-button danger" id="btnConfirmReject" style="display:none;">Confirm
+                            Rejection</button>
+                    </div>
+                </div>
+
+                <!-- Adjust Progress Segment -->
+                <div
+                    style="padding:16px; border-radius:12px; background:rgba(102, 126, 234, 0.05); border:1px solid rgba(102, 126, 234, 0.1);">
+                    <h5 style="margin-bottom:12px; font-weight:700;">Admin SLA Controls</h5>
+                    <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom: 20px;">
+                        <div>
+                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Override
+                                Actual progress (%)</label>
+                            <input type="number" id="overridePercentVal" class="search-input" style="width:120px;"
+                                min="0" max="100">
+                        </div>
+                        <div style="display:flex; gap:8px; margin-top:18px;">
+                            <button class="action-button primary" id="btnApplyOverride">Apply Override</button>
+                            <button class="action-button" id="btnResumeOverride" style="display:none;">Force SLA
+                                Resume</button>
+                            <button class="action-button danger" id="btnReassignProv">Initiate Reassignment</button>
+                        </div>
+                    </div>
+
+                    <h5 style="margin-bottom:12px; font-weight:700; color:#dc3545;">Proactive Delay Management</h5>
+                    <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+                        <div>
+                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Force Deadline Extension (Days)</label>
+                            <input type="number" id="forceExtensionDays" class="search-input" style="width:120px;" min="1" placeholder="e.g. 2">
+                        </div>
+                        <div style="display:flex; gap:8px; margin-top:18px;">
+                            <button class="action-button primary" id="btnForceExtension" style="background:#dc3545; border-color:#dc3545;">Extend Timeline</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Events log list -->
+                <div>
+                    <h5 style="margin-bottom:12px; font-weight:700;">Milestone Verification & Activity Trail</h5>
+                    <ul class="log-list" id="modalProgressLogs">
+                        <!-- Logs rendered dynamically -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+            authDomain: "phototester555.firebaseapp.com",
+            projectId: "phototester555",
+            storageBucket: "phototester555.firebasestorage.app",
+            messagingSenderId: "953997763616",
+            appId: "1:953997763616:web:4ac177ad8e79c5f38b8845",
+            measurementId: "G-6VS0G0NQ7K"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // Authenticate admin
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                console.log('No user logged in, redirecting to login');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                const adminDoc = await db.collection('admin_users').doc(user.uid).get();
+                if (!adminDoc.exists || !adminDoc.data().isActive) {
+                    console.log('User is not an active admin, signing out');
+                    await auth.signOut();
+                    window.location.href = 'index.html';
+                    return;
+                }
+            } catch (error) {
+                console.error('Error verifying admin status:', error);
+                await auth.signOut();
+                window.location.href = 'index.html';
+                return;
+            }
+
+            initBookingsListener();
+        });
+
+        // Safe Helpers
+        function getTurnaroundMs(data) {
+            // Priority: Use provider-committed delivery deadline if available
+            if (data.timestamps?.currentDeadline && data.timestamps?.startedAt) {
+                let deadline = data.timestamps.currentDeadline;
+                let started = data.timestamps.startedAt;
+                if (deadline.toDate) deadline = deadline.toDate().getTime();
+                else deadline = new Date(deadline).getTime();
+                if (started.toDate) started = started.toDate().getTime();
+                else started = new Date(started).getTime();
+                const diff = deadline - started;
+                if (diff > 0) return diff;
+            }
+
+            let turnaroundStr = data.selectedPricing?.turnaround || data.selectedPricing?.tatDays || data.tatDays || data.turnaround;
+            let minHours = data.selectedPricing?.hours || data.selectedPricing?.minHours || data.pricing?.hourly?.minHours;
+
+            if (data.selectedPricing?.type === 'hourly' && minHours) {
+                return Number(minHours) * 60 * 60 * 1000;
+            }
+
+            if (turnaroundStr) {
+                const str = String(turnaroundStr).toLowerCase().trim();
+                if (str.includes('hour')) {
+                    const match = str.match(/(\d+)\s*hour/);
+                    if (match) return Number(match[1]) * 60 * 60 * 1000;
+                }
+                if (str.includes('day')) {
+                    const match = str.match(/(\d+)\s*day/);
+                    if (match) return Number(match[1]) * 24 * 60 * 60 * 1000;
+                }
+                const days = Number(turnaroundStr);
+                if (!isNaN(days) && days > 0) {
+                    return days * 24 * 60 * 60 * 1000;
+                }
+            }
+            return 24 * 60 * 60 * 1000;
+        }
+
+        function calculateProgressMetrics(data) {
+            const now = Date.now();
+            let startedAt = data.timestamps?.startedAt || data.providerStartedAt;
+            if (startedAt && startedAt.toDate) startedAt = startedAt.toDate().getTime();
+            else if (startedAt) startedAt = new Date(startedAt).getTime();
+            else {
+                let fallback = data.timestamps?.acceptedAt || data.acceptedAt || data.timestamps?.createdAt || data.createdAt;
+                if (fallback && fallback.toDate) startedAt = fallback.toDate().getTime();
+                else if (fallback) startedAt = new Date(fallback).getTime();
+                else startedAt = now;
+            }
+
+            const turnaroundMs = getTurnaroundMs(data) || 24 * 60 * 60 * 1000;
+            const accumPause = Number(data.progress?.accumulatedPauseDurationMs || 0);
+
+            let currentPauseElapsed = 0;
+            if (data.progress?.activeState === 'PAUSED' && data.progress?.lastPauseTimestamp) {
+                let pauseStart = data.progress.lastPauseTimestamp;
+                if (pauseStart.toDate) pauseStart = pauseStart.toDate().getTime();
+                else pauseStart = new Date(pauseStart).getTime();
+                currentPauseElapsed = Math.max(0, now - pauseStart);
+            }
+
+            const totalPauseMs = accumPause + currentPauseElapsed;
+            const elapsedMs = Math.max(0, now - startedAt - totalPauseMs);
+
+            let expectedPercent = 0;
+            const statusLower = String(data.status || '').toLowerCase();
+            if (statusLower === 'completed' || statusLower === 'closed') {
+                expectedPercent = 100;
+            } else {
+                expectedPercent = Math.min(100, Math.max(0, (elapsedMs / turnaroundMs) * 100));
+            }
+            if (isNaN(expectedPercent)) expectedPercent = 0;
+
+            let actualPercent = Number(data.progress?.actualPercent || 0);
+            const samplesUploaded = !!(data.deliverables && (data.deliverables.samples || data.deliverables.all || data.deliverables.uploadedAt));
+            const hasFastTrack = !!(data.fastTrackPin || data.fastTrackRequested === true);
+
+            const isWorkSubmitted = [
+                'samples ready for review',
+                'deliverables uploaded',
+                'customer received',
+                'payment completed',
+                'payment pending',
+                'review required',
+                'completed',
+                'closed'
+            ].includes(statusLower) || 
+            (hasFastTrack && samplesUploaded) || 
+            (samplesUploaded && statusLower.includes('revision'));
+
+            if (isWorkSubmitted) {
+                actualPercent = 100;
+            }
+
+            const delta = actualPercent - expectedPercent;
+            const timeDelayMs = delta < 0 ? Math.max(0, elapsedMs - (actualPercent / 100) * turnaroundMs) : 0;
+
+            let riskLevel = 'ON_TRACK';
+            if (delta < -25) riskLevel = 'CRITICAL';
+            else if (delta < -15) riskLevel = 'WARNING';
+
+            return {
+                expectedPercent: Math.round(expectedPercent) || 0,
+                actualPercent: Math.round(actualPercent) || 0,
+                delta: Math.round(delta) || 0,
+                riskLevel,
+                deadline: new Date(startedAt + turnaroundMs + totalPauseMs),
+                timeDelayMs: Math.round(timeDelayMs) || 0
+            };
+        }
+
+        function formatDuration(ms) {
+            if (ms <= 0) return '0h';
+            const hrs = Math.floor(ms / (3600 * 1000));
+            if (hrs >= 24) {
+                const days = Math.floor(hrs / 24);
+                const remHrs = hrs % 24;
+                return remHrs > 0 ? `${days}d ${remHrs}h` : `${days} days`;
+            }
+            const remMins = Math.round((ms % (3600 * 1000)) / (60 * 1000));
+            if (hrs === 0) return `${remMins}m`;
+            return `${hrs}h ${remMins}m`;
+        }
+
+        function getCategoryType(categoryName) {
+            const cat = String(categoryName || '').toLowerCase();
+            if (['video', 'photo', 'graphic', 'logo', 'design', 'media'].some(k => cat.includes(k))) return 'media';
+            if (['web', 'app', 'coding', 'debugging', 'setup', 'tech'].some(k => cat.includes(k))) return 'tech';
+            if (['clean', 'handyman', 'plumbing', 'electr', 'carpent', 'offline', 'on-site'].some(k => cat.includes(k))) return 'offline';
+            return 'general';
+        }
+
+        let bookingsCache = [];
+        let activeAdminPtsId = null;
+        let activeAdminPtsPendingMs = null;
+        let activeAdminExtReq = null;
+        let activeAdminPtsData = null;
+
+        // Fetch ongoing bookings in real time
+        function initBookingsListener() {
+            db.collection("bookings")
+                .where("status", "in", ["Ongoing", "Samples Ready for Review", "Revision Requested 1", "Revision Requested 2", "Revision in Progress 1", "Revision in Progress 2"])
+                .onSnapshot(snap => {
+                    bookingsCache = [];
+                    snap.forEach(d => {
+                        bookingsCache.push({ docId: d.id, data: d.data() });
+                    });
+                    renderAdminBoard();
+                }, err => {
+                    console.error("Error fetching bookings:", err);
+                });
+        }
+
+        function renderAdminBoard() {
+            const body = document.getElementById("bookingsTableBody");
+            body.innerHTML = "";
+
+            const searchVal = document.getElementById("adminSearchInput").value.toLowerCase().trim();
+            const catFilter = document.getElementById("categoryFilter").value;
+            const riskFilter = document.getElementById("riskFilter").value;
+
+            let total = 0, onTrack = 0, warning = 0, critical = 0;
+
+            let filtered = bookingsCache.filter(item => {
+                const data = item.data;
+                const docId = item.docId;
+                const pts = calculateProgressMetrics(data);
+                const categoryType = getCategoryType(data.category || data.serviceCategory);
+
+                total++;
+                if (pts.riskLevel === 'CRITICAL') critical++;
+                else if (pts.riskLevel === 'WARNING') warning++;
+                else onTrack++;
+
+                // Search matching
+                const matchesSearch = docId.toLowerCase().includes(searchVal) ||
+                    (data.providerName || '').toLowerCase().includes(searchVal) ||
+                    (data.customerName || '').toLowerCase().includes(searchVal) ||
+                    (data.serviceName || '').toLowerCase().includes(searchVal);
+
+                // Category matching
+                const matchesCat = catFilter === 'all' || categoryType === catFilter;
+
+                // Risk matching
+                let matchesRisk = true;
+                if (riskFilter === 'critical') matchesRisk = pts.riskLevel === 'CRITICAL';
+                else if (riskFilter === 'warning') matchesRisk = pts.riskLevel === 'WARNING';
+                else if (riskFilter === 'ontrack') matchesRisk = pts.riskLevel === 'ON_TRACK';
+
+                return matchesSearch && matchesCat && matchesRisk;
+            });
+
+            // Update stats labels
+            document.getElementById("statTotalJobs").textContent = total;
+            document.getElementById("statOnTrack").textContent = onTrack;
+            document.getElementById("statSlightDelay").textContent = warning;
+            document.getElementById("statCritical").textContent = critical;
+
+            if (filtered.length === 0) {
+                body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-secondary);">No active tracked bookings found matching filters.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const data = item.data;
+                const docId = item.docId;
+                const pts = calculateProgressMetrics(data);
+
+                const riskBadge = pts.riskLevel === 'CRITICAL' ? '<span class="badge badge-red">🚨 Critical SLA Risk</span>'
+                    : (pts.riskLevel === 'WARNING' ? '<span class="badge badge-orange">⚠️ Slight Delay</span>'
+                        : '<span class="badge badge-green">✓ On Track</span>');
+
+                const deltaColorClass = pts.delta >= 0 ? 'text-success' : (pts.riskLevel === 'CRITICAL' ? 'text-danger' : 'text-warning');
+                const deltaText = pts.delta >= 0 ? `+${pts.delta}%` : `${pts.delta}%`;
+
+                const timeLeftMs = pts.deadline.getTime() - Date.now();
+                let timeLeftText = 'Overdue';
+                if (timeLeftMs > 0) {
+                    const hrs = Math.floor(timeLeftMs / (3600 * 1000));
+                    timeLeftText = hrs > 24 ? `${Math.floor(hrs / 24)} days left` : `${hrs} hours left`;
+                }
+
+                let fastTrackBadge = '';
+                if (data.fastTrackRequested) {
+                    if (data.fastTrackPin) {
+                        fastTrackBadge = `<span class="badge badge-green mb-1" style="font-size:10px;display:block;">⚡ Fast-Track PIN Verified</span>`;
+                    } else {
+                        fastTrackBadge = `<span class="badge badge-orange mb-1" style="font-size:10px;display:block;">⚡ Fast-Track Req'd (No PIN)</span>`;
+                    }
+                }
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td style="font-weight:700; color:var(--primary);">#${docId.substring(0, 8)}…</td>
+                    <td>
+                        <div style="font-weight:600;">${escapeHtml(data.serviceName || 'Service')}</div>
+                        <div class="small text-muted" style="font-size:12px;">Category: ${escapeHtml(data.category || 'General')}</div>
+                    </td>
+                    <td>
+                        <div style="font-size:13px;">Pro: <strong>${escapeHtml(data.providerName || 'Provider')}</strong></div>
+                        <div style="font-size:12px; color:var(--text-secondary);">Client: ${escapeHtml(data.customerName || 'Customer')}</div>
+                    </td>
+                    <td>
+                        <div class="progress-bar-stack">
+                            <div class="bar-container">
+                                <div class="bar-actual" style="width:${pts.actualPercent}%"></div>
+                                <div class="marker-expected" style="left:${pts.expectedPercent}%"></div>
+                            </div>
+                            <div class="legend-row">
+                                <span>Act: <strong>${pts.actualPercent}%</strong></span>
+                                <span>Exp: <strong>${pts.expectedPercent}%</strong></span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        ${riskBadge}
+                        <div class="small fw-semibold mt-1 ${deltaColorClass}">Var: ${deltaText} (${timeLeftText})</div>
+                        ${pts.delta < 0 ? `<div style="color:#dc3545; font-size:11px; font-weight:700; margin-top:2px;">⚠️ Delayed by ${Math.abs(pts.delta)}% (${formatDuration(pts.timeDelayMs)})</div>` : ''}
+                    </td>
+                    <td>
+                        ${fastTrackBadge}
+                        ${data.progress?.pendingMilestone?.status === 'pending_verification' && data.progress.pendingMilestone.percent === 50 ? `<span class="badge badge-orange mb-1" style="font-size:10px;display:block;">⏳ Pending Verification</span>` : ''}
+                        <button class="action-button primary" onclick="openAdminPtsWorkspace('${docId}')">Manage</button>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        async function openAdminPtsWorkspace(bookingId) {
+            activeAdminPtsId = bookingId;
+            const item = bookingsCache.find(x => x.docId === bookingId);
+            if (!item) return;
+
+            const data = item.data;
+            const pts = calculateProgressMetrics(data);
+
+            document.getElementById("modalBookingIdShort").textContent = `Manage Booking #${bookingId.substring(0, 8)}`;
+            document.getElementById("modalServiceName").textContent = data.serviceName || 'Service';
+            let delayHtml = '';
+            if (pts.delta < 0) {
+                delayHtml = `<br><span style="color:#dc3545; font-weight:700;">⚠️ Delayed by ${Math.abs(pts.delta)}% (${formatDuration(pts.timeDelayMs)})</span>`;
+            }
+            document.getElementById("modalUserMeta").innerHTML = `Provider: <strong>${data.providerName || '—'}</strong><br>Client: <strong>${data.customerName || '—'}</strong>${delayHtml}`;
+            document.getElementById("modalDeadline").textContent = pts.deadline.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+            const stateEl = document.getElementById("modalSlaState");
+            stateEl.textContent = data.progress?.activeState || 'ONGOING';
+            stateEl.className = 'badge ' + (data.progress?.activeState === 'PAUSED' ? 'badge-orange' : 'badge-green');
+
+            document.getElementById("overridePercentVal").value = pts.actualPercent;
+
+            const resumeBtn = document.getElementById("btnResumeOverride");
+            resumeBtn.style.display = data.progress?.activeState === 'PAUSED' ? 'block' : 'none';
+
+            // Load verification log events
+            const logContainer = document.getElementById("modalProgressLogs");
+            logContainer.innerHTML = '<li>Loading logs...</li>';
+
+            try {
+                const logsSnap = await db.collection("bookings").doc(bookingId).collection("progressEvents").orderBy("timestamp", "desc").get();
+                logContainer.innerHTML = '';
+                if (logsSnap.empty) {
+                    logContainer.innerHTML = '<li class="text-muted small">No verified progress events logged yet.</li>';
+                } else {
+                    logsSnap.forEach(snap => {
+                        const ev = snap.data();
+                        const li = document.createElement("li");
+                        li.className = "log-item";
+
+                        let proofUrlHtml = '';
+                        if (ev.payload?.proofFileUrl) {
+                            proofUrlHtml = `<br><a href="${normalizeUrl(ev.payload.proofFileUrl)}" target="_blank" rel="noopener noreferrer" class="action-button mt-2 d-inline-block py-1 px-2" style="font-size:11px;">Download Visual Escrow Proof ↗</a>`;
+                        } else if (ev.payload?.proofLinkUrl) {
+                            proofUrlHtml = `<br><a href="${normalizeUrl(ev.payload.proofLinkUrl)}" target="_blank" rel="noopener noreferrer" class="action-button mt-2 d-inline-block py-1 px-2" style="font-size:11px;">Verify Staging URL ↗</a>`;
+                        }
+
+                        li.innerHTML = `
+                            <div style="font-weight:700; font-size:13px;">${escapeHtml(ev.eventType)} - ${ev.payload?.title || 'System event'}</div>
+                            <p class="small text-muted" style="font-size:11.5px;">${new Date(ev.timestamp).toLocaleString()} by ${ev.submittedBy}</p>
+                            <p style="font-size:12px; color:var(--text-secondary); margin-top:4px;">${escapeHtml(ev.payload?.description || ev.payload?.comment || '')}</p>
+                            ${proofUrlHtml}
+                        `;
+                        logContainer.appendChild(li);
+                    });
+                }
+            } catch (err) {
+                console.error("Error loading progress logs:", err);
+                logContainer.innerHTML = '<li class="text-danger small">Failed to load progress activity trail.</li>';
+            }
+
+            // Populate pending extension verification section
+            const pendingExtSection = document.getElementById("pendingExtensionSection");
+            if (data.extensionStatus === 'pending') {
+                pendingExtSection.style.display = 'block';
+                document.getElementById("pendingExtDays").textContent = `${data.extensionRequestedDays || 1} Days`;
+
+                let extDate = '—';
+                if (data.extensionRequestedAt) {
+                    extDate = data.extensionRequestedAt.toDate
+                        ? data.extensionRequestedAt.toDate().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+                        : new Date(data.extensionRequestedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+                }
+                document.getElementById("pendingExtDate").textContent = extDate;
+                document.getElementById("pendingExtReason").textContent = data.extensionReason || '—';
+
+                // Store extension data for click handlers
+                activeAdminExtReq = {
+                    days: data.extensionRequestedDays || 1,
+                    reason: data.extensionReason || ''
+                };
+            } else {
+                pendingExtSection.style.display = 'none';
+                activeAdminExtReq = null;
+            }
+
+            // Populate pending milestone verification section
+            const pendingMs = data.progress?.pendingMilestone;
+            const pendingSection = document.getElementById("pendingMilestoneSection");
+            if (pendingMs && pendingMs.status === 'pending_verification' && pendingMs.percent === 50) {
+                pendingSection.style.display = 'block';
+                document.getElementById("pendingMsTitle").textContent = pendingMs.title || '—';
+                document.getElementById("pendingMsPercent").textContent = `${pendingMs.percent || 0}%`;
+                document.getElementById("pendingMsDesc").textContent = pendingMs.description || '—';
+                document.getElementById("pendingMsDate").textContent = pendingMs.submittedAt
+                    ? new Date(pendingMs.submittedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '—';
+
+                // Proof links/files rendering
+                const proofContainer = document.getElementById("pendingMsProofContainer");
+                if (proofContainer) {
+                    proofContainer.innerHTML = '';
+                    let elements = [];
+                    if (pendingMs.proofFiles && Array.isArray(pendingMs.proofFiles) && pendingMs.proofFiles.length > 0) {
+                        pendingMs.proofFiles.forEach((file, fIdx) => {
+                            const name = file.name || `File Proof ${fIdx + 1}`;
+                            elements.push(`
+                                <div class="mb-2">
+                                    <a href="${normalizeUrl(file.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success" style="padding: 4px 8px; font-size: 12px; border-radius: 6px; border: 1px solid #198754; color: #198754; background: transparent; text-decoration: none; display: inline-block;">
+                                        📎 ${escapeHtml(name)} ↗
+                                    </a>
+                                </div>
+                            `);
+                        });
+                    }
+                    if (pendingMs.proofLinks && Array.isArray(pendingMs.proofLinks) && pendingMs.proofLinks.length > 0) {
+                        pendingMs.proofLinks.forEach((link, lIdx) => {
+                            const displayLink = link.length > 40 ? link.substring(0, 37) + '...' : link;
+                            elements.push(`
+                                <div class="mb-2">
+                                    <a href="${normalizeUrl(link)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info" style="padding: 4px 8px; font-size: 12px; border-radius: 6px; border: 1px solid #0dcaf0; color: #0dcaf0; background: transparent; text-decoration: none; display: inline-block;">
+                                        🔗 ${escapeHtml(displayLink)} ↗
+                                    </a>
+                                </div>
+                            `);
+                        });
+                    }
+                    if (elements.length === 0) {
+                        if (pendingMs.proofFileUrl) {
+                            elements.push(`
+                                <div class="mb-2">
+                                    <a href="${normalizeUrl(pendingMs.proofFileUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success" style="padding: 4px 8px; font-size: 12px; border-radius: 6px; border: 1px solid #198754; color: #198754; background: transparent; text-decoration: none; display: inline-block;">
+                                        📎 View File Proof ↗
+                                    </a>
+                                </div>
+                            `);
+                        }
+                        if (pendingMs.proofLinkUrl) {
+                            elements.push(`
+                                <div class="mb-2">
+                                    <a href="${normalizeUrl(pendingMs.proofLinkUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info" style="padding: 4px 8px; font-size: 12px; border-radius: 6px; border: 1px solid #0dcaf0; color: #0dcaf0; background: transparent; text-decoration: none; display: inline-block;">
+                                        🔗 View Staging URL ↗
+                                    </a>
+                                </div>
+                            `);
+                        }
+                    }
+                    if (elements.length > 0) {
+                        proofContainer.style.display = 'block';
+                        const wrapper = document.createElement('div');
+                        wrapper.innerHTML = `<p style="font-size:11px; font-weight:600; color:#666; margin-bottom:4px;">Proof Artifacts</p>` + elements.join('');
+                        proofContainer.appendChild(wrapper);
+                    } else {
+                        proofContainer.style.display = 'none';
+                    }
+                }
+
+                // Comment
+                const commentSection = document.getElementById("pendingMsComment");
+                if (pendingMs.comment) {
+                    commentSection.style.display = 'block';
+                    document.getElementById("pendingMsCommentText").textContent = pendingMs.comment;
+                } else {
+                    commentSection.style.display = 'none';
+                }
+
+                // Reset reject form
+                document.getElementById("rejectReasonContainer").style.display = 'none';
+                document.getElementById("btnConfirmReject").style.display = 'none';
+                document.getElementById("btnShowRejectForm").style.display = 'inline-block';
+                document.getElementById("rejectReasonInput").value = '';
+
+                // Store data for handlers
+                activeAdminPtsPendingMs = pendingMs;
+                activeAdminPtsData = data;
+            } else {
+                pendingSection.style.display = 'none';
+                activeAdminPtsPendingMs = null;
+                activeAdminPtsData = data;
+            }
+
+            // Setup Fast-Track Tracking
+            const fastTrackSection = document.getElementById("fastTrackSection");
+            if (data.fastTrackRequested) {
+                fastTrackSection.style.display = 'block';
+                document.getElementById("fastTrackStatusText").textContent = data.fastTrackPin ? "Approved (PIN Generated)" : "Requested by Provider";
+                document.getElementById("fastTrackStatusText").style.color = data.fastTrackPin ? "#0f766e" : "#b45309";
+                document.getElementById("fastTrackPinText").textContent = data.fastTrackPin || "Waiting for Client...";
+            } else {
+                fastTrackSection.style.display = 'none';
+            }
+
+            document.getElementById("adminPtsModal").style.display = "flex";
+        }
+
+        // Close Modal
+        document.getElementById("modalCloseBtn").onclick = () => {
+            document.getElementById("adminPtsModal").style.display = "none";
+        };
+
+        // =========================================================================
+        // MILESTONE VERIFICATION HANDLERS
+        // =========================================================================
+        // Extension Approval
+        document.getElementById("btnApproveExtension").onclick = async () => {
+            if (!activeAdminPtsId || !activeAdminExtReq) return;
+
+            Swal.fire({
+                title: 'Approve Extension?',
+                text: `Grant an additional ${activeAdminExtReq.days} day(s) to the provider?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                confirmButtonText: 'Yes, Approve'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const bRef = db.collection("bookings").doc(activeAdminPtsId);
+
+                        // We need to fetch current deadline and add days
+                        const docSnap = await bRef.get();
+                        const data = docSnap.data();
+
+                        let oldDeadlineMs = data.timestamps?.currentDeadline;
+                        if (oldDeadlineMs && oldDeadlineMs.toDate) {
+                            oldDeadlineMs = oldDeadlineMs.toDate().getTime();
+                        } else if (oldDeadlineMs) {
+                            oldDeadlineMs = new Date(oldDeadlineMs).getTime();
+                        } else {
+                            oldDeadlineMs = Date.now();
+                        }
+
+                        const addedMs = activeAdminExtReq.days * 24 * 60 * 60 * 1000;
+                        const newDeadlineMs = oldDeadlineMs + addedMs;
+
+                        let schedule = data.progress?.milestoneSchedule || [];
+                        if (Array.isArray(schedule) && schedule.length > 0) {
+                            schedule = JSON.parse(JSON.stringify(schedule)); // deep copy
+                            schedule.forEach(ms => {
+                                if (ms.deadline) {
+                                    const oldDl = new Date(ms.deadline).getTime();
+                                    ms.deadline = new Date(oldDl + addedMs).toISOString();
+                                }
+                            });
+                        }
+
+                        await bRef.update({
+                            extensionStatus: 'approved',
+                            'timestamps.currentDeadline': new Date(newDeadlineMs).toISOString(),
+                            'progress.milestoneSchedule': schedule,
+                            'progress.lastUpdateTime': new Date().toISOString()
+                        });
+
+                        // Notification
+                        if (data.providerId) {
+                            await db.collection("notifications").add({
+                                userId: data.providerId,
+                                title: "Extension Approved",
+                                body: `Your request for a ${activeAdminExtReq.days}-day extension was approved.`,
+                                type: "pts_extension_approved",
+                                referenceId: activeAdminPtsId,
+                                isRead: false,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
+                        if (data.userId || data.customerId) {
+                            await db.collection("notifications").add({
+                                userId: data.userId || data.customerId,
+                                title: "Booking Delayed",
+                                body: `The provider requested and received a ${activeAdminExtReq.days}-day extension for your booking.`,
+                                type: "pts_extension_approved",
+                                referenceId: activeAdminPtsId,
+                                isRead: false,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
+
+                        Swal.fire('Approved!', 'The extension has been granted and deadlines updated.', 'success');
+                        closeManageModal();
+                    } catch (e) {
+                        console.error('Error approving extension:', e);
+                        Swal.fire('Error', e.message, 'error');
+                    }
+                }
+            });
+        };
+
+        // Extension Rejection
+        document.getElementById("btnRejectExtension").onclick = async () => {
+            if (!activeAdminPtsId || !activeAdminExtReq) return;
+
+            Swal.fire({
+                title: 'Reject Extension Request?',
+                text: 'Are you sure you want to deny this extension?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Yes, Reject'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const bRef = db.collection("bookings").doc(activeAdminPtsId);
+                        const docSnap = await bRef.get();
+                        const data = docSnap.data();
+
+                        await bRef.update({
+                            extensionStatus: 'rejected',
+                            'progress.lastUpdateTime': new Date().toISOString()
+                        });
+
+                        // Notification
+                        if (data.providerId) {
+                            await db.collection("notifications").add({
+                                userId: data.providerId,
+                                title: "Extension Rejected",
+                                body: `Your request for an extension was rejected by the admin.`,
+                                type: "pts_extension_rejected",
+                                referenceId: activeAdminPtsId,
+                                isRead: false,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
+
+                        Swal.fire('Rejected', 'The extension request was rejected.', 'success');
+                        closeManageModal();
+                    } catch (e) {
+                        console.error('Error rejecting extension:', e);
+                        Swal.fire('Error', e.message, 'error');
+                    }
+                }
+            });
+        };
+
+
+        // Verify Milestone
+        document.getElementById("btnVerifyMilestone").onclick = async () => {
+            if (!activeAdminPtsId || !activeAdminPtsPendingMs) return;
+
+            const ms = activeAdminPtsPendingMs;
+            Swal.fire({
+                title: 'Verify Milestone?',
+                html: `<p>Approve <strong>"${ms.title}"</strong> at <strong>${ms.percent}%</strong> progress?</p><p class="small text-muted">This will update the actual progress for both the provider and customer.</p>`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                confirmButtonText: '✓ Verify & Update Progress'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const nowStr = new Date().toISOString();
+                        const bRef = db.collection("bookings").doc(activeAdminPtsId);
+                        const bookingSnap = await bRef.get();
+                        const bookingData = bookingSnap.data() || {};
+                        let schedule = bookingData.progress?.milestoneSchedule || [];
+                        const stageIndex = ms.stageIndex !== undefined ? ms.stageIndex : 1;
+
+                        if (schedule[stageIndex]) {
+                            schedule = JSON.parse(JSON.stringify(schedule)); // deep copy
+                            schedule[stageIndex].proofFiles = ms.proofFiles || [];
+                            schedule[stageIndex].proofLinks = ms.proofLinks || [];
+                            schedule[stageIndex].proofFileUrl = ms.proofFileUrl || null;
+                            schedule[stageIndex].proofLinkUrl = ms.proofLinkUrl || null;
+                            schedule[stageIndex].completedAt = nowStr;
+                            schedule[stageIndex].comment = ms.description || '';
+                        }
+
+                        const updateData = {
+                            "progress.actualPercent": ms.percent,
+                            "progress.pendingMilestone": null,
+                            "progress.milestoneSchedule": schedule,
+                            "progress.lastUpdateTime": nowStr
+                        };
+
+                        // If 100%, also update booking status
+                        if (ms.percent === 100) {
+                            updateData.status = 'Samples Ready for Review';
+                        }
+
+                        await bRef.update(updateData);
+
+                        // Log verified event
+                        await bRef.collection("progressEvents").add({
+                            timestamp: nowStr,
+                            eventType: 'MILESTONE_VERIFIED',
+                            stageNumber: (ms.stageIndex || 0) + 1,
+                            submittedBy: 'admin',
+                            payload: {
+                                title: ms.title,
+                                description: ms.description || '',
+                                verifiedPercent: ms.percent,
+                                proofFiles: ms.proofFiles || [],
+                                proofLinks: ms.proofLinks || [],
+                                proofFileUrl: ms.proofFileUrl || null,
+                                proofLinkUrl: ms.proofLinkUrl || null,
+                                originalSubmittedAt: ms.submittedAt,
+                                comment: ms.description || ''
+                            }
+                        });
+
+                        // Notify provider
+                        if (activeAdminPtsData?.providerId) {
+                            try {
+                                await db.collection("notifications").add({
+                                    userId: activeAdminPtsData.providerId,
+                                    title: 'Milestone Verified ✅',
+                                    body: `Admin verified your milestone "${ms.title}" (${ms.percent}%) for "${activeAdminPtsData.serviceName || 'Service'}". Progress has been updated.`,
+                                    read: false,
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                    data: {
+                                        type: 'booking',
+                                        bookingId: activeAdminPtsId,
+                                        status: activeAdminPtsData.status || 'Ongoing',
+                                        progressPercent: ms.percent
+                                    }
+                                });
+                            } catch (e) { console.warn('Provider notification failed:', e); }
+                        }
+
+                        // Notify customer
+                        if (activeAdminPtsData?.customerId) {
+                            try {
+                                await db.collection("notifications").add({
+                                    userId: activeAdminPtsData.customerId,
+                                    title: 'Milestone Verified ✅',
+                                    body: `Milestone "${ms.title}" (${ms.percent}%) has been verified by admin for "${activeAdminPtsData.serviceName || 'Service'}". Your service progress is now at ${ms.percent}%.`,
+                                    read: false,
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                    data: {
+                                        type: 'booking',
+                                        bookingId: activeAdminPtsId,
+                                        status: activeAdminPtsData.status || 'Ongoing',
+                                        progressPercent: ms.percent
+                                    }
+                                });
+                            } catch (e) { console.warn('Customer notification failed:', e); }
+                        }
+
+                        document.getElementById("adminPtsModal").style.display = "none";
+                        Swal.fire('Verified!', `Milestone "${ms.title}" verified. Progress updated to ${ms.percent}%.`, 'success');
+
+                    } catch (err) {
+                        console.error("Error verifying milestone:", err);
+                        Swal.fire("Error", `Failed to verify milestone: ${err.message}`, "error");
+                    }
+                }
+            });
+        };
+
+        // Show Reject Form
+        document.getElementById("btnShowRejectForm").onclick = () => {
+            document.getElementById("rejectReasonContainer").style.display = 'block';
+            document.getElementById("btnConfirmReject").style.display = 'inline-block';
+            document.getElementById("btnShowRejectForm").style.display = 'none';
+        };
+
+        // Confirm Reject
+        document.getElementById("btnConfirmReject").onclick = async () => {
+            if (!activeAdminPtsId || !activeAdminPtsPendingMs) return;
+
+            const reason = document.getElementById("rejectReasonInput").value.trim();
+            if (!reason) {
+                Swal.fire("Error", "Please provide a rejection reason.", "error");
+                return;
+            }
+
+            const ms = activeAdminPtsPendingMs;
+            try {
+                const nowStr = new Date().toISOString();
+                const bRef = db.collection("bookings").doc(activeAdminPtsId);
+
+                // Clear pending milestone
+                await bRef.update({
+                    "progress.pendingMilestone": null,
+                    "progress.lastUpdateTime": nowStr
+                });
+
+                // Log rejection event
+                await bRef.collection("progressEvents").add({
+                    timestamp: nowStr,
+                    eventType: 'MILESTONE_REJECTED',
+                    stageNumber: (ms.stageIndex || 0) + 1,
+                    submittedBy: 'admin',
+                    payload: {
+                        title: ms.title,
+                        rejectedPercent: ms.percent,
+                        rejectionReason: reason,
+                        originalSubmittedAt: ms.submittedAt
+                    }
+                });
+
+                // Notify provider about rejection
+                if (activeAdminPtsData?.providerId) {
+                    try {
+                        await db.collection("notifications").add({
+                            userId: activeAdminPtsData.providerId,
+                            title: 'Milestone Rejected ❌',
+                            body: `Admin rejected your milestone "${ms.title}" (${ms.percent}%) for "${activeAdminPtsData.serviceName || 'Service'}". Reason: ${reason}. Please re-submit with valid proof.`,
+                            read: false,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            data: {
+                                type: 'booking',
+                                bookingId: activeAdminPtsId,
+                                status: activeAdminPtsData.status || 'Ongoing'
+                            }
+                        });
+                    } catch (e) { console.warn('Provider rejection notification failed:', e); }
+                }
+
+                document.getElementById("adminPtsModal").style.display = "none";
+                Swal.fire('Rejected', `Milestone "${ms.title}" has been rejected. Provider has been notified.`, 'warning');
+
+            } catch (err) {
+                console.error("Error rejecting milestone:", err);
+                Swal.fire("Error", `Failed to reject milestone: ${err.message}`, "error");
+            }
+        };
+
+        // Apply progress override
+        document.getElementById("btnApplyOverride").onclick = async () => {
+            const p = parseInt(document.getElementById("overridePercentVal").value);
+            if (isNaN(p) || p < 0 || p > 100) {
+                Swal.fire("Error", "Percent must be a number between 0 and 100", "error");
+                return;
+            }
+
+            Swal.fire({
+                title: 'Override Progress SLA?',
+                text: `Are you sure you want to manually force actual progress to ${p}%?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#667eea',
+                confirmButtonText: 'Yes, Override'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const nowStr = new Date().toISOString();
+                        const bRef = db.collection("bookings").doc(activeAdminPtsId);
+
+                        await bRef.update({
+                            "progress.actualPercent": p,
+                            "progress.lastUpdateTime": nowStr
+                        });
+
+                        // Log event
+                        await bRef.collection("progressEvents").add({
+                            timestamp: nowStr,
+                            eventType: 'ADMIN_OVERRIDE',
+                            submittedBy: 'admin',
+                            payload: {
+                                title: 'Admin Progress Override',
+                                description: `Admin manually adjusted actual progress value to ${p}%`,
+                                actualPercentUpdated: p
+                            }
+                        });
+
+                        // Send push notifications to both client and provider
+                        const item = bookingsCache.find(x => x.docId === activeAdminPtsId);
+                        if (item && item.data) {
+                            const data = item.data;
+                            const notifDataClient = {
+                                userId: data.customerId,
+                                title: 'SLA Progress Adjusted ⚙️',
+                                body: `An administrator manually set the progress of your booking for "${data.serviceName || 'Service'}" to ${p}%.`,
+                                read: false,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                data: {
+                                    type: 'booking',
+                                    bookingId: activeAdminPtsId,
+                                    status: data.status || 'Ongoing'
+                                }
+                            };
+                            const notifDataProv = {
+                                userId: data.providerId,
+                                title: 'SLA Progress Adjusted ⚙️',
+                                body: `An administrator manually set the progress of your booking for "${data.serviceName || 'Service'}" to ${p}%.`,
+                                read: false,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                data: {
+                                    type: 'booking',
+                                    bookingId: activeAdminPtsId,
+                                    status: data.status || 'Ongoing'
+                                }
+                            };
+                            try {
+                                await db.collection("notifications").add(notifDataClient);
+                                await db.collection("notifications").add(notifDataProv);
+                            } catch (nErr) {
+                                console.warn("Could not dispatch admin override notifications:", nErr);
+                            }
+                        }
+
+                        Swal.fire("Success", "Progress successfully overridden!", "success");
+                        document.getElementById("adminPtsModal").style.display = "none";
+                        renderAdminBoard();
+                    } catch (err) {
+                        Swal.fire("Error", err.message, "error");
+                    }
+                }
+            });
+        };
+
+        // Resume SLA Forcefully
+        document.getElementById("btnResumeOverride").onclick = async () => {
+            try {
+                const now = new Date();
+                const nowStr = now.toISOString();
+                const item = bookingsCache.find(x => x.docId === activeAdminPtsId);
+                const data = item.data;
+
+                let pauseStart = data.progress?.lastPauseTimestamp;
+                if (pauseStart.toDate) pauseStart = pauseStart.toDate().getTime();
+                else pauseStart = new Date(pauseStart).getTime();
+
+                const pauseDurationMs = Math.max(0, now.getTime() - pauseStart);
+                const accumPause = Number(data.progress?.accumulatedPauseDurationMs || 0) + pauseDurationMs;
+
+                const bRef = db.collection("bookings").doc(activeAdminPtsId);
+                await bRef.update({
+                    "progress.activeState": "ONGOING",
+                    "progress.accumulatedPauseDurationMs": accumPause,
+                    "progress.lastPauseTimestamp": null
+                });
+
+                // Log event
+                await bRef.collection("progressEvents").add({
+                    timestamp: nowStr,
+                    eventType: 'ADMIN_FORCE_SLA_RESUME',
+                    submittedBy: 'admin',
+                    payload: {
+                        comment: 'Admin forcefully ended project pause state'
+                    }
+                });
+
+                // Send push notifications to both client and provider
+                const notifDataClient = {
+                    userId: data.customerId,
+                    title: 'SLA Resumed by Admin ⚙️',
+                    body: `An administrator forcefully ended the paused state for "${data.serviceName || 'Service'}" and resumed the SLA timer.`,
+                    read: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    data: {
+                        type: 'booking',
+                        bookingId: activeAdminPtsId,
+                        status: data.status || 'Ongoing'
+                    }
+                };
+                const notifDataProv = {
+                    userId: data.providerId,
+                    title: 'SLA Resumed by Admin ⚙️',
+                    body: `An administrator forcefully ended the paused state for your booking "${data.serviceName || 'Service'}" and resumed the SLA timer.`,
+                    read: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    data: {
+                        type: 'booking',
+                        bookingId: activeAdminPtsId,
+                        status: data.status || 'Ongoing'
+                    }
+                };
+                try {
+                    await db.collection("notifications").add(notifDataClient);
+                    await db.collection("notifications").add(notifDataProv);
+                } catch (nErr) {
+                    console.warn("Could not dispatch admin resume notifications:", nErr);
+                }
+
+                Swal.fire("Success", "Project SLA resumed!", "success");
+                document.getElementById("adminPtsModal").style.display = "none";
+                renderAdminBoard();
+            } catch (err) {
+                Swal.fire("Error", err.message, "error");
+            }
+        };
+
+        // Provider Reassignment Trigger
+        document.getElementById("btnReassignProv").onclick = () => {
+            document.getElementById("adminPtsModal").style.display = "none";
+            // Redirect to standard replacement panel passing the bookingId
+            window.location.href = `provider-replacement.html?bookingId=${activeAdminPtsId}`;
+        };
+
+        // Proactive Force Deadline Extension
+        document.getElementById("btnForceExtension").onclick = async () => {
+            if (!activeAdminPtsId) return;
+            const daysInput = document.getElementById("forceExtensionDays").value;
+            const days = parseInt(daysInput);
+
+            if (isNaN(days) || days <= 0) {
+                Swal.fire("Error", "Please enter a valid number of days to extend.", "error");
+                return;
+            }
+
+            Swal.fire({
+                title: 'Force Timeline Extension?',
+                text: `Add ${days} day(s) to the current deadline proactively? This will notify both parties.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Yes, Extend Deadline'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const bRef = db.collection("bookings").doc(activeAdminPtsId);
+                        const docSnap = await bRef.get();
+                        const data = docSnap.data();
+
+                        let oldDeadlineMs = data.timestamps?.currentDeadline;
+                        if (oldDeadlineMs && oldDeadlineMs.toDate) {
+                            oldDeadlineMs = oldDeadlineMs.toDate().getTime();
+                        } else if (oldDeadlineMs) {
+                            oldDeadlineMs = new Date(oldDeadlineMs).getTime();
+                        } else {
+                            oldDeadlineMs = Date.now();
+                        }
+
+                        const addedMs = days * 24 * 60 * 60 * 1000;
+                        const newDeadlineMs = oldDeadlineMs + addedMs;
+                        const nowStr = new Date().toISOString();
+
+                        let schedule = data.progress?.milestoneSchedule || [];
+                        if (Array.isArray(schedule) && schedule.length > 0) {
+                            schedule = JSON.parse(JSON.stringify(schedule)); // deep copy
+                            schedule.forEach(ms => {
+                                if (ms.deadline) {
+                                    const oldDl = new Date(ms.deadline).getTime();
+                                    ms.deadline = new Date(oldDl + addedMs).toISOString();
+                                }
+                            });
+                        }
+
+                        await bRef.update({
+                            'timestamps.currentDeadline': new Date(newDeadlineMs).toISOString(),
+                            'progress.milestoneSchedule': schedule,
+                            'progress.lastUpdateTime': nowStr
+                        });
+
+                        // Log event
+                        await bRef.collection("progressEvents").add({
+                            timestamp: nowStr,
+                            eventType: 'ADMIN_FORCE_EXTENSION',
+                            submittedBy: 'admin',
+                            payload: {
+                                daysAdded: days,
+                                comment: 'Admin proactively extended deadline to manage delays.'
+                            }
+                        });
+
+                        // Notify
+                        if (data.providerId) {
+                            await db.collection("notifications").add({
+                                userId: data.providerId,
+                                title: "Deadline Proactively Extended",
+                                body: `The admin has added ${days} day(s) to your delivery timeline to account for delays.`,
+                                type: "pts_admin_extension",
+                                referenceId: activeAdminPtsId,
+                                isRead: false,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
+                        if (data.customerId || data.userId) {
+                            await db.collection("notifications").add({
+                                userId: data.customerId || data.userId,
+                                title: "Delivery Timeline Adjusted",
+                                body: `The admin has added ${days} day(s) to the delivery timeline to ensure quality completion.`,
+                                type: "pts_admin_extension",
+                                referenceId: activeAdminPtsId,
+                                isRead: false,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
+
+                        Swal.fire('Success', 'The timeline has been forcefully extended.', 'success');
+                        document.getElementById("adminPtsModal").style.display = "none";
+                        renderAdminBoard();
+                    } catch (err) {
+                        console.error('Error extending deadline:', err);
+                        Swal.fire('Error', err.message, 'error');
+                    }
+                }
+            });
+        };
+
+        // Category/Search listeners
+        document.getElementById("adminSearchInput").addEventListener("input", renderAdminBoard);
+        document.getElementById("categoryFilter").addEventListener("change", renderAdminBoard);
+        document.getElementById("riskFilter").addEventListener("change", renderAdminBoard);
+
+        // Escape helper
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function normalizeUrl(url) {
+            if (!url || typeof url !== 'string') return '';
+            const trimmed = url.trim();
+            if (!trimmed || trimmed === '#') return '';
+            if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//i.test(trimmed)) {
+                return trimmed;
+            }
+            if (trimmed.startsWith('//')) {
+                return 'https:' + trimmed;
+            }
+            if (/^(mailto|tel):/i.test(trimmed)) {
+                return trimmed;
+            }
+            return 'https://' + trimmed;
+        }
+
+        // Theme Toggle
+        const themeBtn = document.getElementById("themeToggleBtn");
+        themeBtn.onclick = () => {
+            const html = document.documentElement;
+            if (html.getAttribute("data-theme") === "dark") {
+                html.removeAttribute("data-theme");
+                themeBtn.textContent = "☀️";
+            } else {
+                html.setAttribute("data-theme", "dark");
+                themeBtn.textContent = "🌙";
+            }
+        };
+    </script>
+</body>
+
+</html>

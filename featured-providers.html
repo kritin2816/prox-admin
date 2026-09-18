@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Featured Providers Management</title>
+    
+    <!-- Firebase SDK v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 50px;
+            border-bottom: 4px solid rgba(255,255,255,0.2);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 15px;
+        }
+
+        .content {
+            padding: 40px 50px;
+        }
+
+        /* Week Navigation */
+        .featured-week-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 16px;
+        }
+
+        .week-navigation {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .week-nav-btn {
+            padding: 12px 20px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .week-nav-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .current-week-display {
+            text-align: center;
+        }
+
+        .current-week-display h3 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .week-status {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .week-status.complete {
+            color: #4caf50;
+            font-weight: 600;
+        }
+
+        .week-status.partial {
+            color: #ff9800;
+            font-weight: 600;
+        }
+
+        .week-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .secondary-btn {
+            background: #e0e0e0;
+            color: #555;
+        }
+
+        .secondary-btn:hover {
+            background: #d0d0d0;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Featured Slots */
+        .content-container {
+            margin-bottom: 40px;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .content-header h2 {
+            font-size: 24px;
+            color: #333;
+        }
+
+        .featured-counter {
+            font-size: 16px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .featured-slots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .featured-slot {
+            background: #f8f9fa;
+            border: 3px solid #e0e0e0;
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .featured-slot:hover {
+            border-color: #667eea;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+        }
+
+        .featured-slot.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f0f4ff, #ffffff);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.25);
+        }
+
+        .slot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .slot-number {
+            font-size: 14px;
+            font-weight: 700;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .clear-slot-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            transition: all 0.3s ease;
+        }
+
+        .clear-slot-btn:hover {
+            background: #cc0000;
+            transform: scale(1.1);
+        }
+
+        .slot-content.empty {
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .empty-slot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            color: #999;
+        }
+
+        .empty-icon {
+            font-size: 40px;
+        }
+
+        .empty-text {
+            font-size: 14px;
+        }
+
+        .slot-content.filled {
+            padding: 15px;
+        }
+
+        .featured-provider-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .featured-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #667eea;
+        }
+
+        .featured-avatar.placeholder {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .featured-info {
+            text-align: center;
+        }
+
+        .featured-info h4 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .featured-category, .featured-location {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .provider-rating {
+            color: #ffa500;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Provider Search */
+        .search-filters {
+            margin-bottom: 20px;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .filter-tab {
+            padding: 12px 28px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            color: #555;
+        }
+
+        .filter-tab:hover {
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .filter-tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .search-section input {
+            flex: 1;
+            padding: 14px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .search-section input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .refresh-btn {
+            padding: 14px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        /* Available Providers Grid */
+        .available-providers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .available-provider-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .available-provider-card:hover {
+            border-color: #667eea;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+        }
+
+        .provider-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 12px;
+        }
+
+        .provider-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #667eea;
+        }
+
+        .provider-avatar.placeholder {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .provider-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .provider-category, .provider-location {
+            font-size: 13px;
+            color: #666;
+            margin: 4px 0;
+        }
+
+        .tier-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+
+        .tier-platinum {
+            background: linear-gradient(135deg, #e5e5e5, #ffffff);
+            color: #666;
+            border: 2px solid #999;
+        }
+
+        .tier-gold {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #b8860b;
+        }
+
+        .tier-silver {
+            background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+            color: #696969;
+        }
+
+        .tier-bronze {
+            background: linear-gradient(135deg, #cd7f32, #e6a874);
+            color: #8b4513;
+        }
+
+        /* Loading & Empty States */
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            padding: 16px 24px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #4caf50, #66bb6a);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #f44336, #e57373);
+        }
+
+        .toast.warning {
+            background: linear-gradient(135deg, #ff9800, #ffb74d);
+        }
+
+        .toast.info {
+            background: linear-gradient(135deg, #2196f3, #64b5f6);
+        }
+
+        @media (max-width: 1024px) {
+            .featured-slots {
+                grid-template-columns: 1fr;
+            }
+
+            .featured-week-header {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .available-providers-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 25px 20px;
+            }
+
+            .header {
+                padding: 25px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⭐ Featured Providers Management</h1>
+            <p>Select up to 3 featured providers for each week</p>
+        </div>
+
+        <div class="content">
+            <!-- Week Navigation Header -->
+            <div class="featured-week-header">
+                <div class="week-navigation">
+                    <button id="prev-week-btn" class="week-nav-btn">
+                        <span class="nav-icon">←</span>
+                        <span class="nav-text">Previous</span>
+                    </button>
+                </div>
+
+                <div class="current-week-display">
+                    <h3 id="current-week-title">Week of Nov 13-19, 2025</h3>
+                    <p id="current-week-status" class="week-status">0 providers selected</p>
+                </div>
+
+                <button id="next-week-btn" class="week-nav-btn">
+                    <span class="nav-text">Next</span>
+                    <span class="nav-icon">→</span>
+                </button>
+            </div>
+
+            <!-- Week Actions -->
+            <div class="week-actions" style="margin-bottom: 30px; display: flex; justify-content: center; gap: 15px;">
+                <button id="copy-previous-week-btn" class="action-btn secondary-btn">
+                    <span class="btn-icon">📋</span>
+                    <span class="btn-text">Copy Previous</span>
+                </button>
+                <button id="clear-week-btn" class="action-btn secondary-btn">
+                    <span class="btn-icon">🗑️</span>
+                    <span class="btn-text">Clear All</span>
+                </button>
+                <button id="save-featured-btn" class="action-btn send-btn">
+                    <span class="btn-icon">💾</span>
+                    <span class="btn-text">Save Changes</span>
+                </button>
+            </div>
+
+            <!-- Current Featured Providers -->
+            <div class="content-container">
+                <div class="content-header">
+                    <h2>Featured Providers for Current Week</h2>
+                    <div class="featured-counter">
+                        <span id="featured-count">0</span>/3 Selected
+                    </div>
+                </div>
+
+                <!-- Featured Slots -->
+                <div id="featured-slots" class="featured-slots">
+                    <div class="featured-slot" data-slot="1">
+                        <div class="slot-header">
+                            <span class="slot-number">1st Position</span>
+                            <button class="clear-slot-btn" style="display: none;">×</button>
+                        </div>
+                        <div class="slot-content empty">
+                            <div class="empty-slot">
+                                <span class="empty-icon">➕</span>
+                                <span class="empty-text">Select Provider</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="featured-slot" data-slot="2">
+                        <div class="slot-header">
+                            <span class="slot-number">2nd Position</span>
+                            <button class="clear-slot-btn" style="display: none;">×</button>
+                        </div>
+                        <div class="slot-content empty">
+                            <div class="empty-slot">
+                                <span class="empty-icon">➕</span>
+                                <span class="empty-text">Select Provider</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="featured-slot" data-slot="3">
+                        <div class="slot-header">
+                            <span class="slot-number">3rd Position</span>
+                            <button class="clear-slot-btn" style="display: none;">×</button>
+                        </div>
+                        <div class="slot-content empty">
+                            <div class="empty-slot">
+                                <span class="empty-icon">➕</span>
+                                <span class="empty-text">Select Provider</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Provider Search Section -->
+            <div class="content-container">
+                <div class="content-header">
+                    <h2>Select Providers</h2>
+                </div>
+
+                <div class="search-filters">
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-category="all">All Categories</button>
+                        <button class="filter-tab" data-category="media">Media</button>
+                        <button class="filter-tab" data-category="tech">Tech</button>
+                    </div>
+                </div>
+
+                <!-- Provider Search -->
+                <div class="search-section">
+                    <input type="text" id="search-featured-providers" placeholder="Search providers by name, category, or location...">
+                    <div class="search-actions">
+                        <button id="refresh-provider-search-btn" class="refresh-btn">Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Available Providers List -->
+                <div id="available-providers-container" class="available-providers-grid">
+                    <!-- Provider cards will be dynamically generated -->
+                </div>
+
+                <div id="available-providers-loading" class="loading-state" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Loading available providers...</p>
+                </div>
+
+                <div id="available-providers-empty" class="empty-state" style="display: none;">
+                    <h3>No Providers Found</h3>
+                    <p>No providers match your search criteria</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+            authDomain: "phototester555.firebaseapp.com",
+            projectId: "phototester555",
+            storageBucket: "phototester555.firebasestorage.app",
+            messagingSenderId: "953997763616",
+            appId: "1:953997763616:web:4ac177ad8e79c5f38b8845",
+            measurementId: "G-6VS0G0NQ7K"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // Global State
+        let featuredProviders = [];
+        let availableProviders = [];
+        let currentWeek = getCurrentWeekData();
+        let selectedSlot = null;
+        let featuredProviderFilter = 'all';
+        let featuredProviderSearch = '';
+        let featuredUnsub = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            auth.onAuthStateChanged(async (user) => {
+                if (!user) {
+                    console.log('No user logged in, redirecting to login');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                try {
+                    const adminDoc = await db.collection('admin_users').doc(user.uid).get();
+                    if (!adminDoc.exists || !adminDoc.data().isActive) {
+                        console.log('User is not an active admin, signing out');
+                        await auth.signOut();
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error verifying admin status:', error);
+                    await auth.signOut();
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                initializeWeekNavigation();
+                initializeProviderSearch();
+                initializeSlots();
+                updateWeekDisplay();
+                loadAvailableProviders();
+                wireFeaturedProviders();
+            });
+        });
+
+        // Week Management
+        function getCurrentWeekData() {
+            const now = new Date();
+            const monday = new Date(now);
+            monday.setDate(now.getDate() - now.getDay() + 1);
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+
+            return {
+                start: monday,
+                end: sunday,
+                id: `week-${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
+            };
+        }
+
+        function updateWeekDisplay() {
+            const titleEl = document.getElementById('current-week-title');
+            const statusEl = document.getElementById('current-week-status');
+            const countEl = document.getElementById('featured-count');
+
+            if (titleEl) {
+                const startStr = currentWeek.start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                const endStr = currentWeek.end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                titleEl.textContent = `Week of ${startStr} - ${endStr}`;
+            }
+
+            const count = featuredProviders.length;
+            if (countEl) countEl.textContent = count;
+            
+            if (statusEl) {
+                statusEl.textContent = `${count}/3 providers selected`;
+                statusEl.className = `week-status ${count === 3 ? 'complete' : count > 0 ? 'partial' : ''}`;
+            }
+        }
+
+        function initializeWeekNavigation() {
+            document.getElementById('prev-week-btn')?.addEventListener('click', () => navigateWeek(-1));
+            document.getElementById('next-week-btn')?.addEventListener('click', () => navigateWeek(1));
+            document.getElementById('copy-previous-week-btn')?.addEventListener('click', copyPreviousWeek);
+            document.getElementById('clear-week-btn')?.addEventListener('click', clearWeekSelections);
+            document.getElementById('save-featured-btn')?.addEventListener('click', saveFeaturedProviders);
+        }
+
+        function navigateWeek(direction) {
+            currentWeek.start.setDate(currentWeek.start.getDate() + (direction * 7));
+            currentWeek.end.setDate(currentWeek.end.getDate() + (direction * 7));
+            currentWeek.id = `week-${currentWeek.start.getFullYear()}-${String(currentWeek.start.getMonth() + 1).padStart(2, '0')}-${String(currentWeek.start.getDate()).padStart(2, '0')}`;
+            
+            updateWeekDisplay();
+            loadFeaturedProvidersForWeek();
+        }
+
+        async function copyPreviousWeek() {
+            try {
+                const prevWeek = new Date(currentWeek.start);
+                prevWeek.setDate(prevWeek.getDate() - 7);
+                const prevWeekId = `week-${prevWeek.getFullYear()}-${String(prevWeek.getMonth() + 1).padStart(2, '0')}-${String(prevWeek.getDate()).padStart(2, '0')}`;
+
+                const prevDoc = await db.collection('featuredProviders').doc(prevWeekId).get();
+
+                if (!prevDoc.exists) {
+                    showToast('No featured providers found for previous week', 'warning');
+                    return;
+                }
+
+                const prevData = prevDoc.data();
+                featuredProviders = prevData.providers || [];
+                renderFeaturedSlots();
+                renderAvailableProviders();
+                updateWeekDisplay();
+                showToast('Copied providers from previous week. Remember to save!', 'info');
+            } catch (error) {
+                console.error('Error copying previous week:', error);
+                showToast('Error copying from previous week', 'error');
+            }
+        }
+
+        function clearWeekSelections() {
+            if (featuredProviders.length === 0) {
+                showToast('No providers selected to clear', 'info');
+                return;
+            }
+
+            if (confirm(`Clear all ${featuredProviders.length} selected providers for this week?`)) {
+                featuredProviders = [];
+                renderFeaturedSlots();
+                renderAvailableProviders();
+                updateWeekDisplay();
+                showToast('All selections cleared', 'success');
+            }
+        }
+
+        // Firestore Integration
+        function wireFeaturedProviders(force = false) {
+            if (force && featuredUnsub) {
+                try { featuredUnsub(); } catch {}
+                featuredUnsub = null;
+            }
+
+            if (featuredUnsub) return;
+
+            const docRef = db.collection('featuredProviders').doc(currentWeek.id);
+            featuredUnsub = docRef.onSnapshot(
+                async (doc) => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        featuredProviders = data.providers || [];
+                    } else {
+                        featuredProviders = [];
+                    }
+                    renderFeaturedSlots();
+                    updateWeekDisplay();
+                },
+                (err) => {
+                    console.error('Featured providers listener error:', err);
+                }
+            );
+        }
+
+        async function loadFeaturedProvidersForWeek() {
+            try {
+                const doc = await db.collection('featuredProviders').doc(currentWeek.id).get();
+                
+                if (doc.exists) {
+                    const data = doc.data();
+                    featuredProviders = data.providers || [];
+                } else {
+                    featuredProviders = [];
+                }
+                
+                renderFeaturedSlots();
+                updateWeekDisplay();
+            } catch (error) {
+                console.error('Error loading featured providers for week:', error);
+                showToast('Error loading featured providers', 'error');
+            }
+        }
+
+        async function loadAvailableProviders() {
+            try {
+                const loadingEl = document.getElementById('available-providers-loading');
+                if (loadingEl) loadingEl.style.display = 'block';
+
+                const snapshot = await db.collection('providers')
+                    .where('status', '==', 'approved')
+                    .get();
+
+                availableProviders = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.fullName || data.firstName || data.lastName) {
+                        availableProviders.push({
+                            id: doc.id,
+                            ...data
+                        });
+                    }
+                });
+
+                renderAvailableProviders();
+                if (loadingEl) loadingEl.style.display = 'none';
+            } catch (error) {
+                console.error('Error loading available providers:', error);
+                showToast('Error loading providers', 'error');
+            }
+        }
+
+        async function saveFeaturedProviders() {
+            if (featuredProviders.length === 0) {
+                showToast('Please select at least one provider before saving', 'warning');
+                return;
+            }
+
+            try {
+                const docData = {
+                    weekStart: firebase.firestore.Timestamp.fromDate(currentWeek.start),
+                    weekEnd: firebase.firestore.Timestamp.fromDate(currentWeek.end),
+                    providers: featuredProviders,
+                    updatedBy: auth.currentUser?.uid || 'unknown',
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'active'
+                };
+
+                await db.collection('featuredProviders').doc(currentWeek.id).set(docData);
+
+                showToast(`Featured providers saved for week of ${currentWeek.start.toLocaleDateString()}!`, 'success');
+            } catch (error) {
+                console.error('Error saving featured providers:', error);
+                showToast('Error saving featured providers', 'error');
+            }
+        }
+
+        // Provider Search and Filtering
+        function initializeProviderSearch() {
+            // Category filters
+            document.querySelectorAll('.filter-tab')?.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                    featuredProviderFilter = e.currentTarget.dataset.category || 'all';
+                    renderAvailableProviders();
+                });
+            });
+
+            // Search input
+            document.getElementById('search-featured-providers')?.addEventListener('input', (e) => {
+                featuredProviderSearch = e.target.value.toLowerCase().trim();
+                renderAvailableProviders();
+            });
+
+            // Refresh button
+            document.getElementById('refresh-provider-search-btn')?.addEventListener('click', () => {
+                loadAvailableProviders();
+            });
+        }
+
+        // Slot Management
+        function initializeSlots() {
+            document.querySelectorAll('.featured-slot').forEach(slot => {
+                slot.addEventListener('click', (e) => {
+                    if (e.target.closest('.clear-slot-btn')) return;
+                    const slotNumber = parseInt(slot.dataset.slot);
+                    selectSlot(slotNumber);
+                });
+            });
+        }
+
+        function selectSlot(slotNumber) {
+            selectedSlot = slotNumber;
+            
+            // Update UI
+            document.querySelectorAll('.featured-slot').forEach(slot => {
+                slot.classList.remove('selected');
+            });
+            
+            const selectedSlotEl = document.querySelector(`.featured-slot[data-slot="${slotNumber}"]`);
+            if (selectedSlotEl) {
+                selectedSlotEl.classList.add('selected');
+            }
+            
+            showToast(`Position ${slotNumber} selected. Click a provider to add them.`, 'info');
+        }
+
+        function removeFromSlot(slotNumber) {
+            featuredProviders = featuredProviders.filter(p => p.priority !== slotNumber);
+            renderFeaturedSlots();
+            renderAvailableProviders();
+            updateWeekDisplay();
+            showToast(`Removed provider from position ${slotNumber}`, 'success');
+        }
+
+        // Rendering Functions
+        function renderFeaturedSlots() {
+            for (let slot = 1; slot <= 3; slot++) {
+                const slotEl = document.querySelector(`.featured-slot[data-slot="${slot}"]`);
+                if (!slotEl) continue;
+
+                const contentEl = slotEl.querySelector('.slot-content');
+                const clearBtn = slotEl.querySelector('.clear-slot-btn');
+                const provider = featuredProviders.find(p => p.priority === slot);
+
+                if (provider) {
+                    // Show provider
+                    contentEl.className = 'slot-content filled';
+                    const name = provider.name || [provider.fullName, provider.firstName, provider.lastName].filter(Boolean).join(' ').trim();
+                    const category = [provider.category, provider.profile?.primaryDomain, provider.profile?.mediaSpecialization].filter(Boolean).join(', ') || 'Service Provider';
+                    const location = provider.location || provider.identity?.city || provider.city || 'Location not specified';
+
+                    contentEl.innerHTML = `
+                        <div class="featured-provider-card">
+                            ${provider.profilePhoto ? 
+                                `<img src="${escapeHtml(provider.profilePhoto)}" alt="${escapeHtml(name)}" class="featured-avatar">` :
+                                `<div class="featured-avatar placeholder">${getInitials(name)}</div>`
+                            }
+                            <div class="featured-info">
+                                <h4>${escapeHtml(name)}</h4>
+                                <div class="featured-category">${escapeHtml(category)}</div>
+                                <div class="featured-location">📍 ${escapeHtml(location)}</div>
+                                ${provider.rating ? `<div class="provider-rating">⭐ ${provider.rating}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+
+                    clearBtn.style.display = 'block';
+                    clearBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        removeFromSlot(slot);
+                    };
+                } else {
+                    // Show empty
+                    contentEl.className = 'slot-content empty';
+                    contentEl.innerHTML = `
+                        <div class="empty-slot">
+                            <span class="empty-icon">➕</span>
+                            <span class="empty-text">Select Provider</span>
+                        </div>
+                    `;
+                    clearBtn.style.display = 'none';
+                }
+            }
+        }
+
+        function renderAvailableProviders() {
+            const container = document.getElementById('available-providers-container');
+            const loadingEl = document.getElementById('available-providers-loading');
+            const emptyEl = document.getElementById('available-providers-empty');
+
+            if (!container) return;
+
+            // Filter providers
+            let filtered = availableProviders.slice();
+
+            // Category filter
+            if (featuredProviderFilter !== 'all') {
+                filtered = filtered.filter(provider => {
+                    const category = (provider.category || '').toLowerCase();
+                    const serviceTypes = (provider.serviceTypes || []).join(' ').toLowerCase();
+                    
+                    if (featuredProviderFilter === 'media') {
+                        return category.includes('photo') || category.includes('video') || category.includes('drone') ||
+                               serviceTypes.includes('photo') || serviceTypes.includes('video') || serviceTypes.includes('drone');
+                    } else if (featuredProviderFilter === 'tech') {
+                        return category.includes('web') || category.includes('digital') || category.includes('ui') || category.includes('ux') ||
+                               serviceTypes.includes('web') || serviceTypes.includes('digital') || serviceTypes.includes('ui');
+                    }
+                    return true;
+                });
+            }
+
+            // Search filter
+            if (featuredProviderSearch) {
+                filtered = filtered.filter(provider => {
+                    const searchStr = [
+                        provider.name,
+                        provider.fullName,
+                        provider.firstName,
+                        provider.lastName,
+                        provider.email,
+                        provider.city,
+                        provider.identity?.city,
+                        provider.category,
+                        (provider.serviceTypes || []).join(' ')
+                    ].join(' ').toLowerCase();
+                    return searchStr.includes(featuredProviderSearch);
+                });
+            }
+
+            // Remove already selected providers
+            const selectedIds = featuredProviders.map(p => p.providerId);
+            filtered = filtered.filter(provider => !selectedIds.includes(provider.id));
+
+            // Render
+            container.innerHTML = '';
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (emptyEl) emptyEl.style.display = 'none';
+
+            if (filtered.length === 0) {
+                if (emptyEl) emptyEl.style.display = 'block';
+                return;
+            }
+
+            filtered.forEach(provider => {
+                const card = createAvailableProviderCard(provider);
+                container.appendChild(card);
+            });
+        }
+
+        function createAvailableProviderCard(provider) {
+            const card = document.createElement('div');
+            card.className = 'available-provider-card';
+
+            const name = provider.fullName || provider.identity?.fullName || [provider.firstName, provider.lastName].filter(Boolean).join(' ') || provider.email?.split('@')[0] || 'Unknown Provider';
+            const rating = provider.rating || provider.averageRating || 0;
+            const primaryDomain = provider.profile?.primaryDomain;
+            const mediaSpec = provider.profile?.mediaSpecialization;
+            const techSpec = provider.profile?.techSpecialization;
+            const specialisations = provider.profile?.specialisations;
+            const category = [primaryDomain, mediaSpec, techSpec, specialisations].filter(item => item && item.trim()).join(', ') || provider.tier || 'Service Provider';
+            const location = provider.identity?.city || provider.city || provider.country || 'Location not specified';
+
+            const tierClass = provider.tier ? `tier-${provider.tier.toLowerCase()}` : '';
+
+            card.innerHTML = `
+                <div class="provider-header">
+                    ${provider.profilePhoto ? 
+                        `<img src="${escapeHtml(provider.profilePhoto)}" alt="${escapeHtml(name)}" class="provider-avatar">` :
+                        `<div class="provider-avatar placeholder">${getInitials(name)}</div>`
+                    }
+                    <div>
+                        <div class="provider-name">${escapeHtml(name)}</div>
+                        ${rating > 0 ? `<div class="provider-rating">⭐ ${rating.toFixed(1)}</div>` : ''}
+                    </div>
+                </div>
+                <div class="provider-category">${escapeHtml(category)}</div>
+                <div class="provider-location">📍 ${escapeHtml(location)}</div>
+                ${provider.tier ? `<span class="tier-badge ${tierClass}">${provider.tier}</span>` : ''}
+            `;
+
+            card.addEventListener('click', () => addProviderToFeatured(provider));
+
+            return card;
+        }
+
+        function addProviderToFeatured(provider) {
+            if (!selectedSlot) {
+                selectedSlot = 1;
+            }
+
+            if (selectedSlot > 3) {
+                showToast('Please select a position first', 'warning');
+                return;
+            }
+
+            // Replace existing provider in this slot
+            if (featuredProviders.find(p => p.priority === selectedSlot)) {
+                featuredProviders = featuredProviders.filter(p => p.priority !== selectedSlot);
+            }
+
+            const name = [provider.fullName, provider.firstName, provider.lastName].filter(Boolean).join(' ').trim();
+            const featuredProvider = {
+                providerId: provider.id,
+                name: name,
+                profilePhoto: provider.profilePhoto || null,
+                category: [provider.category, provider.serviceTypes].filter(Boolean).join(', ') || 'Service Provider',
+                location: provider.location || provider.city || 'Location not specified',
+                rating: provider.rating || provider.averageRating || 0,
+                priority: selectedSlot
+            };
+
+            featuredProviders.push(featuredProvider);
+            featuredProviders.sort((a, b) => a.priority - b.priority);
+
+            renderFeaturedSlots();
+            renderAvailableProviders();
+            updateWeekDisplay();
+            showToast(`${featuredProvider.name} added to position ${selectedSlot}!`, 'success');
+
+            // Clear selection
+            selectedSlot = null;
+            document.querySelectorAll('.featured-slot').forEach(slot => slot.classList.remove('selected'));
+        }
+
+        // Utility Functions
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function getInitials(name) {
+            if (!name) return '?';
+            const parts = name.trim().split(' ');
+            if (parts.length >= 2) {
+                return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+            }
+            return name[0].toUpperCase();
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

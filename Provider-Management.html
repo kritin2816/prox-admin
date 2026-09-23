@@ -438,6 +438,16 @@
             color: #fed7aa;
         }
 
+        html:not(.dark-mode) .badge.in_progress {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        html.dark-mode .badge.in_progress {
+            background: rgba(56, 189, 248, 0.2);
+            color: #7dd3fc;
+        }
+
         /* ============================================
    TIER BADGES
    ============================================ */
@@ -2353,6 +2363,10 @@
                     <div class="value" id="stat-pending">0</div>
                 </div>
                 <div class="stat-card">
+                    <div class="label">In Progress</div>
+                    <div class="value" id="stat-in-progress">0</div>
+                </div>
+                <div class="stat-card">
                     <div class="label">Approved</div>
                     <div class="value" id="stat-approved">0</div>
                 </div>
@@ -2378,6 +2392,9 @@
                     </button>
                     <button class="filter-btn" data-filter="pending" onclick="dashboard.filterProviders('pending')">
                         Pending
+                    </button>
+                    <button class="filter-btn" data-filter="in_progress" onclick="dashboard.filterProviders('in_progress')">
+                        In Progress
                     </button>
                     <button class="filter-btn" data-filter="approved" onclick="dashboard.filterProviders('approved')">
                         Approved
@@ -2998,16 +3015,6 @@
                     const qs = await db.collection("providers").get();
                     this.providers = [];
 
-                    const _parseTs = (ts) => {
-                        if (!ts) return null;
-                        if (ts instanceof Date) return ts;
-                        if (typeof ts?.toDate === 'function') return ts.toDate();
-                        if (typeof ts === 'number') return new Date(ts);
-                        if (typeof ts === 'string') { const d = new Date(ts); return isNaN(d) ? null : d; }
-                        if (ts?.seconds != null) return new Date(ts.seconds * 1000 + (ts.nanoseconds || 0) / 1e6);
-                        return null;
-                    };
-
                     qs.forEach(docSnap => {
                         const data = docSnap.data() || {};
 
@@ -3018,8 +3025,8 @@
                         const primaryDomain = get(data, 'profile.primaryDomain', data.primaryDomain);
 
                         const statusRaw = data.status || get(data, 'onboarding.status', 'waiting');
-                        const createdAt = _parseTs(data.createdAt) || _parseTs(data.onboarding?.submittedAt) || _parseTs(data.updatedAt) || new Date(0);
-                        const updatedAt = _parseTs(data.updatedAt) || createdAt || new Date(0);
+                        const createdAt = this.parseTs(data.createdAt) || this.parseTs(data.onboarding?.submittedAt) || this.parseTs(data.updatedAt) || this.parseTs(data.onboarding?.updatedAt) || new Date(0);
+                        const updatedAt = this.parseTs(data.updatedAt) || this.parseTs(data.onboarding?.updatedAt) || createdAt || new Date(0);
 
                         const provider = {
                             id: docSnap.id,
@@ -3029,7 +3036,7 @@
                             city: toString(city),
                             primaryDomain: toString(primaryDomain),
                             name: toString(fullName || data.username || 'Unknown'),
-                            approvalStatus: this.mapStatusForUI(statusRaw),
+                            approvalStatus: this.mapStatusForUI(statusRaw, data),
                             originalStatus: statusRaw,
                             tier: data.tier || null,
                             createdAt,
@@ -3055,10 +3062,49 @@
                 }
             }
 
-            mapStatusForUI(firebaseStatus) {
-                switch (firebaseStatus) {
+            parseTs(ts) {
+                if (!ts) return null;
+                if (ts instanceof Date) return isNaN(ts.getTime()) ? null : ts;
+                if (typeof ts?.toDate === 'function') return ts.toDate();
+                if (typeof ts === 'number') return new Date(ts);
+                if (typeof ts === 'string') {
+                    const cleaned = ts.replace(/\s+at\s+/i, ' ');
+                    const d = new Date(cleaned);
+                    if (!isNaN(d.getTime())) return d;
+                    const d2 = new Date(ts);
+                    return isNaN(d2.getTime()) ? null : d2;
+                }
+                if (typeof ts === 'object') {
+                    if (ts.seconds != null) return new Date(ts.seconds * 1000 + (ts.nanoseconds || 0) / 1e6);
+                    if (ts._seconds != null) return new Date(ts._seconds * 1000 + (ts._nanoseconds || 0) / 1e6);
+                }
+                return null;
+            }
+
+            mapStatusForUI(firebaseStatus, data = {}) {
+                const rawStatus = String(firebaseStatus || '').toLowerCase();
+                const onboarding = data.onboarding || {};
+
+                if (
+                    rawStatus === 'in_progress' ||
+                    rawStatus === 'onboarding_required' ||
+                    rawStatus === 'draft' ||
+                    rawStatus === 'incomplete' ||
+                    rawStatus === 'unsubmitted'
+                ) {
+                    return 'in_progress';
+                }
+
+                if (onboarding.completed === false || data.onboardingCompleted === false) {
+                    if (rawStatus !== 'approved' && rawStatus !== 'rejected' && rawStatus !== 'needs_changes') {
+                        return 'in_progress';
+                    }
+                }
+
+                switch (rawStatus) {
                     case 'waiting':
                     case 'processing':
+                    case 'pending':
                         return 'pending';
                     case 'needs_changes':
                     case 'retry':
@@ -3075,15 +3121,17 @@
             updateStats() {
                 const total = this.providers.length;
                 const pending = this.providers.filter(p => p.approvalStatus === 'pending').length;
+                const inProgress = this.providers.filter(p => p.approvalStatus === 'in_progress').length;
                 const approved = this.providers.filter(p => p.approvalStatus === 'approved').length;
                 const needsChanges = this.providers.filter(p => p.approvalStatus === 'needs_changes').length;
                 const rejected = this.providers.filter(p => p.approvalStatus === 'rejected').length;
 
-                document.getElementById('stat-total').textContent = total;
-                document.getElementById('stat-pending').textContent = pending;
-                document.getElementById('stat-approved').textContent = approved;
-                document.getElementById('stat-needs-changes').textContent = needsChanges;
-                document.getElementById('stat-rejected').textContent = rejected;
+                if (document.getElementById('stat-total')) document.getElementById('stat-total').textContent = total;
+                if (document.getElementById('stat-pending')) document.getElementById('stat-pending').textContent = pending;
+                if (document.getElementById('stat-in-progress')) document.getElementById('stat-in-progress').textContent = inProgress;
+                if (document.getElementById('stat-approved')) document.getElementById('stat-approved').textContent = approved;
+                if (document.getElementById('stat-needs-changes')) document.getElementById('stat-needs-changes').textContent = needsChanges;
+                if (document.getElementById('stat-rejected')) document.getElementById('stat-rejected').textContent = rejected;
             }
 
             filterProviders(filter) {
@@ -3178,11 +3226,13 @@
             }
 
             getStatusBadgeText(provider) {
-                const s = provider.originalStatus;
-                if (s === 'needs_changes') return 'Needs Changes';
-                if (s === 'waiting') return 'Pending Review';
-                if (s === 'approved') return 'Approved';
-                if (s === 'rejected') return 'Rejected';
+                if (provider.approvalStatus === 'in_progress') return 'In Progress';
+                const s = String(provider.originalStatus || '').toLowerCase();
+                if (s === 'needs_changes' || provider.approvalStatus === 'needs_changes') return 'Needs Changes';
+                if (s === 'waiting' || provider.approvalStatus === 'pending') return 'Pending Review';
+                if (s === 'approved' || provider.approvalStatus === 'approved') return 'Approved';
+                if (s === 'rejected' || provider.approvalStatus === 'rejected') return 'Rejected';
+                if (s === 'in_progress' || s === 'onboarding_required' || s === 'draft' || s === 'incomplete') return 'In Progress';
                 return 'Pending Review';
             }
 
@@ -3203,8 +3253,8 @@
             }
 
             formatDate(date) {
-                if (!date) return 'N/A';
-                const d = new Date(date);
+                const d = this.parseTs(date);
+                if (!d) return 'N/A';
                 return d.toLocaleDateString('en-IN', {
                     year: 'numeric',
                     month: 'short',
@@ -3262,7 +3312,7 @@
                             </div>
                             <div class="info-item">
                                 <label>Status</label>
-                                <value>${this.getStatusBadgeText(provider)}</value>
+                                <value><span class="badge ${provider.approvalStatus}">${this.getStatusBadgeText(provider)}</span></value>
                             </div>
                             <div class="info-item">
                                 <label>Tier</label>
@@ -3432,11 +3482,11 @@
     <div class="info-grid">
         <div class="info-item">
             <label>Account Created</label>
-            <value>${this.formatDate(data.createdAt)}</value>
+            <value>${this.formatDate(data.createdAt || data.onboarding?.submittedAt || provider.createdAt)}</value>
         </div>
         <div class="info-item">
             <label>Last Updated</label>
-            <value>${this.formatDate(data.updatedAt)}</value>
+            <value>${this.formatDate(data.updatedAt || data.onboarding?.updatedAt || provider.updatedAt)}</value>
         </div>
         <div class="info-item">
             <label>Provider ID</label>

@@ -3369,14 +3369,20 @@ async loadProvidersFromFirebase() {
         // Helper to parse timestamps
         const parseTs = (ts) => {
             if (!ts) return null;
-            if (ts instanceof Date) return ts;
+            if (ts instanceof Date) return isNaN(ts.getTime()) ? null : ts;
             if (typeof ts?.toDate === 'function') return ts.toDate();
             if (typeof ts === 'number') return new Date(ts);
             if (typeof ts === 'string') {
-                const d = new Date(ts);
-                return isNaN(d) ? null : d;
+                const cleaned = ts.replace(/\s+at\s+/i, ' ');
+                const d = new Date(cleaned);
+                if (!isNaN(d.getTime())) return d;
+                const d2 = new Date(ts);
+                return isNaN(d2.getTime()) ? null : d2;
             }
-            if (ts?.seconds != null) return new Date((ts.seconds * 1000) + ((ts.nanoseconds || 0) / 1e6));
+            if (typeof ts === 'object') {
+                if (ts.seconds != null) return new Date((ts.seconds * 1000) + ((ts.nanoseconds || 0) / 1e6));
+                if (ts._seconds != null) return new Date((ts._seconds * 1000) + ((ts._nanoseconds || 0) / 1e6));
+            }
             return null;
         };
         
@@ -3592,10 +3598,34 @@ async loadProvidersFromFirebase() {
 
     
     // Map Firebase status to UI display (EXISTING - UNCHANGED)
-    mapStatusForUI(firebaseStatus) {
-        switch(firebaseStatus) {
+    mapStatusForUI(firebaseStatus, data = {}) {
+        const rawStatus = String(firebaseStatus || '').toLowerCase();
+        const onboarding = data.onboarding || {};
+
+        if (
+            rawStatus === 'in_progress' ||
+            rawStatus === 'onboarding_required' ||
+            rawStatus === 'draft' ||
+            rawStatus === 'incomplete' ||
+            rawStatus === 'unsubmitted'
+        ) {
+            return 'in_progress';
+        }
+
+        if (onboarding.completed === false || data.onboardingCompleted === false) {
+            if (rawStatus !== 'approved' && rawStatus !== 'rejected' && rawStatus !== 'needs_changes') {
+                return 'in_progress';
+            }
+        }
+
+        switch(rawStatus) {
             case 'waiting':
+            case 'processing':
+            case 'pending':
                 return 'pending';
+            case 'needs_changes':
+            case 'retry':
+                return 'needs_changes';
             case 'approved':
                 return 'approved';
             case 'rejected':

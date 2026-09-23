@@ -438,14 +438,33 @@
             color: #fed7aa;
         }
 
+        @keyframes redPulse {
+            0% {
+                box-shadow: 0 0 4px rgba(220, 53, 69, 0.6), 0 0 10px rgba(220, 53, 69, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 12px rgba(220, 53, 69, 0.9), 0 0 20px rgba(220, 53, 69, 0.7);
+            }
+            100% {
+                box-shadow: 0 0 4px rgba(220, 53, 69, 0.6), 0 0 10px rgba(220, 53, 69, 0.4);
+            }
+        }
+
+        .badge.in_progress {
+            animation: redPulse 1.5s infinite ease-in-out;
+            font-weight: 700;
+        }
+
         html:not(.dark-mode) .badge.in_progress {
-            background: #e0f2fe;
-            color: #0369a1;
+            background: #dc3545;
+            color: #ffffff;
+            border: 1px solid #bd2130;
         }
 
         html.dark-mode .badge.in_progress {
-            background: rgba(56, 189, 248, 0.2);
-            color: #7dd3fc;
+            background: #ef4444;
+            color: #ffffff;
+            border: 1px solid #f87171;
         }
 
         /* ============================================

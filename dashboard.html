@@ -1683,6 +1683,7 @@
         let allReassignments = [];
         let allFeaturedProviders = [];
         let allServiceReviewRequests = [];
+        let allServices = [];
         let allDeletionRequests = [];
         let allPromoCodes = [];
         let allUsers = [];
@@ -1800,14 +1801,16 @@
                 });
 
                 // Fetch other collections once
-                const [enquiriesSnap, reviewsSnap, cancellationsSnap, reassignmentsSnap, featuredSnap, serviceReviewsSnap, promoCodesSnap, deletionRequestsSnap, usersSnap] =
+                const [enquiriesSnap, reviewsSnap, cancellationsSnap, reassignmentsSnap, legacyReassignmentsSnap, featuredSnap, serviceReviewsSnap, servicesSnap, promoCodesSnap, deletionRequestsSnap, usersSnap] =
                     await Promise.all([
                         getDocs(collection(db, 'enquiries')),
                         getDocs(collection(db, 'reviews')),
                         getDocs(collection(db, 'cancellation_requests')),
                         getDocs(collection(db, 'provider_replacement_requests')),
+                        getDocs(collection(db, 'providerreplacementrequests')),
                         getDocs(collection(db, 'featured_providers')),
-                        getDocs(collection(db, 'service_review_requests')),
+                        getDocs(collection(db, 'servicereviewrequests')),
+                        getDocs(collection(db, 'services')),
                         getDocs(collection(db, 'promo_codes')),
                         getDocs(collection(db, 'accountDeletionRequests')),
                         getDocs(collection(db, 'users'))
@@ -1816,9 +1819,19 @@
                 allEnquiries = enquiriesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allReviews = reviewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allCancellations = cancellationsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                allReassignments = reassignmentsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // Merge both reassignment collections (legacy + snake_case) and deduplicate by doc id
+                const reassignMap = new Map();
+                [...legacyReassignmentsSnap.docs, ...reassignmentsSnap.docs].forEach(doc => {
+                    if (!reassignMap.has(doc.id)) {
+                        reassignMap.set(doc.id, { id: doc.id, ...doc.data() });
+                    }
+                });
+                allReassignments = Array.from(reassignMap.values());
+
                 allFeaturedProviders = featuredSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allServiceReviewRequests = serviceReviewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                allServices = servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allDeletionRequests = deletionRequestsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allPromoCodes = promoCodesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allUsers = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -1857,7 +1870,15 @@
         // Calculate stats
         function calculateStats() {
             const totalProviders = allProviders.length;
-            const pendingProviders = allProviders.filter(p => getStatus(p) === 'pending').length;
+            // Match Provider-Management page: 'waiting','processing','pending', and unknown status all = pending
+            const pendingProviders = allProviders.filter(p => {
+                const raw = String(p.status || (p.onboarding && p.onboarding.status) || '').toLowerCase();
+                const isInProgress = ['in_progress','onboarding_required','draft','incomplete','unsubmitted'].includes(raw);
+                if (isInProgress) return false;
+                if (['approved','rejected','needs_changes','retry'].includes(raw)) return false;
+                // 'pending', 'waiting', 'processing', or unrecognized defaults to pending
+                return true;
+            }).length;
             const approvedProviders = allProviders.filter(p => getStatus(p) === 'approved').length;
 
             const totalBookings = allBookings.length;
@@ -1865,11 +1886,29 @@
             const completedBookings = allBookings.filter(b => getStatus(b) === 'completed').length;
 
             const totalEnquiries = allEnquiries.length;
-            const pendingReviews = allServiceReviewRequests.filter(r => getStatus(r) === 'pending').length;
+            // Count 'new' (unread/unactioned) enquiries for the badge
+            const newEnquiries = allEnquiries.filter(e => (e.status || 'new') === 'new').length;
+            // Count services pending admin review (from services collection, status='pending_review')
+            // ALSO count pending servicereviewrequests (edit requests awaiting approval)
+            const pendingServiceReviews = allServices.filter(s => s.status === 'pending_review').length;
+            const pendingEditReviews = allServiceReviewRequests.filter(r => getStatus(r) === 'pending').length;
+            const pendingReviews = pendingServiceReviews + pendingEditReviews;
             const totalCancellations = allCancellations.length;
             const pendingCancellations = allCancellations.filter(c => getStatus(c) === 'pending').length;
             const totalReassignments = allReassignments.length;
-            const pendingReassignments = allReassignments.filter(r => getStatus(r) === 'pending').length;
+            // Match provider-replacement page pending statuses: 'pending', 'pending-admin', 'awaiting-provider'
+            const pendingReassignmentsFromDocs = allReassignments.filter(r => {
+                const s = String(r.status || 'pending').toLowerCase().replace(/-/g, '');
+                return ['pending', 'pendingadmin', 'awaitingprovider'].includes(s);
+            }).length;
+            // Also count bookings surfaced on the page that have no reassignment doc yet
+            const pendingReassignmentsFromBookings = allBookings.filter(b => {
+                const userChoice = String((b.cancelRequest && b.cancelRequest.userChoice) || '').toLowerCase();
+                const bStatus = String(b.status || '').toLowerCase();
+                const coveredByDoc = allReassignments.some(r => r.bookingId === b.id);
+                return !coveredByDoc && (userChoice === 'replacement' || bStatus === 'awaiting reassignment' || bStatus === 'awaiting provider' || !!b.needsReassignment);
+            }).length;
+            const pendingReassignments = pendingReassignmentsFromDocs + pendingReassignmentsFromBookings;
 
             const completionRate = totalBookings > 0 ? ((completedBookings / totalBookings) * 100).toFixed(0) : 0;
             const pendingActions = pendingProviders + pendingCancellations + pendingReassignments + pendingReviews;
@@ -1897,18 +1936,27 @@
                 return (eligTier === 'platinum' && tier !== 'platinum') || (eligTier === 'gold' && tier === 'silver');
             }).length;
 
-            // Progress Monitoring active count
+            // Progress Monitoring active count - match exact Firestore status casing
             const activeProgressCount = allBookings.filter(b => {
-                const status = String(b.status || '').toLowerCase();
-                return ['ongoing', 'samples ready for review', 'revision requested 1', 'revision requested 2', 'revision in progress 1', 'revision in progress 2'].includes(status);
+                const status = String(b.status || '').toLowerCase().trim();
+                return [
+                    'ongoing',
+                    'samples ready for review',
+                    'revision requested 1',
+                    'revision requested 2',
+                    'revision in progress 1',
+                    'revision in progress 2'
+                ].includes(status);
             }).length;
 
             // Deletion requests count
             const pendingDeletions = allDeletionRequests.filter(d => (d.status || 'pending') === 'pending').length;
 
-            // Payouts count calculation
+            // Payouts count calculation - matches payout.html logic (includes 'customer received')
             const pendingPayoutsCount = allBookings.filter(b => {
-                const isFinalPaid = b.finalPaymentDone === true || (b.paymentStatus && b.paymentStatus.finalPayment === true) || (b.status === 'completed' || b.status === 'payment completed' || b.status === 'work accepted');
+                const isFinalPaid = b.finalPaymentDone === true ||
+                    (b.paymentStatus && b.paymentStatus.finalPayment === true) ||
+                    ['completed', 'payment completed', 'work accepted', 'customer received'].includes((b.status || '').toLowerCase());
                 return isFinalPaid && Number(b.amount || b.totalAmount || 0) > 0 && b.payoutStatus !== 'paid';
             }).length;
 
@@ -1925,14 +1973,14 @@
             updateBadge('badge-featured', 0);
             updateBadge('badge-bookings', confirmedBookings);
             updateBadge('badge-progress', activeProgressCount);
-            updateBadge('badge-enquiries', totalEnquiries);
+            updateBadge('badge-enquiries', newEnquiries);
             updateBadge('badge-support-tickets', openTicketsCount);
             updateBadge('badge-cancellations', pendingCancellations);
             updateBadge('badge-reassignments', pendingReassignments);
             updateBadge('badge-subscriptions', eligibleCount);
             updateBadge('badge-financials', 0);
             updateBadge('badge-payouts-pending', pendingPayoutsCount);
-            updateBadge('badge-promo', 0);
+            updateBadge('badge-promo', activePromoCodes);
             updateBadge('badge-deletions', pendingDeletions);
 
             // Update all action card descriptions/footers
@@ -1940,7 +1988,7 @@
             document.getElementById('count-reviews').textContent = `${pendingReviews} pending`;
             document.getElementById('count-bookings').textContent = `${totalBookings} total`;
             document.getElementById('count-progress').textContent = `${activeProgressCount} active`;
-            document.getElementById('count-enquiries').textContent = `${totalEnquiries} total`;
+            document.getElementById('count-enquiries').textContent = `${newEnquiries} new / ${totalEnquiries} total`;
             document.getElementById('count-support-tickets').textContent = `${allSupportTickets.length} total`;
             document.getElementById('count-cancellations').textContent = `${pendingCancellations} pending`;
             document.getElementById('count-reassignments').textContent = `${pendingReassignments} pending`;

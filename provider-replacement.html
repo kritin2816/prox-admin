@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1e293b">
   <title>Pro X Admin — Bookings Management</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -901,6 +905,8 @@
   line-height:1.45;
 }
   </style>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="mobile-app.css">
 </head>
 <body>
 <div class="app">
@@ -3357,5 +3363,6 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 </script>
+    <script src="mobile-app.js"></script>
 </body>
 </html>

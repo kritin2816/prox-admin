@@ -3,7 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1e293b">
     <title>Pro X Admin Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!-- Firebase SDK v8 (compat) - CDN -->
@@ -1067,6 +1071,8 @@
             outline-offset: 2px;
         }
     </style>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="mobile-app.css">
 </head>
 
 <body>
@@ -2440,6 +2446,7 @@
             updateLastUpdated();
         }, 300000);
     </script>
+    <script src="mobile-app.js"></script>
 </body>
 
 </html>

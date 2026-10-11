@@ -3,7 +3,13 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1e293b">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="mobile-app.css">
     <title>Pro X - Provider Management</title>
 
     <!-- Firebase SDK v8 CDN -->
@@ -373,6 +379,41 @@
             padding: 15px;
             font-size: 14px;
             color: var(--text-primary);
+        }
+
+        .col-name {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .provider-avatar-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .provider-name-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .provider-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .provider-email-sub {
+            display: none;
         }
 
         .info-item value a {
@@ -882,14 +923,6 @@
 
             .filter-group {
                 justify-content: center;
-            }
-
-            .table-container {
-                overflow-x: scroll;
-            }
-
-            table {
-                min-width: 800px;
             }
 
             .info-grid {
@@ -2365,35 +2398,35 @@
 
         <!-- Tab Navigation -->
         <div class="tab-nav">
-            <button class="tab-btn active" id="tab-providers-btn" onclick="switchTab('providers')">👥 Provider
-                Management</button>
+            <button class="tab-btn active" id="tab-providers-btn" onclick="switchTab('providers')">👥 Provider Management</button>
+            <button class="tab-btn" id="tab-subscriptions-btn" onclick="switchTab('subscriptions')">⭐ Tier Upgrades &amp; Subscriptions</button>
         </div>
 
         <div id="tab-providers" class="tab-content">
 
             <!-- Stats Container -->
             <div class="stats-container" id="provider-stats">
-                <div class="stat-card">
+                <div class="stat-card" onclick="dashboard.filterProviders('all')" title="Filter by All">
                     <div class="label">Total Providers</div>
                     <div class="value" id="stat-total">0</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" onclick="dashboard.filterProviders('pending')" title="Filter by Pending Review">
                     <div class="label">Pending Review</div>
                     <div class="value" id="stat-pending">0</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" onclick="dashboard.filterProviders('in_progress')" title="Filter by In Progress">
                     <div class="label">In Progress</div>
                     <div class="value" id="stat-in-progress">0</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" onclick="dashboard.filterProviders('approved')" title="Filter by Approved">
                     <div class="label">Approved</div>
                     <div class="value" id="stat-approved">0</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" onclick="dashboard.filterProviders('needs_changes')" title="Filter by Needs Changes">
                     <div class="label">Needs Changes</div>
                     <div class="value" id="stat-needs-changes">0</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" onclick="dashboard.filterProviders('rejected')" title="Filter by Rejected">
                     <div class="label">Rejected</div>
                     <div class="value" id="stat-rejected">0</div>
                 </div>
@@ -3215,29 +3248,35 @@
                     const subLabel = subStatus === 'active' ? (subPlan || 'Active')
                         : subStatus === 'paused' ? 'Paused'
                             : 'None';
+                    const initials = (provider.name || 'P').trim().split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase();
                     return `
-                    <tr>
-                        <td>
-                            ${provider.name}
-                            ${provider.pendingFeedbackCount > 0 ?
-                            `<span class="chip chip-${provider.lastFeedback?.blocking ? 'danger' : 'warn'}">
-                                    ${provider.pendingFeedbackCount} pending
-                                </span>` : ''}
+                    <tr class="provider-table-row">
+                        <td class="col-name" data-label="Name">
+                            <div class="provider-avatar-box">${initials}</div>
+                            <div class="provider-name-group">
+                                <div class="provider-title">${provider.name}</div>
+                                <div class="provider-email-sub">${provider.email}</div>
+                                ${provider.pendingFeedbackCount > 0 ?
+                                `<span class="chip chip-${provider.lastFeedback?.blocking ? 'danger' : 'warn'}">
+                                        ${provider.pendingFeedbackCount} pending
+                                    </span>` : ''}
+                            </div>
                         </td>
-                        <td>${provider.email}</td>
-                        <td>${provider.city || 'N/A'}</td>
-                        <td>${provider.primaryDomain || 'N/A'}</td>
-                        <td>
+                        <td class="col-email" data-label="Email">${provider.email}</td>
+                        <td class="col-city" data-label="City">${provider.city || 'N/A'}</td>
+                        <td class="col-domain" data-label="Domain">${provider.primaryDomain || 'N/A'}</td>
+                        <td class="col-status" data-label="Status">
                             <span class="badge ${provider.approvalStatus}">
                                 ${this.getStatusBadgeText(provider)}
                             </span>
                         </td>
-                        <td>${this.createTierBadge(provider.tier, true)}</td>
-                        <td><span class="sub-pill ${subPillClass}">${subIcon} ${subLabel}</span></td>
-                        <td>${this.formatDate(provider.createdAt)}</td>
-                        <td>
-                            <button class="action-btn primary" onclick="dashboard.showProviderModal(dashboard.providers.find(p => p.id === '${provider.id}'))">
-                                View
+                        <td class="col-tier" data-label="Tier">${this.createTierBadge(provider.tier, true)}</td>
+                        <td class="col-subscription" data-label="Subscription"><span class="sub-pill ${subPillClass}">${subIcon} ${subLabel}</span></td>
+                        <td class="col-date" data-label="Date">${this.formatDate(provider.createdAt)}</td>
+                        <td class="col-actions" data-label="Actions">
+                            <button class="action-btn primary view-provider-btn" onclick="dashboard.showProviderModal(dashboard.providers.find(p => p.id === '${provider.id}'))">
+                                <span>Review Application</span>
+                                <span class="action-btn-arrow">→</span>
                             </button>
                         </td>
                     </tr>`;
@@ -4936,6 +4975,7 @@
         // Initialize dashboard
         const dashboard = new ProviderDashboard();
     </script>
+    <script src="mobile-app.js"></script>
 </body>
 
 </html>

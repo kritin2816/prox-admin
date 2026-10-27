@@ -1454,6 +1454,10 @@
             background: #cbd5e1;
         }
 
+        .card-ribbon.none {
+            background: rgba(148, 163, 184, 0.25);
+        }
+
         .card-body-sub {
             padding: 1.5rem;
             display: flex;
@@ -1491,6 +1495,10 @@
 
         .sub-avatar.silver {
             background: #94a3b8;
+        }
+
+        .sub-avatar.none {
+            background: #64748b;
         }
 
         .sub-prov-name {
@@ -1595,6 +1603,12 @@
         .sub-tier-pill.platinum {
             background: rgba(168, 85, 247, 0.12);
             color: #a855f7;
+        }
+
+        .sub-tier-pill.none {
+            background: rgba(148, 163, 184, 0.12);
+            color: #94a3b8;
+            border: 1px dashed rgba(148, 163, 184, 0.3);
         }
 
         .card-footer-sub {
@@ -1802,6 +1816,10 @@
 
         .sub-tier-dist-dot.platinum {
             background: #a855f7;
+        }
+
+        .sub-tier-dist-dot.none {
+            background: #94a3b8;
         }
 
         /* Sort + search row */
@@ -2500,6 +2518,8 @@
                             id="sub-dist-gold">– Gold</span></div>
                     <div class="sub-tier-dist-item"><span class="sub-tier-dist-dot platinum"></span><span
                             id="sub-dist-platinum">– Platinum</span></div>
+                    <div class="sub-tier-dist-item"><span class="sub-tier-dist-dot none"></span><span
+                            id="sub-dist-none">– No Tier</span></div>
                 </div>
             </div>
 
@@ -2640,13 +2660,13 @@
                 <!-- Shown only during Approve flow -->
                 <div id="approve-tier-section" style="display:none; margin-top:20px;">
                     <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
-                        ⓘ The provider will default to <strong>Silver</strong> after approval.<br>
-                        Optionally pre-grant <strong>Gold</strong> or <strong>Platinum</strong> access — the
-                        provider still needs to select and pay before it activates.
+                        ⓘ The provider will choose and activate their plan in ProX after approval.<br>
+                        Optionally pre-grant <strong>Gold</strong> or <strong>Platinum</strong> access offer — the
+                        provider will still select and pay before it activates.
                     </p>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
                         <button class="approve-tier-btn" data-tier="none" onclick="dashboard.selectApproveTier(this)">
-                            🥈 Default Silver
+                            Standard (No Pre-grant)
                         </button>
                         <button class="approve-tier-btn" data-tier="gold" onclick="dashboard.selectApproveTier(this)">
                             🥇 Pre-grant Gold
@@ -2772,7 +2792,7 @@
                 <div class="sub-modal-section">
                     <p class="sub-modal-section-label">Grant Plan Access</p>
                     <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:10px;">
-                        Provider stays on Silver by default. Granting Gold or Platinum lets them choose it themselves.
+                        Provider selects Silver by default. Granting Gold or Platinum lets them choose higher tiers upon subscription.
                         Platinum automatically includes Gold access.
                     </p>
                     <div class="sub-modal-btn-row" id="sub-grant-btns">
@@ -3073,11 +3093,61 @@
                 }
             }
 
+            resolveProviderTier(data, providerId, activeSubs = null) {
+                // Check standalone subscriptions collection first if available
+                if (activeSubs && providerId && activeSubs.has(providerId)) {
+                    const subDoc = activeSubs.get(providerId);
+                    const subPlan = subDoc.tier || subDoc.plan || subDoc.planId;
+                    if (subPlan) return String(subPlan).toLowerCase();
+                }
+
+                // Check provider document subscription object
+                const subObj = data.subscription || {};
+                const subStatus = String(subObj.status || data.subscriptionStatus || '').toLowerCase();
+                const isSubActive = subStatus === 'active' || subStatus === 'trialing';
+
+                if (isSubActive) {
+                    const plan = subObj.plan || subObj.tier || data.subscriptionPlan || data.tier;
+                    if (plan) return String(plan).toLowerCase();
+                    return 'silver'; // Default active plan if tier name unspecified
+                }
+
+                // If subscription is pending_payment, pending, or inactive, no tier is enabled yet
+                if (subStatus === 'pending_payment' || subStatus === 'pending' || subStatus === 'paused') {
+                    return null;
+                }
+
+                // If explicit subscriptionStatus is false or none
+                if (data.subscriptionStatus === 'inactive' || data.subscriptionStatus === 'none') {
+                    return null;
+                }
+
+                // Fallback: In ProXhosting, an approved provider must select and pay via subscription.html before activation.
+                // An unsubscribed approved provider has no active tier.
+                return null;
+            }
+
             async loadProvidersFromFirebase() {
                 const loadingState = document.getElementById('providers-loading-state');
                 if (loadingState) loadingState.style.display = 'block';
 
                 try {
+                    // Fetch active subscriptions map from subscriptions collection to guarantee truth
+                    let activeSubs = new Map();
+                    try {
+                        const subSnap = await db.collection("subscriptions").get();
+                        subSnap.forEach(d => {
+                            const sd = d.data() || {};
+                            const pId = sd.providerId || sd.userId;
+                            const st = String(sd.status || '').toLowerCase();
+                            if (pId && (st === 'active' || st === 'trialing')) {
+                                activeSubs.set(pId, sd);
+                            }
+                        });
+                    } catch (subErr) {
+                        console.warn("Could not load subscriptions collection directly:", subErr);
+                    }
+
                     const qs = await db.collection("providers").get();
                     this.providers = [];
 
@@ -3094,6 +3164,8 @@
                         const createdAt = this.parseTs(data.createdAt) || this.parseTs(data.onboarding?.submittedAt) || this.parseTs(data.updatedAt) || this.parseTs(data.onboarding?.updatedAt) || new Date(0);
                         const updatedAt = this.parseTs(data.updatedAt) || this.parseTs(data.onboarding?.updatedAt) || createdAt || new Date(0);
 
+                        const calculatedTier = this.resolveProviderTier(data, docSnap.id, activeSubs);
+
                         const provider = {
                             id: docSnap.id,
                             fullName: toString(fullName),
@@ -3104,13 +3176,14 @@
                             name: toString(fullName || data.username || 'Unknown'),
                             approvalStatus: this.mapStatusForUI(statusRaw, data),
                             originalStatus: statusRaw,
-                            tier: data.tier || null,
+                            tier: calculatedTier,
                             createdAt,
                             updatedAt,
                             pendingFeedbackCount: data.pendingFeedbackCount || 0,
                             lastFeedback: data.lastFeedback || null,
                             // Store full data for modal display
-                            _fullData: data
+                            _fullData: data,
+                            _activeSubscription: activeSubs.get(docSnap.id) || null
                         };
 
                         this.providers.push(provider);
@@ -3143,7 +3216,8 @@
                         const email = get(data, 'identity.email', data.email) || '';
                         const phone = get(data, 'identity.phone', data.phone) || '';
                         const city = get(data, 'identity.city', data.city) || '';
-                        const tier = data.tier || 'Silver';
+                        const prov = this.providers.find(p => p.id === pid);
+                        const tier = (prov && prov.tier) ? prov.tier : (data.tier || 'None');
 
                         const masterRef = db.collection('providers_master_registry').doc(pid);
                         batch.set(masterRef, {
@@ -3305,14 +3379,16 @@
                 tableContainer.style.display = 'block';
 
                 tbody.innerHTML = filtered.map(provider => {
+                    const subDoc = provider._activeSubscription || {};
                     const sub = (provider._fullData || {}).subscription || {};
-                    const subStatus = sub.status || 'none';
-                    const subPlan = sub.plan || '';
-                    const subPillClass = subStatus === 'active' ? 'sub-pill-active'
+                    const subStatus = subDoc.status || sub.status || provider._fullData?.subscriptionStatus || 'none';
+                    const isSubActive = String(subStatus).toLowerCase() === 'active' || String(subStatus).toLowerCase() === 'trialing';
+                    const subPlan = subDoc.tier || subDoc.plan || sub.plan || provider.tier || '';
+                    const subPillClass = isSubActive ? 'sub-pill-active'
                         : subStatus === 'paused' ? 'sub-pill-paused'
                             : 'sub-pill-none';
-                    const subIcon = subStatus === 'active' ? '●' : subStatus === 'paused' ? '⏸' : '—';
-                    const subLabel = subStatus === 'active' ? (subPlan || 'Active')
+                    const subIcon = isSubActive ? '●' : subStatus === 'paused' ? '⏸' : '—';
+                    const subLabel = isSubActive ? (subPlan ? subPlan.charAt(0).toUpperCase() + subPlan.slice(1) : 'Active')
                         : subStatus === 'paused' ? 'Paused'
                             : 'None';
                     return `
@@ -3356,10 +3432,11 @@
             }
 
             createTierBadge(tier, includeIcon = false) {
-                if (!tier) return '<span style="color: #999;">No tier</span>';
+                if (!tier || tier === 'none' || tier === 'None') return '<span style="color: #999;">No tier</span>';
+                const tierName = tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase();
                 const tierClass = `tier-badge tier-${tier.toLowerCase()}`;
-                const tierIcon = includeIcon ? this.getTierIcon(tier) : '';
-                return `<span class="${tierClass}">${tierIcon}${tier}</span>`;
+                const tierIcon = includeIcon ? this.getTierIcon(tierName) : '';
+                return `<span class="${tierClass}">${tierIcon}${tierName}</span>`;
             }
 
             getTierIcon(tier) {
@@ -3618,21 +3695,25 @@
                         <h3>Subscription</h3>
                         ${(() => {
                         const sub = data.subscription || {};
-                        const plan = sub.plan || null;
-                        const price = sub.price || '';
-                        const status = sub.status || 'none';
-                        const grantedTier = sub.grantedTier || 'none';
+                        const activeSub = provider._activeSubscription;
+                        const status = activeSub ? 'active' : (sub.status || data.subscriptionStatus || 'none');
+                        const isSubActive = String(status).toLowerCase() === 'active';
+                        const plan = isSubActive ? ((activeSub && (activeSub.plan || activeSub.planKey || activeSub.tier)) || sub.plan || data.subscriptionPlan || data.tier || null) : null;
+                        const price = isSubActive ? (sub.price || (activeSub && activeSub.price) || '') : '';
+                        const grantedTier = sub.grantedTier || data.grantedTier || 'none';
                         const stoppedBy = sub.stoppedByAdmin ? 'Admin' : (sub.stoppedByProvider ? 'Provider' : 'Unknown');
                         const statusClass = status === 'active' ? 'sub-status-active'
                             : status === 'paused' ? 'sub-status-paused'
-                                : 'sub-status-none';
+                                : status === 'pending_payment' ? 'sub-status-paused'
+                                    : 'sub-status-none';
                         const statusText = status === 'active' ? '● Active'
                             : status === 'paused' ? '⏸ Paused'
-                                : '— Not subscribed';
+                                : status === 'pending_payment' ? '⏳ Pending Payment'
+                                    : '— Not subscribed';
 
                         const planTierClass = plan
-                            ? (plan.toLowerCase() === 'gold' ? 'tier-gold'
-                                : plan.toLowerCase() === 'platinum' ? 'tier-platinum'
+                            ? (plan.toLowerCase().includes('gold') ? 'tier-gold'
+                                : plan.toLowerCase().includes('platinum') ? 'tier-platinum'
                                     : 'tier-silver')
                             : '';
 
@@ -4067,7 +4148,7 @@
 
                 if (action === 'approve') {
                     title.textContent = `Approve ${provider.name}`;
-                    message.textContent = 'Provider will be approved on Silver by default. Optionally pre-grant Gold or Platinum access — provider must still select and pay to activate it.';
+                    message.textContent = 'Approve provider application. After approval, the provider will select and activate their subscription tier in ProX.';
                     tierSec.style.display = 'block';
                     confirmBtn.textContent = 'Approve';
                     confirmBtn.className = 'action-btn success';
@@ -4093,9 +4174,9 @@
                 btn.classList.add('selected');
                 this._approveGrant = btn.dataset.tier;
                 const notes = {
-                    none: 'Provider activates on Silver immediately after approval.',
-                    gold: '🥇 Gold access pre-granted — provider selects & pays to activate.',
-                    platinum: '💎 Platinum access pre-granted (includes Gold) — provider selects & pays to activate.'
+                    none: 'Standard flow — Provider will select and activate their tier in ProX.',
+                    gold: '🥇 Gold access pre-granted — provider selects & pays in ProX to activate.',
+                    platinum: '💎 Platinum access pre-granted (includes Gold) — provider selects & pays in ProX to activate.'
                 };
                 document.getElementById('approve-tier-note').textContent = notes[btn.dataset.tier] || '';
             }
@@ -4119,7 +4200,7 @@
 
             async approveProvider(providerId, grantedTier) {
                 // grantedTier: 'none' | 'gold' | 'platinum'
-                // Provider is set to Silver. grantedTier is an offer — activates ONLY after provider selects & pays.
+                // Provider is approved. grantedTier is an offer — activates ONLY after provider selects & pays in ProX.
                 // Subscription logs are written by the payment flow, NOT here.
                 try {
                     const now = firebase.firestore.FieldValue.serverTimestamp();
@@ -4128,15 +4209,12 @@
 
                     const updateData = {
                         status: 'approved',
-                        tier: 'Silver',        // always Silver until provider pays
                         statusChanged: now,
                         updatedAt: now,
                         // record the grant offer inside the subscription object
                         'subscription.grantedTier': grantedTier === 'none' ? null : grantedTier,
                         'subscription.grantedBy': adminUid,
                         'subscription.grantedAt': now,
-                        // NOTE: subscription.status is NOT set here — it is only set after provider completes payment
-                        'subscription.plan': 'silver',
                         'subscription.approvedAt': now,
                     };
 
@@ -4152,7 +4230,7 @@
                             adminId: adminUid,
                             adminName: adminName,
                             note: grantedTier === 'none'
-                                ? 'Approved — Silver plan active.'
+                                ? 'Approved — Waiting for provider to select and activate subscription in ProX.'
                                 : `Approved — ${grantedTier.charAt(0).toUpperCase() + grantedTier.slice(1)} access pre-granted. Activates after provider selects and pays.`,
                             createdAt: now,
                         });
@@ -4162,7 +4240,7 @@
                     this.updateStats();
 
                     const msg = grantedTier === 'none'
-                        ? 'Provider approved on Silver plan.'
+                        ? 'Provider approved. Waiting for provider to select and activate plan.'
                         : `Provider approved — ${grantedTier.charAt(0).toUpperCase() + grantedTier.slice(1)} access pre-granted (activates after payment).`;
                     this.showSuccessMessage(msg);
                 } catch (error) {
@@ -4192,11 +4270,20 @@
 
             async resetProvider(providerId) {
                 try {
+                    const docSnap = await db.collection('providers').doc(providerId).get();
+                    const d = docSnap.exists ? docSnap.data() : {};
+                    const isSubActive = String(d.subscription?.status || d.subscriptionStatus || '').toLowerCase() === 'active';
+
                     const updateData = {
                         status: 'waiting',
                         statusChanged: firebase.firestore.FieldValue.serverTimestamp(),
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     };
+
+                    if (!isSubActive) {
+                        updateData.tier = firebase.firestore.FieldValue.delete();
+                        updateData['subscription.plan'] = firebase.firestore.FieldValue.delete();
+                    }
 
                     await db.collection('providers').doc(providerId).update(updateData);
                     await this.loadProvidersFromFirebase();
@@ -4568,8 +4655,26 @@
         }
 
         function getSubProviderTier(p) {
-            const fromSubColl = (subPlans[p.id] && subPlans[p.id].plan) || (subPlans[p.uid] && subPlans[p.uid].plan);
-            return String(fromSubColl || p.subscriptionPlan || p.tier || (p.subscription && p.subscription.plan) || 'silver').toLowerCase();
+            const subDoc = (subPlans[p.id]) || (subPlans[p.uid]);
+            const subObj = p.subscription || {};
+
+            // 1. Check subscriptions collection doc if active
+            if (subDoc) {
+                const status = String(subDoc.status || '').toLowerCase();
+                if (status === 'active' || status === 'enabled') {
+                    return String(subDoc.plan || 'silver').toLowerCase();
+                }
+            }
+
+            // 2. Check provider's embedded subscription object or fields if active
+            const status = String(subObj.status || p.subscriptionStatus || '').toLowerCase();
+            if (status === 'active' || status === 'enabled') {
+                const plan = subObj.plan || p.subscriptionPlan || p.tier;
+                if (plan) return String(plan).toLowerCase();
+            }
+
+            // 3. Not active / not enabled
+            return 'none';
         }
 
         function getSubProviderStats(p) {
@@ -4581,9 +4686,10 @@
         }
 
         function calcEligibility(p) {
+            const cur = getSubProviderTier(p);
+            if (cur === 'none') return 'none';
             const s = getSubProviderStats(p);
             const avg = s.ratingCount > 0 ? s.ratingTotal / s.ratingCount : 0;
-            const cur = getSubProviderTier(p);
 
             const goldReq = SUB_THRESHOLDS.gold;
             const platReq = SUB_THRESHOLDS.platinum;
@@ -4596,6 +4702,7 @@
         function calcProgressPct(p) {
             const cur = getSubProviderTier(p);
             if (cur === 'platinum') return 100;
+            if (cur === 'none') return 0;
 
             const targetTier = cur === 'gold' ? 'platinum' : 'gold';
             const req = SUB_THRESHOLDS[targetTier].bookings;
@@ -4604,7 +4711,8 @@
         }
 
         function isNearEligible(p) {
-            if (getSubProviderTier(p) === 'platinum') return false;
+            const cur = getSubProviderTier(p);
+            if (cur === 'platinum' || cur === 'none') return false;
             const pct = calcProgressPct(p);
             return pct >= 70 && calcEligibility(p) === 'none';
         }
@@ -4658,6 +4766,7 @@
             const distSilv = candidates.filter(p => getSubProviderTier(p) === 'silver').length;
             const distGold = candidates.filter(p => getSubProviderTier(p) === 'gold').length;
             const distPlat = candidates.filter(p => getSubProviderTier(p) === 'platinum').length;
+            const distNone = candidates.filter(p => getSubProviderTier(p) === 'none').length;
             document.getElementById('sub-stat-total').textContent = eligGold + eligPlat;
             document.getElementById('sub-stat-gold').textContent = eligGold;
             document.getElementById('sub-stat-plat').textContent = eligPlat;
@@ -4665,6 +4774,8 @@
             document.getElementById('sub-dist-silver').textContent = `${distSilv} Silver`;
             document.getElementById('sub-dist-gold').textContent = `${distGold} Gold`;
             document.getElementById('sub-dist-platinum').textContent = `${distPlat} Platinum`;
+            const noneDistEl = document.getElementById('sub-dist-none');
+            if (noneDistEl) noneDistEl.textContent = `${distNone} No Tier`;
 
             // Apply search
             if (subSearchTerm) {
@@ -4698,8 +4809,9 @@
             }
 
             grid.innerHTML = filtered.map(p => {
-                const isEligible = p._elig !== 'none';
                 const curTier = getSubProviderTier(p);
+                const isNoTier = curTier === 'none';
+                const isEligible = p._elig !== 'none';
                 const isMaxTier = curTier === 'platinum';
                 const nextTierTarget = isMaxTier ? 'platinum' : (curTier === 'gold' ? 'platinum' : 'gold');
 
@@ -4712,20 +4824,22 @@
                 const domain = (p.profile && p.profile.primaryDomain) || p.primaryDomain || '—';
                 const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
-                const ribbonClass = isMaxTier ? 'platinum' : (isEligible ? p._elig : (p._near ? nextTierTarget : curTier));
-                const tagClass = isMaxTier ? 'platinum' : (isEligible ? p._elig : 'none');
-                const tagIcon = isMaxTier ? '👑' : (isEligible ? (p._elig === 'platinum' ? '💎' : '⭐') : (p._near ? '🔥' : '⏳'));
-                const tagText = isMaxTier
-                    ? 'Max Tier — Platinum'
-                    : (isEligible
-                        ? `Eligible for ${label}`
-                        : `Working towards ${label}`);
+                const ribbonClass = isNoTier ? 'none' : (isMaxTier ? 'platinum' : (isEligible ? p._elig : (p._near ? nextTierTarget : curTier)));
+                const tagClass = isNoTier ? 'none' : (isMaxTier ? 'platinum' : (isEligible ? p._elig : 'none'));
+                const tagIcon = isNoTier ? '⏳' : (isMaxTier ? '👑' : (isEligible ? (p._elig === 'platinum' ? '💎' : '⭐') : (p._near ? '🔥' : '⏳')));
+                const tagText = isNoTier
+                    ? 'No Active Tier'
+                    : (isMaxTier
+                        ? 'Max Tier — Platinum'
+                        : (isEligible
+                            ? `Eligible for ${label}`
+                            : `Working towards ${label}`));
 
                 const progressColor = isMaxTier ? '#a855f7' : (isEligible ? '#10b981' : (p._progressPct >= 70 ? '#f59e0b' : '#94a3b8'));
 
                 // "N more needed" hint
                 let needHint = '';
-                if (!isMaxTier && !isEligible) {
+                if (!isMaxTier && !isEligible && !isNoTier) {
                     const moreBooks = Math.max(0, reqBooks - p._completed);
                     const moreRating = p._ratingNum < reqRating ? (reqRating - p._ratingNum).toFixed(1) : 0;
                     const hints = [];
@@ -4740,15 +4854,21 @@
                 const safeName = name.replace(/"/g, '&quot;').replace(/</g, '&lt;');
                 const btnHtml = isMaxTier
                     ? `<button type="button" class="btn-upgrade" disabled style="background:rgba(168,85,247,0.12);color:#a855f7;border:1px solid rgba(168,85,247,0.3);cursor:default;">👑 Max Tier</button>`
-                    : `<button type="button" class="btn-upgrade ${isEligible ? nextTierTarget : 'force'}" id="subbtn-${p.id}"
-                           data-pid="${p.id}" data-tier="${nextTierTarget}" data-label="${label}" data-name="${safeName}"
-                           onclick="handleUpgradeClick(this)">
-                           ${isEligible ? `Upgrade to ${label} →` : `Force Upgrade →`}
-                       </button>`;
+                    : isNoTier
+                        ? `<button type="button" class="btn-upgrade force" id="subbtn-${p.id}"
+                               data-pid="${p.id}" data-tier="silver" data-label="Silver" data-name="${safeName}"
+                               onclick="handleUpgradeClick(this)">
+                               Assign Tier →
+                           </button>`
+                        : `<button type="button" class="btn-upgrade ${isEligible ? nextTierTarget : 'force'}" id="subbtn-${p.id}"
+                               data-pid="${p.id}" data-tier="${nextTierTarget}" data-label="${label}" data-name="${safeName}"
+                               onclick="handleUpgradeClick(this)">
+                               ${isEligible ? `Upgrade to ${label} →` : `Force Upgrade →`}
+                           </button>`;
 
                 const glowClass = isEligible
                     ? `${p._elig}-glow`
-                    : (curTier === 'gold' || curTier === 'platinum' ? `${curTier}-glow` : '');
+                    : (!isNoTier && (curTier === 'gold' || curTier === 'platinum') ? `${curTier}-glow` : '');
 
                 return `
                 <div class="sub-card ${glowClass}" id="subcard-${p.id}" style="${(!isEligible && !isMaxTier) ? 'opacity:0.85;' : ''}">
@@ -4778,7 +4898,12 @@
                             </div>
                             <div class="ms-item">
                                 <span class="ms-lbl">Current Tier</span>
-                                <span class="ms-val"><span class="sub-tier-pill ${curTier}">${curTier.charAt(0).toUpperCase() + curTier.slice(1)}</span></span>
+                                <span class="ms-val">
+                                    ${isNoTier
+                                        ? `<span class="sub-tier-pill none">No Tier</span>`
+                                        : `<span class="sub-tier-pill ${curTier}">${curTier.charAt(0).toUpperCase() + curTier.slice(1)}</span>`
+                                    }
+                                </span>
                                 <button type="button" class="sub-need-hint" style="background:none;border:none;padding:0;cursor:pointer;color:var(--accent-primary);font-size:0.7rem;font-style:normal;font-weight:600;"
                                     data-pid="${p.id}" data-name="${safeName}" data-curtier="${curTier}"
                                     onclick="openDowngradeModal(this)">Manage tier ›</button>

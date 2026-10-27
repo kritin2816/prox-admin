@@ -2924,41 +2924,49 @@
             return 'https://' + trimmed;
         }
 
+        function escapeHtml(s) {
+            if (s == null) return '';
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // ============================================
-        // CANONICAL FIELDS FOR CHANGE REQUESTS
+        // CANONICAL FIELDS FOR CHANGE REQUESTS (MODERN ONBOARDING)
         // ============================================
         const RC_CANONICAL_FIELDS = [
-            { id: 'identity.fullName', label: 'Full legal name' },
-            { id: 'identity.phone', label: 'Phone (E.164)' },
-            { id: 'identity.email', label: 'Email' },
+            // Step 1: Identity & Contact
+            { id: 'identity.fullName', label: 'Legal Full Name' },
+            { id: 'identity.nameOnId', label: 'Name on Government ID' },
+            { id: 'identity.gender', label: 'Gender' },
+            { id: 'identity.dob', label: 'Date of Birth' },
+            { id: 'identity.email', label: 'Email Address' },
+            { id: 'identity.phone', label: 'Mobile (WhatsApp)' },
             { id: 'identity.city', label: 'City' },
-            { id: 'kyc.idFilesUrls', label: 'Government ID uploads' },
-            { id: 'profile.experience', label: 'Experience (years)' },
-            { id: 'profile.primaryDomain', label: 'Primary domain' },
-            { id: 'profile.specialisations', label: 'Specialisation tags' },
-            { id: 'profile.mediaSpecialization', label: 'Media focus' },
-            { id: 'profile.mediaSubSkills', label: 'Media styles / specialties' },
-            { id: 'profile.techSpecialization', label: 'Tech focus' },
-            { id: 'profile.techStack', label: 'Tech stack' },
-            { id: 'profile.toolsSkills', label: 'Tools & skills' },
-            { id: 'profile.equipment', label: 'Equipment list' },
-            { id: 'work.portfolio', label: 'Portfolio / Work showcase' },
-            { id: 'work.cvUrl', label: 'CV / Résumé' },
-            { id: 'work.links', label: 'Top work links' },
-            { id: 'work.mediaPortfolioUrl', label: 'Media portfolio URL (legacy)' },
-            { id: 'work.techPortfolioUrl', label: 'Tech portfolio URL (legacy)' },
-            { id: 'payout.india.acctName', label: 'IN: Account holder name' },
-            { id: 'payout.india.bankName', label: 'IN: Bank name' },
-            { id: 'payout.india.acctNumber', label: 'IN: Account number' },
-            { id: 'payout.india.ifsc', label: 'IN: IFSC' },
-            { id: 'payout.india.pan', label: 'IN: PAN' },
-            { id: 'payout.international.intlAcctName', label: 'INTL: Account holder name' },
-            { id: 'payout.international.iban', label: 'INTL: IBAN' },
-            { id: 'payout.international.swift', label: 'INTL: SWIFT/BIC' },
-            { id: 'payout.international.routing', label: 'US: Routing/ABA' },
-            { id: 'payout.international.intlAcctNumber', label: 'INTL: Account number' },
-            { id: 'payout.international.altPayoutType', label: 'Alt payout method' },
-            { id: 'payout.international.altPayoutId', label: 'Alt payout account' }
+            { id: 'identity.country', label: 'Country' },
+
+            // Step 2: Professional Profile & KYC
+            { id: 'kyc.idFilesUrls', label: 'Government ID Document Upload' },
+            { id: 'profile.primaryDomain', label: 'Primary Domain (Media / Tech)' },
+            { id: 'profile.experienceBucket', label: 'Years of Experience' },
+            { id: 'profile.openToCollaboration', label: 'Package Collaboration Opt-in' },
+
+            // Step 3: Work Evidence & Portfolio
+            { id: 'work.portfolio', label: 'Portfolio / Work Showcase Link' },
+            { id: 'work.cvUrl', label: 'CV / Résumé File' },
+            { id: 'work.links', label: 'Top Work Links' },
+
+            // Step 4: Payout (India)
+            { id: 'payout.india.acctName', label: 'Bank Account Holder Name' },
+            { id: 'payout.india.bankName', label: 'Bank Name' },
+            { id: 'payout.india.acctNumber', label: 'Bank Account Number' },
+            { id: 'payout.india.ifsc', label: 'Bank IFSC Code' },
+            { id: 'payout.india.upi', label: 'UPI ID' },
+            { id: 'payout.india.pan', label: 'PAN Number' },
+            { id: 'payout.india.gstin', label: 'GSTIN' }
         ];
 
         const RC_LABEL = Object.fromEntries(RC_CANONICAL_FIELDS.map(f => [f.id, f.label]));
@@ -2966,34 +2974,20 @@
         function rcGetGroupedFieldCatalog() {
             const groups = [
                 {
-                    title: 'Identity & Contact',
-                    fields: ['identity.fullName', 'identity.phone', 'identity.email', 'identity.city']
+                    title: 'Step 1: Identity & Contact',
+                    fields: ['identity.fullName', 'identity.nameOnId', 'identity.gender', 'identity.dob', 'identity.email', 'identity.phone', 'identity.city', 'identity.country']
                 },
                 {
-                    title: 'KYC & Verification',
-                    fields: ['kyc.idFilesUrls']
+                    title: 'Step 2: Profile & KYC Verification',
+                    fields: ['kyc.idFilesUrls', 'profile.primaryDomain', 'profile.experienceBucket', 'profile.openToCollaboration']
                 },
                 {
-                    title: 'Profile & Skills',
-                    fields: ['profile.primaryDomain', 'profile.experience', 'profile.specialisations',
-                        'profile.mediaSpecialization', 'profile.mediaSubSkills', 'profile.techSpecialization',
-                        'profile.techStack', 'profile.toolsSkills', 'profile.equipment']
+                    title: 'Step 3: Work Evidence & Portfolio',
+                    fields: ['work.portfolio', 'work.cvUrl', 'work.links']
                 },
                 {
-                    title: 'Work Evidence & Portfolio',
-                    fields: ['work.portfolio', 'work.cvUrl', 'work.links', 'work.mediaPortfolioUrl', 'work.techPortfolioUrl']
-                },
-                {
-                    title: 'Payout (India)',
-                    fields: ['payout.india.acctName', 'payout.india.bankName', 'payout.india.acctNumber',
-                        'payout.india.ifsc', 'payout.india.pan']
-                },
-                {
-                    title: 'Payout (International)',
-                    fields: ['payout.international.intlAcctName', 'payout.international.iban',
-                        'payout.international.swift', 'payout.international.routing',
-                        'payout.international.intlAcctNumber', 'payout.international.altPayoutType',
-                        'payout.international.altPayoutId']
+                    title: 'Step 4: Payout Information (India)',
+                    fields: ['payout.india.acctName', 'payout.india.bankName', 'payout.india.acctNumber', 'payout.india.ifsc', 'payout.india.upi', 'payout.india.pan', 'payout.india.gstin']
                 }
             ];
 
@@ -3402,7 +3396,7 @@
                         </td>
                         <td>${provider.email}</td>
                         <td>${provider.city || 'N/A'}</td>
-                        <td>${provider.primaryDomain || 'N/A'}</td>
+                        <td>${this.formatDomain(provider.primaryDomain)}</td>
                         <td>
                             <span class="badge ${provider.approvalStatus}">
                                 ${this.getStatusBadgeText(provider)}
@@ -3418,6 +3412,14 @@
                         </td>
                     </tr>`;
                 }).join('');
+            }
+
+            formatDomain(domain) {
+                if (!domain) return 'N/A';
+                const d = String(domain).toLowerCase();
+                if (d === 'media') return 'Media & Creative';
+                if (d === 'tech') return 'Tech & Dev';
+                return domain.charAt(0).toUpperCase() + domain.slice(1);
             }
 
             getStatusBadgeText(provider) {
@@ -3465,136 +3467,190 @@
 
                 const data = provider._fullData || {};
 
+                // --- 1. Sign-Up Details ---
+                const username = data.username || '—';
+                const authProvider = data.authProvider === 'google.com' ? 'Google Authentication' : (data.authProvider || 'Email & Password');
+                const howFound = data.howDidYouFindUs || data.referralSource || '—';
+                const role = data.role ? (data.role.charAt(0).toUpperCase() + data.role.slice(1)) : 'Provider';
+
+                // --- 2. Step 1: Identity & Contact ---
+                const legalFullName = get(data, 'identity.fullName', data.fullName || provider.name || '—');
+                const nameOnId = get(data, 'identity.nameOnId') || legalFullName;
+                const isSameName = !get(data, 'identity.nameOnId') || get(data, 'identity.nameOnId') === legalFullName;
+                const gender = get(data, 'identity.gender') ? (get(data, 'identity.gender').charAt(0).toUpperCase() + get(data, 'identity.gender').slice(1)) : '—';
+                const dob = get(data, 'identity.dob') || '—';
+                const email = get(data, 'identity.email', data.email || provider.email || '—');
+                const phone = get(data, 'identity.phone', data.phone || provider.phone || '—');
+                const country = get(data, 'identity.country') === 'IN' || !get(data, 'identity.country') ? 'India (IN)' : get(data, 'identity.country');
+                const city = get(data, 'identity.city', data.city || provider.city || '—');
+
+                // --- 3. Step 2: Professional Profile & KYC ---
+                const domainRaw = String(get(data, 'profile.primaryDomain') || provider.primaryDomain || '').toLowerCase();
+                const domainDisplay = domainRaw === 'media' ? '📷 Media & Creative' 
+                    : domainRaw === 'tech' ? '💻 Tech & Development' 
+                    : (domainRaw ? domainRaw.toUpperCase() : '—');
+                const expBucket = get(data, 'profile.experienceBucket');
+                const expYears = get(data, 'profile.experience', data.experience);
+                const expDisplay = expBucket ? `${expBucket} years` : (expYears !== undefined && expYears !== null ? `${expYears} years` : '—');
+                const openCollab = Boolean(get(data, 'profile.openToCollaboration'));
                 const isIdVerified = Boolean(get(data, 'kyc.idVerified') || data.idVerified || (data.kyc && data.kyc.verified));
                 const idFiles = toArray(get(data, 'kyc.idFilesUrls') || data.idFilesUrls || (data.kyc && data.kyc.idUrls) || []);
-                const portfolioUrl = get(data, 'work.portfolio') || get(data, 'work.portfolioUrl') || get(data, 'work.mediaPortfolioUrl') || get(data, 'work.techPortfolioUrl') || data.portfolioUrl || data.mediaPortfolioUrl || data.techPortfolioUrl || data.portfolio || null;
+                const projectTypes = get(data, 'profile.projectTypes', data.projectTypes);
+                const equipmentList = toArray(get(data, 'profile.equipment') || get(data, 'media.equipment') || data.equipment || []).filter(Boolean);
+
+                // --- 4. Step 3: Work Samples & CV ---
+                const portfolioUrl = get(data, 'work.portfolio') || get(data, 'work.portfolioUrl') || data.portfolioUrl || data.portfolio || null;
                 const cvUrl = get(data, 'work.cvUrl') || get(data, 'work.resumeUrl') || data.cvUrl || data.resumeUrl || null;
                 const workLinks = toArray(get(data, 'work.links') || data.links || [data.workLink1, data.workLink2, data.workLink3].filter(Boolean));
-                const equipmentList = toArray(get(data, 'profile.equipment') || get(data, 'media.equipment') || data.equipment || []).filter(Boolean);
+
+                // --- 5. Step 4: Payout Details (India) ---
+                const acctName = get(data, 'payout.india.acctName', data.acctName || '—');
+                const bankName = get(data, 'payout.india.bankName', data.bankName || '—');
+                const acctNumber = get(data, 'payout.india.acctNumber', data.acctNumber || '—');
+                const ifsc = get(data, 'payout.india.ifsc', data.ifsc || '—');
+                const upi = get(data, 'payout.india.upi', data.upi || null);
+                const pan = get(data, 'payout.india.pan', data.pan || '—');
+                const gstin = get(data, 'payout.india.gstin', data.gstin || null);
+
+                // --- 6. Step 4: Compliance & Consent Declarations ---
+                const consent = data.consent || {};
+                const ageConfirmed = Boolean(consent.ageConfirmed);
+                const dataConsent = Boolean(consent.dataConsent);
+                const tosAgreed = Boolean(consent.tosAgreed);
+                const finalDeclaration = Boolean(consent.finalDeclaration);
+                const consentTs = this.formatDate(consent.consentTimestamp);
+
+                // --- 7. Onboarding & Application Status ---
+                const onboarding = data.onboarding || {};
+                const onbCompletedSteps = onboarding.completedSteps || (onboarding.completed ? 4 : (onboarding.step || 1));
+                const onbSubmittedAt = this.formatDate(onboarding.submittedAt || data.createdAt);
 
                 body.innerHTML = `
                     <div class="info-section">
-                        <h3>Identity & Contact</h3>
+                        <h3>👤 Sign-Up &amp; Account Details</h3>
                         <div class="info-grid">
                             <div class="info-item">
-                                <label>Full Name</label>
-                                <value>${provider.name}</value>
+                                <label>Username</label>
+                                <value style="font-weight: 700;">@${escapeHtml(username)}</value>
                             </div>
                             <div class="info-item">
-                                <label>Email</label>
-                                <value>${provider.email}</value>
+                                <label>Sign-Up Method</label>
+                                <value>${escapeHtml(authProvider)}</value>
                             </div>
                             <div class="info-item">
-                                <label>Phone</label>
-                                <value>${provider.phone || 'N/A'}</value>
+                                <label>How Did You Find Us / Referral</label>
+                                <value>${escapeHtml(howFound)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Platform Role</label>
+                                <value><span class="chip chip-info" style="font-weight:600;">${escapeHtml(role)}</span></value>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <h3>🪪 Step 1: Identity &amp; Contact</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Legal Full Name</label>
+                                <value style="font-weight: 600;">${escapeHtml(legalFullName)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Name on Government ID</label>
+                                <value>${escapeHtml(nameOnId)} ${isSameName ? '<span style="color:var(--text-tertiary);font-size:12px;">(Matches legal name)</span>' : ''}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Gender</label>
+                                <value>${escapeHtml(gender)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Date of Birth</label>
+                                <value>${escapeHtml(dob)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Email Address</label>
+                                <value>${escapeHtml(email)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Mobile (WhatsApp)</label>
+                                <value>${escapeHtml(phone)}</value>
                             </div>
                             <div class="info-item">
                                 <label>City</label>
-                                <value>${provider.city || 'N/A'}</value>
+                                <value>${escapeHtml(city)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Country</label>
+                                <value>${escapeHtml(country)}</value>
                             </div>
                         </div>
                     </div>
 
                     <div class="info-section">
-                        <h3>Profile</h3>
+                        <h3>💼 Step 2: Professional Profile &amp; KYC Verification</h3>
                         <div class="info-grid">
                             <div class="info-item">
                                 <label>Primary Domain</label>
-                                <value>${provider.primaryDomain || 'N/A'}</value>
+                                <value style="font-weight: 700; color: var(--accent-primary);">${domainDisplay}</value>
                             </div>
                             <div class="info-item">
-                                <label>Experience</label>
-                                <value>${get(data, 'profile.experience', data.experience || 'N/A')} years</value>
+                                <label>Years of Experience</label>
+                                <value>${escapeHtml(expDisplay)}</value>
                             </div>
                             <div class="info-item">
-                                <label>Status</label>
-                                <value><span class="badge ${provider.approvalStatus}">${this.getStatusBadgeText(provider)}</span></value>
+                                <label>Service Package Collaboration</label>
+                                <value>${openCollab ? '<span style="color:#10b981;font-weight:600;">✅ Opted In (Open to collaborate on packages)</span>' : '<span style="color:var(--text-tertiary);">❌ Not opted in (Independent only)</span>'}</value>
                             </div>
-                            <div class="info-item">
-                                <label>Tier</label>
-                                <value>${this.createTierBadge(provider.tier, true)}</value>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="info-section">
-                        <h3>KYC & Verification</h3>
-                        <div class="info-grid">
                             <div class="info-item">
                                 <label>Government ID Status</label>
-                                <value>${isIdVerified ? '✅ Verified' : '❌ Not Verified'}</value>
+                                <value>${isIdVerified ? '<span style="color:#10b981;font-weight:700;">✅ Verified</span>' : '<span style="color:#f59e0b;font-weight:700;">⏳ Pending Review</span>'}</value>
                             </div>
-                            <div class="info-item">
-                                <label>Government ID Documents</label>
+                            <div class="info-item" style="grid-column: 1 / -1;">
+                                <label>Government ID Document(s)</label>
                                 <value>
                                     ${idFiles.length > 0 ?
-                                        `<div style="display: flex; flex-direction: column; gap: 8px;">
+                                        `<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px;">
                                             ${idFiles.map((url, idx) =>
-                                                `<a href="${normalizeUrl(url)}" target="_blank" rel="noopener noreferrer" style="color: #667eea; font-weight: 600; word-break: break-all;">
+                                                `<a href="${normalizeUrl(url)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; font-size:13px; padding:6px 14px; background:var(--bg-secondary); border:1px solid var(--border-color); color:var(--text-primary); border-radius:8px; font-weight:600;">
                                                     📄 ID Document ${idx + 1} ↗
                                                 </a>`
                                             ).join('')}
                                         </div>`
-                                        : '<span style="color: #999;">No documents uploaded</span>'}
+                                        : '<span style="color: #999;">No ID documents uploaded</span>'}
                                 </value>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="info-section">
-                        <h3>Specializations & Skills</h3>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <label>Specialisation Tags</label>
-                                <value>${toArray(get(data, 'profile.specialisations') || data.specialisations || []).join(', ') || 'N/A'}</value>
-                            </div>
-                            <div class="info-item">
-                                <label>Media Specialization</label>
-                                <value>${get(data, 'profile.mediaSpecialization', data.mediaSpecialization || 'N/A')}</value>
-                            </div>
-                            <div class="info-item">
-                                <label>Media Sub-Skills</label>
-                                <value>${toArray(get(data, 'profile.mediaSubSkills') || data.mediaSubSkills || []).join(', ') || 'N/A'}</value>
-                            </div>
-                            <div class="info-item">
-                                <label>Tech Specialization</label>
-                                <value>${get(data, 'profile.techSpecialization', data.techSpecialization || 'N/A')}</value>
-                            </div>
-                            <div class="info-item">
-                                <label>Tech Stack</label>
-                                <value>${toArray(get(data, 'profile.techStack') || data.techStack || []).join(', ') || 'N/A'}</value>
-                            </div>
-                            <div class="info-item">
-                                <label>Tools & Skills</label>
-                                <value>${toArray(get(data, 'profile.toolsSkills') || data.toolsSkills || []).join(', ') || 'N/A'}</value>
-                            </div>
+                            ${projectTypes ? `
+                            <div class="info-item" style="grid-column: 1 / -1;">
+                                <label>Project Types / Focus</label>
+                                <value>${escapeHtml(projectTypes)}</value>
+                            </div>` : ''}
                             ${equipmentList.length > 0 ? `
-                            <div class="info-item" style="grid-column: 1/-1;">
-                                <label>Equipment Details</label>
-                                <value>${equipmentList.join(', ')}</value>
+                            <div class="info-item" style="grid-column: 1 / -1;">
+                                <label>Equipment / Gear</label>
+                                <value>${escapeHtml(equipmentList.join(', '))}</value>
                             </div>` : ''}
                         </div>
                     </div>
 
                     <div class="info-section">
-                        <h3>Work Evidence & Portfolio</h3>
+                        <h3>📁 Step 3: Work Samples &amp; CV</h3>
                         <div class="info-grid">
                             <div class="info-item">
-                                <label>Portfolio/Work Showcase</label>
-                                <value>${portfolioUrl ? '🔗 <a href="' + normalizeUrl(portfolioUrl) + '" target="_blank" rel="noopener noreferrer" style="word-break: break-all; color: #667eea; font-weight: 600;">View Portfolio ↗</a>' : '<span style="color: #999;">No portfolio provided</span>'}</value>
+                                <label>Portfolio / Work Showcase</label>
+                                <value>${portfolioUrl ? '🔗 <a href="' + normalizeUrl(portfolioUrl) + '" target="_blank" rel="noopener noreferrer" style="word-break: break-all; color: var(--accent-primary); font-weight: 600;">' + escapeHtml(portfolioUrl) + ' ↗</a>' : '<span style="color: #999;">No portfolio link provided</span>'}</value>
                             </div>
                             <div class="info-item">
                                 <label>CV / Résumé</label>
-                                <value>${cvUrl ? '📄 <a href="' + normalizeUrl(cvUrl) + '" target="_blank" rel="noopener noreferrer" style="color: #667eea; font-weight: 600;">Download CV ↗</a>' : '<span style="color: #999;">No CV uploaded</span>'}</value>
+                                <value>${cvUrl ? '📄 <a href="' + normalizeUrl(cvUrl) + '" target="_blank" rel="noopener noreferrer" style="color: var(--accent-primary); font-weight: 600;">Download / View CV ↗</a>' : '<span style="color: #999;">No CV uploaded</span>'}</value>
                             </div>
                             ${workLinks.length > 0 ? `
                             <div class="info-item" style="grid-column: 1/-1;">
                                 <label>Top Work Links</label>
                                 <value>
-                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
                                         ${workLinks.map((link, idx) =>
-                                            `<a href="${normalizeUrl(link)}" target="_blank" rel="noopener noreferrer" style="color: #667eea; font-weight: 600; word-break: break-all;">
-                                                🔗 Sample ${idx + 1} ↗
+                                            `<a href="${normalizeUrl(link)}" target="_blank" rel="noopener noreferrer" style="color: var(--accent-primary); font-weight: 600; word-break: break-all;">
+                                                🔗 Sample ${idx + 1}: ${escapeHtml(link)} ↗
                                             </a>`
                                         ).join('')}
                                     </div>
@@ -3604,92 +3660,104 @@
                         </div>
                     </div>
 
+                    <div class="info-section">
+                        <h3>🏦 Step 4: Payout Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Account Holder Name</label>
+                                <value style="font-weight: 600;">${escapeHtml(acctName)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Bank Name</label>
+                                <value>${escapeHtml(bankName)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Account Number</label>
+                                <value style="font-family: monospace; font-weight: 700; color: #dc3545;">${escapeHtml(acctNumber)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>IFSC Code</label>
+                                <value style="font-family: monospace; font-weight: 600;">${escapeHtml(ifsc)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>UPI ID (Optional)</label>
+                                <value>${upi ? escapeHtml(upi) : '<span style="color:var(--text-tertiary);">Not provided</span>'}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>PAN Number</label>
+                                <value style="font-family: monospace; font-weight: 700; letter-spacing: 0.5px;">${escapeHtml(pan)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>GSTIN (Optional)</label>
+                                <value>${gstin ? escapeHtml(gstin) : '<span style="color:var(--text-tertiary);">Not provided</span>'}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Payout Currency / Country</label>
+                                <value>INR (₹) · India</value>
+                            </div>
+                        </div>
+                    </div>
 
+                    <div class="info-section">
+                        <h3>🛡️ Compliance &amp; Legal Declarations</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Age 18+ Confirmation</label>
+                                <value>${ageConfirmed ? '<span style="color:#10b981;font-weight:600;">✅ Confirmed 18+</span>' : '<span style="color:var(--text-tertiary);">Not recorded</span>'}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Data Processing Consent</label>
+                                <value>${dataConsent ? '<span style="color:#10b981;font-weight:600;">✅ Agreed (Privacy Policy)</span>' : '<span style="color:var(--text-tertiary);">Not recorded</span>'}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Terms &amp; Privacy Policy</label>
+                                <value>${tosAgreed ? '<span style="color:#10b981;font-weight:600;">✅ Accepted Terms &amp; Privacy</span>' : '<span style="color:var(--text-tertiary);">Not recorded</span>'}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Accuracy Declaration</label>
+                                <value>${finalDeclaration ? '<span style="color:#10b981;font-weight:600;">✅ Confirmed Details Accurate</span>' : '<span style="color:var(--text-tertiary);">Not recorded</span>'}</value>
+                            </div>
+                            ${consentTs && consentTs !== 'N/A' ? `
+                            <div class="info-item">
+                                <label>Consent Recorded At</label>
+                                <value>${consentTs}</value>
+                            </div>` : ''}
+                        </div>
+                    </div>
 
-
-
-
-<div class="info-section">
-    <h3>Payout Information - India</h3>
-    <div class="info-grid">
-        <div class="info-item">
-            <label>Account Holder</label>
-            <value>${get(data, 'payout.india.acctName', 'N/A')}</value>
-        </div>
-        <div class="info-item">
-            <label>Bank Name</label>
-            <value>${get(data, 'payout.india.bankName', 'N/A')}</value>
-        </div>
-        <div class="info-item">
-    <label>Account Number</label>
-    <value style="font-family: monospace; font-weight: 600; color: #dc3545;">${get(data, 'payout.india.acctNumber', 'N/A')}</value>
-</div>
-        <div class="info-item">
-            <label>IFSC Code</label>
-            <value>${get(data, 'payout.india.ifsc', 'N/A')}</value>
-        </div>
-        <div class="info-item">
-            <label>PAN</label>
-            <value>${get(data, 'payout.india.pan', 'N/A')}</value>
-        </div>
-    </div>
-</div>
-
-
-<div class="info-section">
-    <h3>Payout Information - International</h3>
-    <div class="info-grid">
-        <div class="info-item">
-            <label>Account Holder</label>
-            <value>${get(data, 'payout.international.intlAcctName', 'N/A')}</value>
-        </div>
-        <div class="info-item">
-            <label>IBAN</label>
-            <value>${get(data, 'payout.international.iban', 'N/A')}</value>
-        </div>
-        <div class="info-item">
-            <label>SWIFT/BIC</label>
-            <value>${get(data, 'payout.international.swift', 'N/A')}</value>
-        </div>
-        <div class="info-item">
-            <label>Routing/ABA</label>
-            <value>${get(data, 'payout.international.routing', 'N/A')}</value>
-        </div>
-        <div class="info-item">
-    <label>Account Number</label>
-    <value style="font-family: monospace; font-weight: 600; color: #dc3545;">${get(data, 'payout.international.intlAcctNumber', 'N/A')}</value>
-</div>
-        <div class="info-item">
-            <label>Alt Payout Method</label>
-            <value>${get(data, 'payout.international.altPayoutType', 'N/A')}</value>
-        </div>
-        <div class="info-item">
-            <label>Alt Payout Account</label>
-            <value>${get(data, 'payout.international.altPayoutId', 'N/A')}</value>
-        </div>
-    </div>
-</div>
-
-
-
-
-<div class="info-section">
-    <h3>Account Information</h3>
-    <div class="info-grid">
-        <div class="info-item">
-            <label>Account Created</label>
-            <value>${this.formatDate(data.createdAt || data.onboarding?.submittedAt || provider.createdAt)}</value>
-        </div>
-        <div class="info-item">
-            <label>Last Updated</label>
-            <value>${this.formatDate(data.updatedAt || data.onboarding?.updatedAt || provider.updatedAt)}</value>
-        </div>
-        <div class="info-item">
-            <label>Provider ID</label>
-            <value style="font-family: monospace; font-size: 12px;">${provider.id}</value>
-        </div>
-    </div>
-</div>
+                    <div class="info-section">
+                        <h3>⚙️ Application &amp; Account Metadata</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Application Status</label>
+                                <value><span class="badge ${provider.approvalStatus}">${this.getStatusBadgeText(provider)}</span></value>
+                            </div>
+                            <div class="info-item">
+                                <label>Current Tier</label>
+                                <value>${this.createTierBadge(provider.tier, true)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Onboarding Progress</label>
+                                <value style="font-weight:600;">${onbCompletedSteps}/4 Steps (${onboarding.completed ? 'Completed' : 'Draft / Waiting'})</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Onboarding Submitted At</label>
+                                <value>${onbSubmittedAt}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Account Created</label>
+                                <value>${this.formatDate(data.createdAt || provider.createdAt)}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Provider ID</label>
+                                <value style="font-family: monospace; font-size: 12px;">${provider.id}</value>
+                            </div>
+                            <div class="info-item">
+                                <label>Last Updated</label>
+                                <value>${this.formatDate(data.updatedAt || provider.updatedAt)}</value>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="info-section">
                         <h3>Subscription</h3>

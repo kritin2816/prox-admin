@@ -792,9 +792,11 @@
             document.getElementById('detail-status').textContent = status;
             document.getElementById('detail-status').className = 'badge ' + (status === 'APPROVED' ? 'badge-success' : 'badge-warning');
             
-            const tier = String(currentProvider.tier || (currentProvider.subscription && currentProvider.subscription.plan) || 'Silver');
+            const isSubActive = String(currentProvider.subscription?.status || currentProvider.subscriptionStatus || '').toLowerCase() === 'active';
+            const rawTier = isSubActive ? (currentProvider.tier || (currentProvider.subscription && currentProvider.subscription.plan)) : null;
+            const tier = rawTier ? String(rawTier) : 'None';
             document.getElementById('detail-tier').textContent = tier.toUpperCase();
-            document.getElementById('detail-tier').className = 'badge badge-' + tier.toLowerCase();
+            document.getElementById('detail-tier').className = 'badge badge-' + (tier !== 'None' ? tier.toLowerCase() : 'secondary');
 
             // Fetch Sub-collections (Bookings, Services, History)
             await fetchProviderDetails(providerId);
@@ -1327,14 +1329,15 @@
             const p = currentProvider;
             const sub = p.subscription || {};
             
-            const plan = sub.plan || p.tier || p.subscriptionPlan || 'Silver';
-            const status = sub.status || 'Active';
+            const isSubActive = String(sub.status || p.subscriptionStatus || '').toLowerCase() === 'active';
+            const plan = isSubActive ? (sub.plan || p.tier || p.subscriptionPlan || 'Silver') : 'None';
+            const status = sub.status || (isSubActive ? 'Active' : 'Not Subscribed');
             const granted = sub.grantedTier || 'None';
             const updatedAt = sub.updatedAt ? new Date(sub.updatedAt.toDate ? sub.updatedAt.toDate() : sub.updatedAt).toLocaleDateString() : 'N/A';
 
             document.getElementById('sub-table').innerHTML = `
-                <tr><th style="width: 30%">Current Plan</th><td><span class="badge badge-${plan.toLowerCase()}">${plan.toUpperCase()}</span></td></tr>
-                <tr><th>Status</th><td><span class="badge ${status.toLowerCase() === 'active' ? 'badge-success' : 'badge-warning'}">${status.toUpperCase()}</span></td></tr>
+                <tr><th style="width: 30%">Current Plan</th><td><span class="badge ${plan !== 'None' ? 'badge-' + plan.toLowerCase() : 'badge-secondary'}">${plan.toUpperCase()}</span></td></tr>
+                <tr><th>Status</th><td><span class="badge ${String(status).toLowerCase() === 'active' ? 'badge-success' : 'badge-warning'}">${status.toUpperCase()}</span></td></tr>
                 <tr><th>Pre-granted Upgrade</th><td>${granted.toUpperCase()}</td></tr>
                 <tr><th>Last Updated</th><td>${updatedAt}</td></tr>
             `;

@@ -442,9 +442,11 @@
             0% {
                 box-shadow: 0 0 4px rgba(220, 53, 69, 0.6), 0 0 10px rgba(220, 53, 69, 0.4);
             }
+
             50% {
                 box-shadow: 0 0 12px rgba(220, 53, 69, 0.9), 0 0 20px rgba(220, 53, 69, 0.7);
             }
+
             100% {
                 box-shadow: 0 0 4px rgba(220, 53, 69, 0.6), 0 0 10px rgba(220, 53, 69, 0.4);
             }
@@ -2415,7 +2417,9 @@
                     <div class="label">Rejected</div>
                     <div class="value" id="stat-rejected">0</div>
                 </div>
-                <div class="stat-card" style="cursor: pointer; background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.25);" onclick="window.location.href='deleted-providers.html?filter=flagged'">
+                <div class="stat-card"
+                    style="cursor: pointer; background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.25);"
+                    onclick="window.location.href='deleted-providers.html?filter=flagged'">
                     <div class="label" style="color: #ef4444; font-weight: 700;">Flagged Re-Logins</div>
                     <div class="value" id="stat-flagged-logins" style="color: #ef4444;">0</div>
                 </div>
@@ -2434,7 +2438,8 @@
                     <button class="filter-btn" data-filter="pending" onclick="dashboard.filterProviders('pending')">
                         Pending
                     </button>
-                    <button class="filter-btn" data-filter="in_progress" onclick="dashboard.filterProviders('in_progress')">
+                    <button class="filter-btn" data-filter="in_progress"
+                        onclick="dashboard.filterProviders('in_progress')">
                         In Progress
                     </button>
                     <button class="filter-btn" data-filter="approved" onclick="dashboard.filterProviders('approved')">
@@ -2447,7 +2452,9 @@
                     <button class="filter-btn" data-filter="rejected" onclick="dashboard.filterProviders('rejected')">
                         Rejected
                     </button>
-                    <a href="deleted-providers.html" class="filter-btn" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;" title="View deleted providers and flagged logins">
+                    <a href="deleted-providers.html" class="filter-btn"
+                        style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"
+                        title="View deleted providers and flagged logins">
                         🚫 Deleted Providers (<span id="stat-flagged-providers-btn">0</span>)
                     </a>
                 </div>
@@ -2701,13 +2708,19 @@
                 <p id="delete-provider-modal-message" style="font-weight: 600; margin-bottom: 16px;">
                     Are you sure you want to permanently delete this provider?
                 </p>
-                <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">
-                    ⚠️ <strong>Notice:</strong> This provider will be removed from active listings and archived to <code>deleted_providers</code> as an <strong>Admin-Initiated Deletion</strong>. If they attempt to log in again, it will be automatically flagged for your review.
+                <div
+                    style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">
+                    ⚠️ <strong>Notice:</strong> This provider will be removed from active listings and archived to
+                    <code>deleted_providers</code> as an <strong>Admin-Initiated Deletion</strong>. If they attempt to
+                    log in again, it will be automatically flagged for your review.
                 </div>
-                
+
                 <div style="margin-bottom: 14px;">
-                    <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; color: var(--text-secondary);">Reason Category</label>
-                    <select id="delete-provider-reason" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
+                    <label
+                        style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; color: var(--text-secondary);">Reason
+                        Category</label>
+                    <select id="delete-provider-reason"
+                        style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
                         <option value="Policy Violation">Policy Violation</option>
                         <option value="Fraudulent Activity">Fraudulent Activity</option>
                         <option value="Inactivity / Abandoned">Inactivity / Abandoned</option>
@@ -2717,13 +2730,19 @@
                 </div>
 
                 <div style="margin-bottom: 14px;">
-                    <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; color: var(--text-secondary);">Admin Notes &amp; Details</label>
-                    <textarea id="delete-provider-notes" rows="3" placeholder="Provide context on why this account is being deleted..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px; box-sizing: border-box; resize: vertical;"></textarea>
+                    <label
+                        style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; color: var(--text-secondary);">Admin
+                        Notes &amp; Details</label>
+                    <textarea id="delete-provider-notes" rows="3"
+                        placeholder="Provide context on why this account is being deleted..."
+                        style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px; box-sizing: border-box; resize: vertical;"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="action-btn" onclick="dashboard.closeModal('delete-provider-modal')">Cancel</button>
-                <button class="action-btn danger" id="delete-provider-confirm-btn" style="background:#ef4444; color:white; border-color:#dc2626;" onclick="dashboard.executeDeleteProvider()">
+                <button class="action-btn danger" id="delete-provider-confirm-btn"
+                    style="background:#ef4444; color:white; border-color:#dc2626;"
+                    onclick="dashboard.executeDeleteProvider()">
                     Delete Provider
                 </button>
             </div>
@@ -2792,7 +2811,8 @@
                 <div class="sub-modal-section">
                     <p class="sub-modal-section-label">Grant Plan Access</p>
                     <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:10px;">
-                        Provider selects Silver by default. Granting Gold or Platinum lets them choose higher tiers upon subscription.
+                        Provider selects Silver by default. Granting Gold or Platinum lets them choose higher tiers upon
+                        subscription.
                         Platinum automatically includes Gold access.
                     </p>
                     <div class="sub-modal-btn-row" id="sub-grant-btns">
@@ -3396,7 +3416,7 @@
                         </td>
                         <td>${provider.email}</td>
                         <td>${provider.city || 'N/A'}</td>
-                        <td>${this.formatDomain(provider.primaryDomain)}</td>
+                        <td>${provider.primaryDomain || 'N/A'}</td>
                         <td>
                             <span class="badge ${provider.approvalStatus}">
                                 ${this.getStatusBadgeText(provider)}
@@ -3412,14 +3432,6 @@
                         </td>
                     </tr>`;
                 }).join('');
-            }
-
-            formatDomain(domain) {
-                if (!domain) return 'N/A';
-                const d = String(domain).toLowerCase();
-                if (d === 'media') return 'Media & Creative';
-                if (d === 'tech') return 'Tech & Dev';
-                return domain.charAt(0).toUpperCase() + domain.slice(1);
             }
 
             getStatusBadgeText(provider) {
@@ -3486,9 +3498,9 @@
 
                 // --- 3. Step 2: Professional Profile & KYC ---
                 const domainRaw = String(get(data, 'profile.primaryDomain') || provider.primaryDomain || '').toLowerCase();
-                const domainDisplay = domainRaw === 'media' ? '📷 Media & Creative' 
-                    : domainRaw === 'tech' ? '💻 Tech & Development' 
-                    : (domainRaw ? domainRaw.toUpperCase() : '—');
+                const domainDisplay = domainRaw === 'media' ? '📷 Media & Creative'
+                    : domainRaw === 'tech' ? '💻 Tech & Development'
+                        : (domainRaw ? domainRaw.toUpperCase() : '—');
                 const expBucket = get(data, 'profile.experienceBucket');
                 const expYears = get(data, 'profile.experience', data.experience);
                 const expDisplay = expBucket ? `${expBucket} years` : (expYears !== undefined && expYears !== null ? `${expYears} years` : '—');
@@ -3609,14 +3621,14 @@
                                 <label>Government ID Document(s)</label>
                                 <value>
                                     ${idFiles.length > 0 ?
-                                        `<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px;">
+                        `<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px;">
                                             ${idFiles.map((url, idx) =>
-                                                `<a href="${normalizeUrl(url)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; font-size:13px; padding:6px 14px; background:var(--bg-secondary); border:1px solid var(--border-color); color:var(--text-primary); border-radius:8px; font-weight:600;">
+                            `<a href="${normalizeUrl(url)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; font-size:13px; padding:6px 14px; background:var(--bg-secondary); border:1px solid var(--border-color); color:var(--text-primary); border-radius:8px; font-weight:600;">
                                                     📄 ID Document ${idx + 1} ↗
                                                 </a>`
-                                            ).join('')}
+                        ).join('')}
                                         </div>`
-                                        : '<span style="color: #999;">No ID documents uploaded</span>'}
+                        : '<span style="color: #999;">No ID documents uploaded</span>'}
                                 </value>
                             </div>
                             ${projectTypes ? `
@@ -3649,10 +3661,10 @@
                                 <value>
                                     <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
                                         ${workLinks.map((link, idx) =>
-                                            `<a href="${normalizeUrl(link)}" target="_blank" rel="noopener noreferrer" style="color: var(--accent-primary); font-weight: 600; word-break: break-all;">
+                            `<a href="${normalizeUrl(link)}" target="_blank" rel="noopener noreferrer" style="color: var(--accent-primary); font-weight: 600; word-break: break-all;">
                                                 🔗 Sample ${idx + 1}: ${escapeHtml(link)} ↗
                                             </a>`
-                                        ).join('')}
+                        ).join('')}
                                     </div>
                                 </value>
                             </div>
@@ -4968,9 +4980,9 @@
                                 <span class="ms-lbl">Current Tier</span>
                                 <span class="ms-val">
                                     ${isNoTier
-                                        ? `<span class="sub-tier-pill none">No Tier</span>`
-                                        : `<span class="sub-tier-pill ${curTier}">${curTier.charAt(0).toUpperCase() + curTier.slice(1)}</span>`
-                                    }
+                        ? `<span class="sub-tier-pill none">No Tier</span>`
+                        : `<span class="sub-tier-pill ${curTier}">${curTier.charAt(0).toUpperCase() + curTier.slice(1)}</span>`
+                    }
                                 </span>
                                 <button type="button" class="sub-need-hint" style="background:none;border:none;padding:0;cursor:pointer;color:var(--accent-primary);font-size:0.7rem;font-style:normal;font-weight:600;"
                                     data-pid="${p.id}" data-name="${safeName}" data-curtier="${curTier}"

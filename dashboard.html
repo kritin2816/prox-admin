@@ -3,11 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#1e293b">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pro X Admin Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!-- Firebase SDK v8 (compat) - CDN -->
@@ -1071,8 +1067,6 @@
             outline-offset: 2px;
         }
     </style>
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="mobile-app.css">
 </head>
 
 <body>
@@ -1109,6 +1103,18 @@
 
     <!-- Main Container -->
     <div class="container">
+        <!-- Flagged Providers Alert Banner -->
+        <div id="flaggedAlertBanner" style="display: none; margin-bottom: 24px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(220, 38, 38, 0.22) 100%); border: 1.5px solid #ef4444; border-radius: 16px; padding: 18px 24px; color: var(--text-primary); align-items: center; justify-content: space-between; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.2);">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="font-size: 28px;">⚠️</div>
+                <div>
+                    <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #ef4444;">Flagged Re-Login Attempt Detected!</h4>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-secondary);" id="flaggedAlertText">One or more deleted providers recently attempted to log in.</p>
+                </div>
+            </div>
+            <a href="deleted-providers.html?filter=flagged" style="background: #ef4444; color: white; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">Review Providers →</a>
+        </div>
+
         <!-- Hero Section -->
         <div class="hero-section">
             <div class="hero-content">
@@ -1536,6 +1542,20 @@
                         <span class="action-arrow">→</span>
                     </div>
                 </a>
+
+                <!-- 11b. Deleted & Flagged Providers -->
+                <a href="deleted-providers.html" class="action-card" id="card-deleted-providers">
+                    <div class="action-header">
+                        <div class="action-icon icon-red">🚫</div>
+                        <div class="action-badge" id="badge-flagged-providers" style="display:none; background:#ef4444; color:white;">0</div>
+                    </div>
+                    <h3 class="action-title">Deleted &amp; Flagged Providers</h3>
+                    <p class="action-description">Audit deleted providers &amp; review flagged re-login attempts</p>
+                    <div class="action-footer">
+                        <span class="action-count" id="count-deleted-providers">- total</span>
+                        <span class="action-arrow">→</span>
+                    </div>
+                </a>
             </div>
         </div>
 
@@ -1689,11 +1709,11 @@
         let allReassignments = [];
         let allFeaturedProviders = [];
         let allServiceReviewRequests = [];
-        let allServices = [];
         let allDeletionRequests = [];
         let allPromoCodes = [];
         let allUsers = [];
         let allSupportTickets = [];
+        let allDeletedProviders = [];
 
         let chartInstances = {};
 
@@ -1806,17 +1826,20 @@
                     updateUI();
                 });
 
+                onSnapshot(collection(db, 'deleted_providers'), (snapshot) => {
+                    allDeletedProviders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    updateDeletedProvidersStats();
+                });
+
                 // Fetch other collections once
-                const [enquiriesSnap, reviewsSnap, cancellationsSnap, reassignmentsSnap, legacyReassignmentsSnap, featuredSnap, serviceReviewsSnap, servicesSnap, promoCodesSnap, deletionRequestsSnap, usersSnap] =
+                const [enquiriesSnap, reviewsSnap, cancellationsSnap, reassignmentsSnap, featuredSnap, serviceReviewsSnap, promoCodesSnap, deletionRequestsSnap, usersSnap] =
                     await Promise.all([
                         getDocs(collection(db, 'enquiries')),
                         getDocs(collection(db, 'reviews')),
                         getDocs(collection(db, 'cancellation_requests')),
                         getDocs(collection(db, 'provider_replacement_requests')),
-                        getDocs(collection(db, 'providerreplacementrequests')),
                         getDocs(collection(db, 'featured_providers')),
-                        getDocs(collection(db, 'servicereviewrequests')),
-                        getDocs(collection(db, 'services')),
+                        getDocs(collection(db, 'service_review_requests')),
                         getDocs(collection(db, 'promo_codes')),
                         getDocs(collection(db, 'accountDeletionRequests')),
                         getDocs(collection(db, 'users'))
@@ -1825,19 +1848,9 @@
                 allEnquiries = enquiriesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allReviews = reviewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allCancellations = cancellationsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                // Merge both reassignment collections (legacy + snake_case) and deduplicate by doc id
-                const reassignMap = new Map();
-                [...legacyReassignmentsSnap.docs, ...reassignmentsSnap.docs].forEach(doc => {
-                    if (!reassignMap.has(doc.id)) {
-                        reassignMap.set(doc.id, { id: doc.id, ...doc.data() });
-                    }
-                });
-                allReassignments = Array.from(reassignMap.values());
-
+                allReassignments = reassignmentsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allFeaturedProviders = featuredSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allServiceReviewRequests = serviceReviewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                allServices = servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allDeletionRequests = deletionRequestsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allPromoCodes = promoCodesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allUsers = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -1876,15 +1889,7 @@
         // Calculate stats
         function calculateStats() {
             const totalProviders = allProviders.length;
-            // Match Provider-Management page: 'waiting','processing','pending', and unknown status all = pending
-            const pendingProviders = allProviders.filter(p => {
-                const raw = String(p.status || (p.onboarding && p.onboarding.status) || '').toLowerCase();
-                const isInProgress = ['in_progress','onboarding_required','draft','incomplete','unsubmitted'].includes(raw);
-                if (isInProgress) return false;
-                if (['approved','rejected','needs_changes','retry'].includes(raw)) return false;
-                // 'pending', 'waiting', 'processing', or unrecognized defaults to pending
-                return true;
-            }).length;
+            const pendingProviders = allProviders.filter(p => getStatus(p) === 'pending').length;
             const approvedProviders = allProviders.filter(p => getStatus(p) === 'approved').length;
 
             const totalBookings = allBookings.length;
@@ -1892,29 +1897,11 @@
             const completedBookings = allBookings.filter(b => getStatus(b) === 'completed').length;
 
             const totalEnquiries = allEnquiries.length;
-            // Count 'new' (unread/unactioned) enquiries for the badge
-            const newEnquiries = allEnquiries.filter(e => (e.status || 'new') === 'new').length;
-            // Count services pending admin review (from services collection, status='pending_review')
-            // ALSO count pending servicereviewrequests (edit requests awaiting approval)
-            const pendingServiceReviews = allServices.filter(s => s.status === 'pending_review').length;
-            const pendingEditReviews = allServiceReviewRequests.filter(r => getStatus(r) === 'pending').length;
-            const pendingReviews = pendingServiceReviews + pendingEditReviews;
+            const pendingReviews = allServiceReviewRequests.filter(r => getStatus(r) === 'pending').length;
             const totalCancellations = allCancellations.length;
             const pendingCancellations = allCancellations.filter(c => getStatus(c) === 'pending').length;
             const totalReassignments = allReassignments.length;
-            // Match provider-replacement page pending statuses: 'pending', 'pending-admin', 'awaiting-provider'
-            const pendingReassignmentsFromDocs = allReassignments.filter(r => {
-                const s = String(r.status || 'pending').toLowerCase().replace(/-/g, '');
-                return ['pending', 'pendingadmin', 'awaitingprovider'].includes(s);
-            }).length;
-            // Also count bookings surfaced on the page that have no reassignment doc yet
-            const pendingReassignmentsFromBookings = allBookings.filter(b => {
-                const userChoice = String((b.cancelRequest && b.cancelRequest.userChoice) || '').toLowerCase();
-                const bStatus = String(b.status || '').toLowerCase();
-                const coveredByDoc = allReassignments.some(r => r.bookingId === b.id);
-                return !coveredByDoc && (userChoice === 'replacement' || bStatus === 'awaiting reassignment' || bStatus === 'awaiting provider' || !!b.needsReassignment);
-            }).length;
-            const pendingReassignments = pendingReassignmentsFromDocs + pendingReassignmentsFromBookings;
+            const pendingReassignments = allReassignments.filter(r => getStatus(r) === 'pending').length;
 
             const completionRate = totalBookings > 0 ? ((completedBookings / totalBookings) * 100).toFixed(0) : 0;
             const pendingActions = pendingProviders + pendingCancellations + pendingReassignments + pendingReviews;
@@ -1942,27 +1929,18 @@
                 return (eligTier === 'platinum' && tier !== 'platinum') || (eligTier === 'gold' && tier === 'silver');
             }).length;
 
-            // Progress Monitoring active count - match exact Firestore status casing
+            // Progress Monitoring active count
             const activeProgressCount = allBookings.filter(b => {
-                const status = String(b.status || '').toLowerCase().trim();
-                return [
-                    'ongoing',
-                    'samples ready for review',
-                    'revision requested 1',
-                    'revision requested 2',
-                    'revision in progress 1',
-                    'revision in progress 2'
-                ].includes(status);
+                const status = String(b.status || '').toLowerCase();
+                return ['ongoing', 'samples ready for review', 'revision requested 1', 'revision requested 2', 'revision in progress 1', 'revision in progress 2'].includes(status);
             }).length;
 
             // Deletion requests count
             const pendingDeletions = allDeletionRequests.filter(d => (d.status || 'pending') === 'pending').length;
 
-            // Payouts count calculation - matches payout.html logic (includes 'customer received')
+            // Payouts count calculation
             const pendingPayoutsCount = allBookings.filter(b => {
-                const isFinalPaid = b.finalPaymentDone === true ||
-                    (b.paymentStatus && b.paymentStatus.finalPayment === true) ||
-                    ['completed', 'payment completed', 'work accepted', 'customer received'].includes((b.status || '').toLowerCase());
+                const isFinalPaid = b.finalPaymentDone === true || (b.paymentStatus && b.paymentStatus.finalPayment === true) || (b.status === 'completed' || b.status === 'payment completed' || b.status === 'work accepted');
                 return isFinalPaid && Number(b.amount || b.totalAmount || 0) > 0 && b.payoutStatus !== 'paid';
             }).length;
 
@@ -1979,14 +1957,14 @@
             updateBadge('badge-featured', 0);
             updateBadge('badge-bookings', confirmedBookings);
             updateBadge('badge-progress', activeProgressCount);
-            updateBadge('badge-enquiries', newEnquiries);
+            updateBadge('badge-enquiries', totalEnquiries);
             updateBadge('badge-support-tickets', openTicketsCount);
             updateBadge('badge-cancellations', pendingCancellations);
             updateBadge('badge-reassignments', pendingReassignments);
             updateBadge('badge-subscriptions', eligibleCount);
             updateBadge('badge-financials', 0);
             updateBadge('badge-payouts-pending', pendingPayoutsCount);
-            updateBadge('badge-promo', activePromoCodes);
+            updateBadge('badge-promo', 0);
             updateBadge('badge-deletions', pendingDeletions);
 
             // Update all action card descriptions/footers
@@ -1994,7 +1972,7 @@
             document.getElementById('count-reviews').textContent = `${pendingReviews} pending`;
             document.getElementById('count-bookings').textContent = `${totalBookings} total`;
             document.getElementById('count-progress').textContent = `${activeProgressCount} active`;
-            document.getElementById('count-enquiries').textContent = `${newEnquiries} new / ${totalEnquiries} total`;
+            document.getElementById('count-enquiries').textContent = `${totalEnquiries} total`;
             document.getElementById('count-support-tickets').textContent = `${allSupportTickets.length} total`;
             document.getElementById('count-cancellations').textContent = `${pendingCancellations} pending`;
             document.getElementById('count-reassignments').textContent = `${pendingReassignments} pending`;
@@ -2008,6 +1986,38 @@
 
             const countFeatured = document.getElementById('count-featured');
             if (countFeatured) countFeatured.textContent = `${allFeaturedProviders.length} total`;
+
+            updateDeletedProvidersStats();
+        }
+
+        function updateDeletedProvidersStats() {
+            const totalDeleted = allDeletedProviders.length;
+            const flagged = allDeletedProviders.filter(p => p.hasLoginAttempt || p.flaggedForReview);
+            const flaggedCount = flagged.length;
+
+            const countEl = document.getElementById('count-deleted-providers');
+            if (countEl) countEl.textContent = `${totalDeleted} total`;
+
+            const badgeEl = document.getElementById('badge-flagged-providers');
+            if (badgeEl) {
+                if (flaggedCount > 0) {
+                    badgeEl.textContent = `${flaggedCount} FLAGGED`;
+                    badgeEl.style.display = 'block';
+                } else {
+                    badgeEl.style.display = 'none';
+                }
+            }
+
+            const banner = document.getElementById('flaggedAlertBanner');
+            const bannerText = document.getElementById('flaggedAlertText');
+            if (banner && bannerText) {
+                if (flaggedCount > 0) {
+                    banner.style.display = 'flex';
+                    bannerText.textContent = `${flaggedCount} deleted provider${flaggedCount > 1 ? 's have' : ' has'} attempted to log back in. Review and investigate immediately.`;
+                } else {
+                    banner.style.display = 'none';
+                }
+            }
         }
 
         // Get chart colors based on theme
@@ -2446,7 +2456,6 @@
             updateLastUpdated();
         }, 300000);
     </script>
-    <script src="mobile-app.js"></script>
 </body>
 
 </html>

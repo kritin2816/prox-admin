@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro X Admin - Deleted Providers & Flagged Logins</title>
+    
+    <!-- Firebase SDK v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-color: #e2e8f0;
+            --accent: #667eea;
+            --accent-dark: #5568d3;
+            --accent2: #764ba2;
+            --accent-light: rgba(102, 126, 234, 0.1);
+            --success: #10b981;
+            --success-light: rgba(16, 185, 129, 0.1);
+            --warning: #f59e0b;
+            --warning-light: rgba(245, 158, 11, 0.1);
+            --danger: #ef4444;
+            --danger-light: rgba(239, 68, 68, 0.1);
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+
+        html.dark-mode {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --border-color: #334155;
+            --accent: #60a5fa;
+            --accent-dark: #3b82f6;
+            --accent-light: rgba(96, 165, 250, 0.1);
+            --success: #22c55e;
+            --success-light: rgba(34, 197, 94, 0.15);
+            --warning: #f97316;
+            --warning-light: rgba(249, 115, 22, 0.15);
+            --danger: #ef4444;
+            --danger-light: rgba(239, 68, 68, 0.15);
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.3);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.3);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            min-height: 100vh;
+            padding: 24px;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .nav-bar-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1440px;
+            margin: 0 auto 16px auto;
+        }
+
+        .back-links-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            backdrop-filter: blur(8px);
+            transition: all 0.2s ease;
+        }
+
+        .back-link:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            background: var(--bg-secondary);
+            border-radius: 24px;
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+            color: white;
+            padding: 32px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header-title-box h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title-box p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 6px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .admin-badge {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-theme-toggle {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .btn-theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .btn-logout {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+            padding: 8px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.4);
+            color: white;
+        }
+
+        /* ── Metric Cards ── */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            padding: 24px 40px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .metric-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            transition: all 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .metric-card.flagged-highlight {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(245, 158, 11, 0.08) 100%);
+            border: 1.5px solid rgba(239, 68, 68, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card.flagged-highlight::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: #ef4444;
+        }
+
+        .metric-icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .icon-total { background: rgba(99, 102, 241, 0.15); color: #6366f1; }
+        .icon-self { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .icon-admin { background: rgba(147, 51, 234, 0.15); color: #9333ea; }
+        .icon-flagged { background: rgba(239, 68, 68, 0.15); color: #ef4444; animation: pulseGlow 2s infinite; }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+        }
+
+        .metric-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-top: 4px;
+        }
+
+        /* ── Controls & Filter Bar ── */
+        .controls-bar {
+            padding: 24px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            background: var(--bg-tertiary);
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            background: var(--bg-secondary);
+            color: var(--accent);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-btn.tab-flagged.active {
+            color: #ef4444;
+        }
+
+        .search-box {
+            position: relative;
+            min-width: 300px;
+            flex: 1;
+            max-width: 450px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 16px 10px 42px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            font-size: 16px;
+        }
+
+        /* ── Content Table / Grid ── */
+        .content-area {
+            padding: 30px 40px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+            color: var(--text-primary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr.row-flagged {
+            background: rgba(239, 68, 68, 0.04);
+        }
+
+        tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .provider-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .provider-name {
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+
+        .provider-sub {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .provider-id {
+            font-family: monospace;
+            font-size: 11px;
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-tertiary);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-self-requested {
+            background: rgba(16, 185, 129, 0.12);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .badge-admin-initiated {
+            background: rgba(124, 58, 237, 0.12);
+            color: #7c3aed;
+            border: 1px solid rgba(124, 58, 237, 0.25);
+        }
+
+        .badge-backend-deleted {
+            background: rgba(245, 158, 11, 0.12);
+            color: #d97706;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-flagged-pulse {
+            background: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            font-weight: 700;
+            animation: badgePulse 2s infinite ease-in-out;
+        }
+
+        @keyframes badgePulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(0.98); }
+        }
+
+        .badge-clear {
+            background: rgba(148, 163, 184, 0.15);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Action Buttons */
+        .btn-view-details {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 7px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-view-details:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .btn-simulate-login {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 7px 11px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-simulate-login:hover {
+            background: rgba(239, 68, 68, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .btn-clear-flag {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #b45309;
+            padding: 7px 11px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 6px;
+        }
+
+        .btn-clear-flag:hover {
+            background: rgba(245, 158, 11, 0.25);
+        }
+
+        .btn-sync-registry {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 9px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+            transition: all 0.2s;
+        }
+
+        .btn-sync-registry:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.45);
+        }
+
+        .btn-guide-toggle {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 9px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-guide-toggle:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent);
+        }
+
+        .code-snippet-box {
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            overflow-x: auto;
+            border: 1px solid #334155;
+            position: relative;
+        }
+
+        .btn-copy-code {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Empty & Loading States */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.6;
+        }
+
+        .empty-state-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .empty-state-desc {
+            font-size: 14px;
+            margin-top: 6px;
+        }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            max-width: 720px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-xl);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .modal-body {
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .modal-section-title {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            background: var(--bg-tertiary);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .detail-item-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .detail-item-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        .audit-alert-box {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .audit-alert-title {
+            color: #dc2626;
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .attempt-log-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 140px;
+            overflow-y: auto;
+            margin-top: 4px;
+        }
+
+        .attempt-log-item {
+            font-size: 12px;
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .modal-footer {
+            padding: 20px 28px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: var(--bg-tertiary);
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+
+        .btn-modal-close {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 9px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-modal-action {
+            background: var(--accent);
+            border: none;
+            color: white;
+            padding: 9px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-modal-action:hover {
+            background: var(--accent-dark);
+        }
+
+        /* Toast */
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1e293b;
+            color: white;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: var(--shadow-xl);
+            display: none;
+            z-index: 2000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <div class="nav-bar-top">
+        <div class="back-links-group">
+            <a href="dashboard.html" class="back-link">
+                ← Dashboard
+            </a>
+            <a href="Provider-Management.html" class="back-link">
+                👥 Provider Management
+            </a>
+            <a href="admin-deletion-requests.html" class="back-link">
+                ⚠️ Deletion Requests
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-title-box">
+                <h1>🚫 Deleted Providers &amp; Flagged Logins</h1>
+                <p>Complete historical registry of deleted providers, deletion reason attribution, and re-login attempt detection</p>
+            </div>
+            <div class="header-controls">
+                <div class="admin-badge" id="adminBadge">
+                    <span>👑</span>
+                    <span id="adminWelcome">Admin</span>
+                </div>
+                <button class="btn-theme-toggle" id="themeToggle" title="Toggle theme">☀️</button>
+                <button class="btn-logout" id="logoutBtn">Sign Out</button>
+            </div>
+        </header>
+
+        <!-- Metric Summary Cards -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon-box icon-total">📋</div>
+                <div class="metric-content">
+                    <span class="metric-label">Total Deleted</span>
+                    <span class="metric-value" id="stat-total">0</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon-box icon-self">👤</div>
+                <div class="metric-content">
+                    <span class="metric-label">Self-Requested</span>
+                    <span class="metric-value" id="stat-self">0</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon-box icon-admin">🛡️</div>
+                <div class="metric-content">
+                    <span class="metric-label">Admin Terminated</span>
+                    <span class="metric-value" id="stat-admin">0</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #d97706;">⚙️</div>
+                <div class="metric-content">
+                    <span class="metric-label">Backend Deleted</span>
+                    <span class="metric-value" id="stat-backend">0</span>
+                </div>
+            </div>
+
+            <div class="metric-card flagged-highlight">
+                <div class="metric-icon-box icon-flagged">⚠️</div>
+                <div class="metric-content">
+                    <span class="metric-label">Flagged Re-Logins</span>
+                    <span class="metric-value" id="stat-flagged" style="color: #ef4444;">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Master Registry Sync Banner -->
+        <div style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); padding: 16px 40px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="font-size: 26px;">🔗</div>
+                <div>
+                    <h4 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0;">Master Duplicate Registry &amp; Backend Sync</h4>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin: 3px 0 0 0;">
+                        Keeps duplicate mirror of active providers in <code>providers_master_registry</code>. Detects any providers deleted directly on Firebase console.
+                    </p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button id="toggleGuideBtn" class="btn-guide-toggle" onclick="toggleAppGuide()">📱 Provider App Login Guide</button>
+                <button id="syncRegistryBtn" class="btn-sync-registry" onclick="syncAndAuditRegistry()">🔄 Sync &amp; Audit Registry</button>
+            </div>
+        </div>
+
+        <!-- Collapsible Mobile App Integration Guide -->
+        <div id="appGuideSection" style="display: none; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); padding: 24px 40px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div>
+                    <h3 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin: 0;">📱 Mobile App Login Interceptor &amp; Flagging Code</h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin: 4px 0 0 0;">
+                        Add this check to your provider mobile app login / OTP handler. When a deleted provider attempts to log in, it automatically rejects them and triggers a real-time flag on this admin dashboard.
+                    </p>
+                </div>
+                <button onclick="toggleAppGuide()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-secondary);">&times;</button>
+            </div>
+
+            <div class="code-snippet-box">
+                <button class="btn-copy-code" onclick="copySnippet()">Copy Snippet</button>
+                <pre id="codeSnippetContent" style="margin: 0; white-space: pre-wrap;"><code>// When provider submits OTP / logs in with auth UID:
+const deletedRef = db.collection('deleted_providers').doc(user.uid);
+const deletedSnap = await deletedRef.get();
+
+if (deletedSnap.exists) {
+  // 1. Flag the attempt in Firestore (Real-time alert on Admin Dashboard)
+  await deletedRef.update({
+    hasLoginAttempt: true,
+    flaggedForReview: true,
+    loginAttemptsCount: firebase.firestore.FieldValue.increment(1),
+    lastLoginAttemptAt: firebase.firestore.FieldValue.serverTimestamp(),
+    loginAttemptLogs: firebase.firestore.FieldValue.arrayUnion({
+      attemptedAt: new Date().toISOString(),
+      method: 'phone_otp_login',
+      device: navigator.userAgent || 'Provider Mobile App'
+    })
+  });
+
+  // 2. Reject login and show prompt
+  await auth.signOut();
+  alert("Your provider account was previously deleted. Please contact Pro X Admin.");
+  return;
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- Controls: Filters & Search -->
+        <div class="controls-bar">
+            <div class="filter-tabs">
+                <button class="tab-btn active" data-filter="all" onclick="setFilter('all')">
+                    All Deleted (<span id="count-all">0</span>)
+                </button>
+                <button class="tab-btn tab-flagged" data-filter="flagged" onclick="setFilter('flagged')">
+                    ⚠️ Flagged Attempts (<span id="count-flagged">0</span>)
+                </button>
+                <button class="tab-btn" data-filter="self_requested" onclick="setFilter('self_requested')">
+                    👤 Self-Requested (<span id="count-self">0</span>)
+                </button>
+                <button class="tab-btn" data-filter="admin_initiated" onclick="setFilter('admin_initiated')">
+                    🛡️ Admin Terminated (<span id="count-admin">0</span>)
+                </button>
+                <button class="tab-btn" data-filter="backend_console_deleted" onclick="setFilter('backend_console_deleted')">
+                    ⚙️ Backend Deleted (<span id="count-backend">0</span>)
+                </button>
+            </div>
+
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search by name, email, phone, or UID..." oninput="handleSearch()">
+            </div>
+        </div>
+
+        <!-- Content Table Area -->
+        <div class="content-area">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Provider Details</th>
+                            <th>Deletion Source</th>
+                            <th>Reason / Details</th>
+                            <th>Flagged Re-Login Status</th>
+                            <th>Deleted On &amp; Handler</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="providersTableBody">
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <div class="empty-state-icon">⏳</div>
+                                <div class="empty-state-title">Loading deleted providers...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Provider Audit Details Modal -->
+    <div class="modal-overlay" id="detailsModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Provider Audit &amp; Flag Details</h2>
+                <button class="modal-close" onclick="closeDetailsModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalDetailsBody">
+                <!-- Dynamically populated -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-close" onclick="closeDetailsModal()">Close</button>
+                <button class="btn-modal-action" id="modalActionBtn" onclick="handleModalFlagAction()">Acknowledge Flag</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast"></div>
+
+    <script>
+        // Firebase initialization (v8 SDK)
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+            authDomain: "phototester555.firebaseapp.com",
+            projectId: "phototester555",
+            storageBucket: "phototester555.firebasestorage.app",
+            messagingSenderId: "953997763616",
+            appId: "1:953997763616:web:4ac177ad8e79c5f38b8845"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // State variables
+        let currentAdmin = null;
+        let allDeletedProviders = [];
+        let activeFilter = 'all';
+        let searchQuery = '';
+        let activeModalProvider = null;
+
+        // Theme management
+        const savedTheme = localStorage.getItem('adminTheme') || 'light';
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark-mode');
+            document.getElementById('themeToggle').textContent = '🌙';
+        }
+
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark-mode');
+            localStorage.setItem('adminTheme', isDark ? 'dark' : 'light');
+            document.getElementById('themeToggle').textContent = isDark ? '🌙' : '☀️';
+        });
+
+        // Auth guard
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                let adminDoc = await db.collection('adminusers').doc(user.uid).get();
+                if (!adminDoc.exists) {
+                    adminDoc = await db.collection('admin_users').doc(user.uid).get();
+                }
+
+                if (!adminDoc.exists || !adminDoc.data().isActive) {
+                    await auth.signOut();
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                currentAdmin = { uid: user.uid, email: user.email, ...adminDoc.data() };
+                document.getElementById('adminWelcome').textContent = currentAdmin.name || user.email;
+                document.getElementById('logoutBtn').onclick = () => auth.signOut().then(() => window.location.href = 'index.html');
+
+                listenToDeletedProviders();
+            } catch (err) {
+                console.error("Admin verification error:", err);
+                await auth.signOut();
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Real-time listener for deleted_providers collection
+        function listenToDeletedProviders() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialFilter = urlParams.get('filter');
+            if (initialFilter) {
+                setFilter(initialFilter);
+            }
+
+            db.collection('deleted_providers')
+                .orderBy('deletedAt', 'desc')
+                .onSnapshot((snapshot) => {
+                    allDeletedProviders = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+
+                    updateStats();
+                    renderTable();
+                }, (error) => {
+                    console.error("Error listening to deleted_providers:", error);
+                    showToast("Failed to load deleted providers: " + error.message);
+                });
+        }
+
+        // Stats calculation
+        function updateStats() {
+            const total = allDeletedProviders.length;
+            const selfReq = allDeletedProviders.filter(p => p.deletionType === 'self_requested').length;
+            const adminInit = allDeletedProviders.filter(p => p.deletionType === 'admin_initiated').length;
+            const backend = allDeletedProviders.filter(p => p.deletionType === 'backend_console_deleted').length;
+            const flagged = allDeletedProviders.filter(p => p.hasLoginAttempt || p.flaggedForReview).length;
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-self').textContent = selfReq;
+            document.getElementById('stat-admin').textContent = adminInit;
+            document.getElementById('stat-backend').textContent = backend;
+            document.getElementById('stat-flagged').textContent = flagged;
+
+            document.getElementById('count-all').textContent = total;
+            document.getElementById('count-flagged').textContent = flagged;
+            document.getElementById('count-self').textContent = selfReq;
+            document.getElementById('count-admin').textContent = adminInit;
+            document.getElementById('count-backend').textContent = backend;
+        }
+
+        // Filter & Search handler
+        function setFilter(filter) {
+            activeFilter = filter;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === filter);
+            });
+            renderTable();
+        }
+
+        function handleSearch() {
+            searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+            renderTable();
+        }
+
+        // Table renderer
+        function renderTable() {
+            const tbody = document.getElementById('providersTableBody');
+            
+            let filtered = allDeletedProviders.filter(p => {
+                // Tab filter
+                if (activeFilter === 'flagged' && !(p.hasLoginAttempt || p.flaggedForReview)) return false;
+                if (activeFilter === 'self_requested' && p.deletionType !== 'self_requested') return false;
+                if (activeFilter === 'admin_initiated' && p.deletionType !== 'admin_initiated') return false;
+                if (activeFilter === 'backend_console_deleted' && p.deletionType !== 'backend_console_deleted') return false;
+
+                // Search query
+                if (searchQuery) {
+                    const name = (p.identity?.fullName || p.fullName || p.name || '').toLowerCase();
+                    const email = (p.identity?.email || p.email || '').toLowerCase();
+                    const phone = (p.identity?.phone || p.phone || '').toLowerCase();
+                    const id = (p.id || p.providerId || '').toLowerCase();
+                    const reason = (p.deletionReasonDetails || p.deletionReasonCategory || p.adminNotes || '').toLowerCase();
+
+                    if (!name.includes(searchQuery) &&
+                        !email.includes(searchQuery) &&
+                        !phone.includes(searchQuery) &&
+                        !id.includes(searchQuery) &&
+                        !reason.includes(searchQuery)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <div class="empty-state-icon">🔍</div>
+                            <div class="empty-state-title">No matching deleted providers found</div>
+                            <div class="empty-state-desc">Try selecting a different filter or clearing search keywords.</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(p => {
+                const name = p.identity?.fullName || p.fullName || p.name || 'Unnamed Provider';
+                const email = p.identity?.email || p.email || 'No email';
+                const phone = p.identity?.phone || p.phone || 'No phone';
+                const providerId = p.providerId || p.id || 'N/A';
+
+                // Deletion source badge
+                let sourceBadge = '';
+                if (p.deletionType === 'self_requested') {
+                    sourceBadge = `<span class="badge badge-self-requested" title="Provider voluntarily requested deletion via app">👤 Self-Requested</span>`;
+                } else if (p.deletionType === 'backend_console_deleted') {
+                    sourceBadge = `<span class="badge badge-backend-deleted" title="Directly deleted from Firebase backend or console">⚙️ Backend Deleted</span>`;
+                } else {
+                    sourceBadge = `<span class="badge badge-admin-initiated" title="Deleted by Admin">🛡️ Admin Terminated</span>`;
+                }
+
+                // Reason snippet
+                const reasonSnippet = p.deletionReasonCategory || p.deletionReasonDetails || p.adminNotes || 'No specific reason provided';
+
+                // Flag status
+                const isFlagged = p.hasLoginAttempt || p.flaggedForReview;
+                const attemptsCount = p.loginAttemptsCount || (p.loginAttemptLogs ? p.loginAttemptLogs.length : (isFlagged ? 1 : 0));
+                const lastAttemptStr = p.lastLoginAttemptAt ? formatDate(p.lastLoginAttemptAt) : 'Recent';
+
+                const flagBadge = isFlagged
+                    ? `<span class="badge badge-flagged-pulse">⚠️ Re-login Attempted (${attemptsCount}x)</span><div style="font-size:11px; color:#ef4444; margin-top:4px; font-weight:600;">Last: ${lastAttemptStr}</div>`
+                    : `<span class="badge badge-clear">No Attempts</span>`;
+
+                // Deleted timestamp & handler
+                const deletedDateStr = formatDate(p.deletedAt);
+                const deletedByStr = p.deletedBy?.email || p.deletedByEmail || 'System';
+
+                return `
+                    <tr class="${isFlagged ? 'row-flagged' : ''}">
+                        <td>
+                            <div class="provider-meta">
+                                <span class="provider-name">${escapeHtml(name)}</span>
+                                <div class="provider-sub">
+                                    <span>${escapeHtml(email)}</span>
+                                    <span>•</span>
+                                    <span>${escapeHtml(phone)}</span>
+                                </div>
+                                <span class="provider-id" title="Firebase Auth UID">${escapeHtml(providerId)}</span>
+                            </div>
+                        </td>
+                        <td>${sourceBadge}</td>
+                        <td style="max-width: 240px;">
+                            <div style="font-weight: 600; font-size: 13px;">${escapeHtml(reasonSnippet)}</div>
+                            ${p.adminNotes && p.deletionType === 'self_requested' ? `<div style="font-size: 11px; color: var(--text-secondary); margin-top: 3px;">Admin note: ${escapeHtml(p.adminNotes)}</div>` : ''}
+                        </td>
+                        <td>${flagBadge}</td>
+                        <td>
+                            <div style="font-weight: 600; font-size: 13px;">${deletedDateStr}</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">by ${escapeHtml(deletedByStr)}</div>
+                        </td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap: 4px;">
+                                <button class="btn-view-details" onclick="openDetailsModal('${p.id}')">View Audit</button>
+                                <button class="btn-simulate-login" onclick="simulateReLogin('${p.id}')" title="Test/Simulate a re-login attempt from this deleted provider">⚡ Test Login</button>
+                                ${isFlagged ? `<button class="btn-clear-flag" onclick="clearFlag('${p.id}')" title="Acknowledge & clear flag">Clear Flag</button>` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Details Modal logic
+        function openDetailsModal(docId) {
+            const provider = allDeletedProviders.find(p => p.id === docId);
+            if (!provider) return;
+
+            activeModalProvider = provider;
+            const modalBody = document.getElementById('modalDetailsBody');
+            const actionBtn = document.getElementById('modalActionBtn');
+
+            const name = provider.identity?.fullName || provider.fullName || provider.name || 'Unnamed';
+            const email = provider.identity?.email || provider.email || 'N/A';
+            const phone = provider.identity?.phone || provider.phone || 'N/A';
+            const city = provider.identity?.city || provider.city || 'N/A';
+            const providerId = provider.providerId || provider.id;
+
+            let deletionTypeLabel = '🔴 Admin-Initiated Removal';
+            if (provider.deletionType === 'self_requested') {
+                deletionTypeLabel = '🟢 Provider Self-Requested Deletion';
+            } else if (provider.deletionType === 'backend_console_deleted') {
+                deletionTypeLabel = '🟠 Direct Firebase Backend Deletion';
+            }
+
+            // Logs
+            const logs = provider.loginAttemptLogs || [];
+            let logsHtml = '<p style="font-size: 13px; color: var(--text-secondary);">No login attempts detected.</p>';
+            if (logs.length > 0) {
+                logsHtml = `
+                    <ul class="attempt-log-list">
+                        ${logs.map(log => `
+                            <li class="attempt-log-item">
+                                <span>📅 ${formatDate(log.attemptedAt)}</span>
+                                <span style="font-weight: 600; text-transform: uppercase;">Method: ${log.method || 'login'}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+            } else if (provider.hasLoginAttempt) {
+                logsHtml = `<p style="font-size: 13px; color: #ef4444; font-weight: 600;">⚠️ Provider attempted to log in on ${formatDate(provider.lastLoginAttemptAt)}.</p>`;
+            }
+
+            modalBody.innerHTML = `
+                <div>
+                    <h3 style="font-size: 18px; font-weight: 800; color: var(--text-primary);">${escapeHtml(name)}</h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;">UID: <code style="font-family: monospace;">${escapeHtml(providerId)}</code></p>
+                </div>
+
+                ${(provider.hasLoginAttempt || provider.flaggedForReview) ? `
+                    <div class="audit-alert-box">
+                        <div class="audit-alert-title">
+                            <span>⚠️ Flagged Re-login Alert</span>
+                            <span style="font-size: 12px; margin-left: auto;">${provider.loginAttemptsCount || 1} Total Attempts</span>
+                        </div>
+                        <p style="font-size: 12px; color: var(--text-primary);">
+                            This provider's account was deleted, but they attempted to log in using their credentials.
+                        </p>
+                        ${logsHtml}
+                    </div>
+                ` : ''}
+
+                <div>
+                    <div class="modal-section-title">Identity &amp; Profile Summary</div>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-item-label">Email</span>
+                            <span class="detail-item-value">${escapeHtml(email)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-item-label">Phone</span>
+                            <span class="detail-item-value">${escapeHtml(phone)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-item-label">City</span>
+                            <span class="detail-item-value">${escapeHtml(city)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-item-label">Previous Tier</span>
+                            <span class="detail-item-value">${escapeHtml(provider.originalProfileSnapshot?.tier || provider.tier || 'Standard')}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="modal-section-title">Deletion Attribution &amp; Audit Trail</div>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-item-label">Deletion Type</span>
+                            <span class="detail-item-value">${deletionTypeLabel}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-item-label">Deleted Date</span>
+                            <span class="detail-item-value">${formatDate(provider.deletedAt)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-item-label">Deleted By</span>
+                            <span class="detail-item-value">${escapeHtml(provider.deletedBy?.email || provider.deletedByEmail || 'System Admin')}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-item-label">Reason Category</span>
+                            <span class="detail-item-value">${escapeHtml(provider.deletionReasonCategory || (provider.deletionType === 'self_requested' ? 'Self Account Closure' : 'Policy / Admin Action'))}</span>
+                        </div>
+                    </div>
+
+                    ${provider.deletionReasonDetails ? `
+                        <div style="margin-top: 10px; background: var(--bg-tertiary); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <div style="font-size: 11px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase;">Provider's Submitted Reason:</div>
+                            <div style="font-size: 13px; margin-top: 4px; color: var(--text-primary);">${escapeHtml(provider.deletionReasonDetails)}</div>
+                        </div>
+                    ` : ''}
+
+                    ${provider.adminNotes ? `
+                        <div style="margin-top: 10px; background: var(--bg-tertiary); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <div style="font-size: 11px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase;">Admin Notes Recorded:</div>
+                            <div style="font-size: 13px; margin-top: 4px; color: var(--text-primary);">${escapeHtml(provider.adminNotes)}</div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            if (provider.hasLoginAttempt || provider.flaggedForReview) {
+                actionBtn.style.display = 'inline-block';
+                actionBtn.textContent = 'Acknowledge & Clear Flag';
+            } else {
+                actionBtn.style.display = 'none';
+            }
+
+            document.getElementById('detailsModal').classList.add('active');
+        }
+
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').classList.remove('active');
+            activeModalProvider = null;
+        }
+
+        async function handleModalFlagAction() {
+            if (!activeModalProvider) return;
+            await clearFlag(activeModalProvider.id);
+            closeDetailsModal();
+        }
+
+        async function clearFlag(docId) {
+            try {
+                await db.collection('deleted_providers').doc(docId).update({
+                    hasLoginAttempt: false,
+                    flaggedForReview: false,
+                    flagAcknowledgedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    flagAcknowledgedBy: currentAdmin?.email || 'admin'
+                });
+                showToast("Flag cleared successfully");
+            } catch (err) {
+                console.error("Error clearing flag:", err);
+                showToast("Error clearing flag: " + err.message);
+            }
+        }
+
+        // Test/Simulate a re-login attempt from a deleted provider
+        async function simulateReLogin(docId) {
+            const provider = allDeletedProviders.find(p => p.id === docId);
+            const provName = provider ? (provider.identity?.fullName || provider.fullName || docId) : docId;
+
+            if (!confirm(`Simulate a login attempt from deleted provider "${provName}"? This will immediately flag them in real-time across Dashboard, Provider Management, and this page.`)) {
+                return;
+            }
+
+            try {
+                const now = new Date().toISOString();
+                await db.collection('deleted_providers').doc(docId).update({
+                    hasLoginAttempt: true,
+                    flaggedForReview: true,
+                    loginAttemptsCount: firebase.firestore.FieldValue.increment(1),
+                    lastLoginAttemptAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    loginAttemptLogs: firebase.firestore.FieldValue.arrayUnion({
+                        attemptedAt: now,
+                        method: 'phone_otp_test',
+                        device: navigator.userAgent || 'Provider Mobile App (Simulated)',
+                        note: 'Admin panel simulation test'
+                    })
+                });
+                showToast(`⚠️ Simulated re-login attempt for "${provName}"! Alert triggered across all dashboards.`);
+            } catch (err) {
+                console.error("Error simulating re-login:", err);
+                showToast("Failed to simulate re-login: " + err.message);
+            }
+        }
+
+        // Sync & Audit Master Duplicate Registry
+        async function syncAndAuditRegistry() {
+            const btn = document.getElementById('syncRegistryBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '🔄 Syncing Registry...';
+            }
+
+            try {
+                // 1. Read all active providers
+                const activeSnap = await db.collection('providers').get();
+                const activeIds = new Set();
+                const batch = db.batch();
+                let syncedCount = 0;
+
+                activeSnap.forEach(docSnap => {
+                    const data = docSnap.data() || {};
+                    const pid = docSnap.id;
+                    activeIds.add(pid);
+
+                    const fullName = data.identity?.fullName || data.fullName || data.name || '';
+                    const email = data.identity?.email || data.email || '';
+                    const phone = data.identity?.phone || data.phone || '';
+                    const city = data.identity?.city || data.city || '';
+                    const tier = data.tier || 'Silver';
+
+                    const masterRef = db.collection('providers_master_registry').doc(pid);
+                    batch.set(masterRef, {
+                        providerId: pid,
+                        identity: { fullName, email, phone, city },
+                        status: 'active',
+                        tier: tier,
+                        createdAt: data.createdAt || null,
+                        lastSyncedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        snapshot: data
+                    }, { merge: true });
+                    syncedCount++;
+                });
+
+                if (syncedCount > 0) {
+                    await batch.commit();
+                }
+
+                // 2. Compare master registry with active providers to detect backend deletions
+                const masterSnap = await db.collection('providers_master_registry').get();
+                const deletedSnap = await db.collection('deleted_providers').get();
+                const existingDeletedIds = new Set(deletedSnap.docs.map(d => d.id));
+
+                let backendDeletedFound = 0;
+
+                for (const mDoc of masterSnap.docs) {
+                    const mId = mDoc.id;
+                    const mData = mDoc.data() || {};
+
+                    // If it was marked active or in master, but NOT in active providers and NOT in deleted_providers
+                    if (!activeIds.has(mId) && !existingDeletedIds.has(mId)) {
+                        backendDeletedFound++;
+
+                        await db.collection('deleted_providers').doc(mId).set({
+                            providerId: mId,
+                            identity: mData.identity || { fullName: 'Unknown', email: '', phone: '', city: '' },
+                            deletionType: 'backend_console_deleted',
+                            deletionReasonCategory: 'Direct Firebase Backend Deletion',
+                            deletionReasonDetails: 'Provider document was removed directly from Firebase console/backend without admin panel.',
+                            adminNotes: 'Auto-detected via Master Registry comparison. Flagged for re-login tracking.',
+                            deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            deletedBy: { uid: 'firebase_backend', email: 'Firebase Database' },
+                            hasLoginAttempt: false,
+                            flaggedForReview: false,
+                            loginAttemptsCount: 0,
+                            loginAttemptLogs: [],
+                            originalProfileSnapshot: mData.snapshot || {}
+                        }, { merge: true });
+
+                        await db.collection('providers_master_registry').doc(mId).update({
+                            status: 'deleted',
+                            deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            deletionType: 'backend_console_deleted'
+                        });
+                    }
+                }
+
+                if (backendDeletedFound > 0) {
+                    showToast(`Sync complete! ${syncedCount} active providers mirrored. Auto-detected & archived ${backendDeletedFound} backend-deleted provider(s)!`);
+                } else {
+                    showToast(`Registry successfully synced! ${syncedCount} active providers mirrored into providers_master_registry.`);
+                }
+            } catch (err) {
+                console.error("Error syncing registry:", err);
+                showToast("Error syncing registry: " + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '🔄 Sync & Audit Registry';
+                }
+            }
+        }
+
+        // Guide toggling & copy
+        function toggleAppGuide() {
+            const section = document.getElementById('appGuideSection');
+            if (!section) return;
+            const isVisible = section.style.display !== 'none';
+            section.style.display = isVisible ? 'none' : 'block';
+            document.getElementById('toggleGuideBtn').textContent = isVisible ? '📱 Provider App Login Guide' : '✕ Hide App Login Guide';
+        }
+
+        function copySnippet() {
+            const code = document.getElementById('codeSnippetContent').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                showToast("Code snippet copied to clipboard!");
+            }).catch(() => {
+                showToast("Failed to copy code snippet.");
+            });
+        }
+
+        // Helpers
+        function formatDate(timestamp) {
+            if (!timestamp) return 'N/A';
+            try {
+                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                return date.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (e) {
+                return 'N/A';
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3500);
+        }
+    </script>
+</body>
+</html>

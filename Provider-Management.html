@@ -3,13 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#1e293b">
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="mobile-app.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pro X - Provider Management</title>
 
     <!-- Firebase SDK v8 CDN -->
@@ -379,41 +373,6 @@
             padding: 15px;
             font-size: 14px;
             color: var(--text-primary);
-        }
-
-        .col-name {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .provider-avatar-box {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-
-        .provider-name-group {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .provider-title {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .provider-email-sub {
-            display: none;
         }
 
         .info-item value a {
@@ -923,6 +882,14 @@
 
             .filter-group {
                 justify-content: center;
+            }
+
+            .table-container {
+                overflow-x: scroll;
+            }
+
+            table {
+                min-width: 800px;
             }
 
             .info-grid {
@@ -2398,37 +2365,41 @@
 
         <!-- Tab Navigation -->
         <div class="tab-nav">
-            <button class="tab-btn active" id="tab-providers-btn" onclick="switchTab('providers')">👥 Provider Management</button>
-            <button class="tab-btn" id="tab-subscriptions-btn" onclick="switchTab('subscriptions')">⭐ Tier Upgrades &amp; Subscriptions</button>
+            <button class="tab-btn active" id="tab-providers-btn" onclick="switchTab('providers')">👥 Provider
+                Management</button>
         </div>
 
         <div id="tab-providers" class="tab-content">
 
             <!-- Stats Container -->
             <div class="stats-container" id="provider-stats">
-                <div class="stat-card" onclick="dashboard.filterProviders('all')" title="Filter by All">
+                <div class="stat-card">
                     <div class="label">Total Providers</div>
                     <div class="value" id="stat-total">0</div>
                 </div>
-                <div class="stat-card" onclick="dashboard.filterProviders('pending')" title="Filter by Pending Review">
+                <div class="stat-card">
                     <div class="label">Pending Review</div>
                     <div class="value" id="stat-pending">0</div>
                 </div>
-                <div class="stat-card" onclick="dashboard.filterProviders('in_progress')" title="Filter by In Progress">
+                <div class="stat-card">
                     <div class="label">In Progress</div>
                     <div class="value" id="stat-in-progress">0</div>
                 </div>
-                <div class="stat-card" onclick="dashboard.filterProviders('approved')" title="Filter by Approved">
+                <div class="stat-card">
                     <div class="label">Approved</div>
                     <div class="value" id="stat-approved">0</div>
                 </div>
-                <div class="stat-card" onclick="dashboard.filterProviders('needs_changes')" title="Filter by Needs Changes">
+                <div class="stat-card">
                     <div class="label">Needs Changes</div>
                     <div class="value" id="stat-needs-changes">0</div>
                 </div>
-                <div class="stat-card" onclick="dashboard.filterProviders('rejected')" title="Filter by Rejected">
+                <div class="stat-card">
                     <div class="label">Rejected</div>
                     <div class="value" id="stat-rejected">0</div>
+                </div>
+                <div class="stat-card" style="cursor: pointer; background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.25);" onclick="window.location.href='deleted-providers.html?filter=flagged'">
+                    <div class="label" style="color: #ef4444; font-weight: 700;">Flagged Re-Logins</div>
+                    <div class="value" id="stat-flagged-logins" style="color: #ef4444;">0</div>
                 </div>
             </div>
 
@@ -2458,6 +2429,9 @@
                     <button class="filter-btn" data-filter="rejected" onclick="dashboard.filterProviders('rejected')">
                         Rejected
                     </button>
+                    <a href="deleted-providers.html" class="filter-btn" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;" title="View deleted providers and flagged logins">
+                        🚫 Deleted Providers (<span id="stat-flagged-providers-btn">0</span>)
+                    </a>
                 </div>
             </div>
 
@@ -2691,6 +2665,46 @@
                 <button class="action-btn" onclick="dashboard.closeModal('confirm-modal')">Cancel</button>
                 <button class="action-btn success" id="confirm-action-btn" onclick="dashboard.executeAction()">
                     Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Provider Modal -->
+    <div id="delete-provider-modal" class="modal">
+        <div class="modal-content" style="max-width:520px;">
+            <div class="modal-header">
+                <h2 style="color: #ef4444;">🗑️ Delete Provider</h2>
+                <button class="close-btn" onclick="dashboard.closeModal('delete-provider-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="delete-provider-modal-message" style="font-weight: 600; margin-bottom: 16px;">
+                    Are you sure you want to permanently delete this provider?
+                </p>
+                <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">
+                    ⚠️ <strong>Notice:</strong> This provider will be removed from active listings and archived to <code>deleted_providers</code> as an <strong>Admin-Initiated Deletion</strong>. If they attempt to log in again, it will be automatically flagged for your review.
+                </div>
+                
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; color: var(--text-secondary);">Reason Category</label>
+                    <select id="delete-provider-reason" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
+                        <option value="Policy Violation">Policy Violation</option>
+                        <option value="Fraudulent Activity">Fraudulent Activity</option>
+                        <option value="Inactivity / Abandoned">Inactivity / Abandoned</option>
+                        <option value="Customer Complaints">Customer Complaints</option>
+                        <option value="Other / Administrative Removal">Other / Administrative Removal</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; color: var(--text-secondary);">Admin Notes &amp; Details</label>
+                    <textarea id="delete-provider-notes" rows="3" placeholder="Provide context on why this account is being deleted..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px; box-sizing: border-box; resize: vertical;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn" onclick="dashboard.closeModal('delete-provider-modal')">Cancel</button>
+                <button class="action-btn danger" id="delete-provider-confirm-btn" style="background:#ef4444; color:white; border-color:#dc2626;" onclick="dashboard.executeDeleteProvider()">
+                    Delete Provider
                 </button>
             </div>
         </div>
@@ -3105,12 +3119,50 @@
                     this.providers.sort((a, b) => (b.createdAt?.getTime?.() ?? 0) - (a.createdAt?.getTime?.() ?? 0));
                     console.log(`Loaded ${this.providers.length} providers`);
 
+                    // Non-blocking background sync to Master Duplicate Registry
+                    this.syncProvidersToMasterRegistry(qs);
+
                 } catch (err) {
                     console.error('Error loading providers:', err);
                     alert('Error loading provider data. Please try again.');
                     this.providers = [];
                 } finally {
                     if (loadingState) loadingState.style.display = 'none';
+                }
+            }
+
+            async syncProvidersToMasterRegistry(qs) {
+                try {
+                    if (!qs || qs.empty) return;
+                    const batch = db.batch();
+                    let count = 0;
+                    qs.forEach(docSnap => {
+                        const data = docSnap.data() || {};
+                        const pid = docSnap.id;
+                        const fullName = get(data, 'identity.fullName', data.fullName) || '';
+                        const email = get(data, 'identity.email', data.email) || '';
+                        const phone = get(data, 'identity.phone', data.phone) || '';
+                        const city = get(data, 'identity.city', data.city) || '';
+                        const tier = data.tier || 'Silver';
+
+                        const masterRef = db.collection('providers_master_registry').doc(pid);
+                        batch.set(masterRef, {
+                            providerId: pid,
+                            identity: { fullName: toString(fullName), email: toString(email), phone: toString(phone), city: toString(city) },
+                            status: 'active',
+                            tier: tier,
+                            createdAt: data.createdAt || null,
+                            lastSyncedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            snapshot: data
+                        }, { merge: true });
+                        count++;
+                    });
+                    if (count > 0) {
+                        await batch.commit();
+                        console.log(`Background synced ${count} providers to providers_master_registry`);
+                    }
+                } catch (e) {
+                    console.warn("Background master duplicate registry sync warning:", e);
                 }
             }
 
@@ -3170,7 +3222,7 @@
                 }
             }
 
-            updateStats() {
+            async updateStats() {
                 const total = this.providers.length;
                 const pending = this.providers.filter(p => p.approvalStatus === 'pending').length;
                 const inProgress = this.providers.filter(p => p.approvalStatus === 'in_progress').length;
@@ -3184,6 +3236,21 @@
                 if (document.getElementById('stat-approved')) document.getElementById('stat-approved').textContent = approved;
                 if (document.getElementById('stat-needs-changes')) document.getElementById('stat-needs-changes').textContent = needsChanges;
                 if (document.getElementById('stat-rejected')) document.getElementById('stat-rejected').textContent = rejected;
+
+                try {
+                    const deletedSnap = await db.collection('deleted_providers').get();
+                    let flaggedCount = 0;
+                    deletedSnap.forEach(d => {
+                        const data = d.data();
+                        if (data.hasLoginAttempt || data.flaggedForReview) flaggedCount++;
+                    });
+                    const flaggedEl = document.getElementById('stat-flagged-logins');
+                    if (flaggedEl) flaggedEl.textContent = flaggedCount;
+                    const btnEl = document.getElementById('stat-flagged-providers-btn');
+                    if (btnEl) btnEl.textContent = `${deletedSnap.size} / ${flaggedCount} Flagged`;
+                } catch (e) {
+                    console.warn("Could not load deleted providers count", e);
+                }
             }
 
             filterProviders(filter) {
@@ -3248,35 +3315,29 @@
                     const subLabel = subStatus === 'active' ? (subPlan || 'Active')
                         : subStatus === 'paused' ? 'Paused'
                             : 'None';
-                    const initials = (provider.name || 'P').trim().split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase();
                     return `
-                    <tr class="provider-table-row">
-                        <td class="col-name" data-label="Name">
-                            <div class="provider-avatar-box">${initials}</div>
-                            <div class="provider-name-group">
-                                <div class="provider-title">${provider.name}</div>
-                                <div class="provider-email-sub">${provider.email}</div>
-                                ${provider.pendingFeedbackCount > 0 ?
-                                `<span class="chip chip-${provider.lastFeedback?.blocking ? 'danger' : 'warn'}">
-                                        ${provider.pendingFeedbackCount} pending
-                                    </span>` : ''}
-                            </div>
+                    <tr>
+                        <td>
+                            ${provider.name}
+                            ${provider.pendingFeedbackCount > 0 ?
+                            `<span class="chip chip-${provider.lastFeedback?.blocking ? 'danger' : 'warn'}">
+                                    ${provider.pendingFeedbackCount} pending
+                                </span>` : ''}
                         </td>
-                        <td class="col-email" data-label="Email">${provider.email}</td>
-                        <td class="col-city" data-label="City">${provider.city || 'N/A'}</td>
-                        <td class="col-domain" data-label="Domain">${provider.primaryDomain || 'N/A'}</td>
-                        <td class="col-status" data-label="Status">
+                        <td>${provider.email}</td>
+                        <td>${provider.city || 'N/A'}</td>
+                        <td>${provider.primaryDomain || 'N/A'}</td>
+                        <td>
                             <span class="badge ${provider.approvalStatus}">
                                 ${this.getStatusBadgeText(provider)}
                             </span>
                         </td>
-                        <td class="col-tier" data-label="Tier">${this.createTierBadge(provider.tier, true)}</td>
-                        <td class="col-subscription" data-label="Subscription"><span class="sub-pill ${subPillClass}">${subIcon} ${subLabel}</span></td>
-                        <td class="col-date" data-label="Date">${this.formatDate(provider.createdAt)}</td>
-                        <td class="col-actions" data-label="Actions">
-                            <button class="action-btn primary view-provider-btn" onclick="dashboard.showProviderModal(dashboard.providers.find(p => p.id === '${provider.id}'))">
-                                <span>Review Application</span>
-                                <span class="action-btn-arrow">→</span>
+                        <td>${this.createTierBadge(provider.tier, true)}</td>
+                        <td><span class="sub-pill ${subPillClass}">${subIcon} ${subLabel}</span></td>
+                        <td>${this.formatDate(provider.createdAt)}</td>
+                        <td>
+                            <button class="action-btn primary" onclick="dashboard.showProviderModal(dashboard.providers.find(p => p.id === '${provider.id}'))">
+                                View
                             </button>
                         </td>
                     </tr>`;
@@ -3669,7 +3730,9 @@
                                 </button>
                             ` : ''}
 
-                            
+                            <button class="action-btn danger" style="background:#ef4444; color:white; border-color:#dc2626;" onclick="dashboard.showDeleteProviderModal(dashboard.currentProvider)">
+                                🗑️ Delete Provider
+                            </button>
                         </div>
                     </div>
 
@@ -4143,6 +4206,112 @@
                 } catch (error) {
                     console.error('Error resetting provider:', error);
                     alert('Error resetting provider. Please try again.');
+                }
+            }
+
+            showDeleteProviderModal(provider) {
+                this.providerToDelete = provider;
+                const modalMsg = document.getElementById('delete-provider-modal-message');
+                if (modalMsg) {
+                    modalMsg.textContent = `Are you sure you want to permanently delete "${provider.name || provider.fullName || provider.id}"?`;
+                }
+                const notesInput = document.getElementById('delete-provider-notes');
+                if (notesInput) notesInput.value = '';
+                const modal = document.getElementById('delete-provider-modal');
+                if (modal) modal.style.display = 'flex';
+            }
+
+            async executeDeleteProvider() {
+                if (!this.providerToDelete) return;
+                const provider = this.providerToDelete;
+                const providerId = provider.id;
+                const reasonSelect = document.getElementById('delete-provider-reason');
+                const reason = reasonSelect ? reasonSelect.value : 'Administrative Removal';
+                const notesInput = document.getElementById('delete-provider-notes');
+                const notes = notesInput ? notesInput.value.trim() : '';
+                const confirmBtn = document.getElementById('delete-provider-confirm-btn');
+
+                if (confirmBtn) {
+                    confirmBtn.disabled = true;
+                    confirmBtn.textContent = 'Deleting...';
+                }
+
+                try {
+                    const now = firebase.firestore.FieldValue.serverTimestamp();
+                    const adminUid = (this.currentAdmin && this.currentAdmin.uid) || 'admin';
+                    const adminEmail = (this.currentAdmin && (this.currentAdmin.email || this.currentAdmin.name)) || 'admin@prox.com';
+
+                    // 1. Fetch full existing provider document to snapshot
+                    const pSnap = await db.collection('providers').doc(providerId).get();
+                    const pData = pSnap.exists ? pSnap.data() : {};
+
+                    // 2. Write to deleted_providers collection
+                    await db.collection('deleted_providers').doc(providerId).set({
+                        providerId: providerId,
+                        identity: {
+                            fullName: pData.identity?.fullName || pData.fullName || provider.name || '',
+                            email: pData.identity?.email || pData.email || provider.email || '',
+                            phone: pData.identity?.phone || pData.phone || provider.phone || '',
+                            city: pData.identity?.city || pData.city || ''
+                        },
+                        deletionType: 'admin_initiated',
+                        deletionReasonCategory: reason,
+                        deletionReasonDetails: notes,
+                        adminNotes: notes,
+                        deletedAt: now,
+                        deletedBy: {
+                            uid: adminUid,
+                            email: adminEmail
+                        },
+                        hasLoginAttempt: false,
+                        flaggedForReview: false,
+                        loginAttemptsCount: 0,
+                        loginAttemptLogs: [],
+                        originalProfileSnapshot: {
+                            tier: pData.tier || provider.tier || 'Silver',
+                            createdAt: pData.createdAt || null,
+                            fullData: pData
+                        }
+                    }, { merge: true });
+
+                    // 2b. Mark deleted in Master Duplicate Registry
+                    await db.collection('providers_master_registry').doc(providerId).set({
+                        status: 'deleted',
+                        deletedAt: now,
+                        deletionType: 'admin_initiated',
+                        linkedDeletedRecordId: providerId
+                    }, { merge: true });
+
+                    // 3. Purge services & availability
+                    const batch = db.batch();
+                    const servicesSnap = await db.collection('services').where('providerId', '==', providerId).get();
+                    servicesSnap.forEach(d => batch.delete(d.ref));
+                    const servicesSnap2 = await db.collection('services').where('userId', '==', providerId).get();
+                    servicesSnap2.forEach(d => batch.delete(d.ref));
+                    const availSnap = await db.collection('availability').where('userId', '==', providerId).get();
+                    availSnap.forEach(d => batch.delete(d.ref));
+                    const availSnap2 = await db.collection('availability').where('providerId', '==', providerId).get();
+                    availSnap2.forEach(d => batch.delete(d.ref));
+                    await batch.commit();
+
+                    // 4. Delete providers doc
+                    await db.collection('providers').doc(providerId).delete();
+
+                    this.closeModal('delete-provider-modal');
+                    this.closeModal('provider-modal');
+                    await this.loadProvidersFromFirebase();
+                    this.renderProviders();
+                    await this.updateStats();
+                    this.showSuccessMessage(`Provider "${provider.name || providerId}" deleted and archived.`);
+                } catch (err) {
+                    console.error("Error deleting provider:", err);
+                    alert("Failed to delete provider: " + err.message);
+                } finally {
+                    if (confirmBtn) {
+                        confirmBtn.disabled = false;
+                        confirmBtn.textContent = 'Delete Provider';
+                    }
+                    this.providerToDelete = null;
                 }
             }
 
@@ -4975,7 +5144,6 @@
         // Initialize dashboard
         const dashboard = new ProviderDashboard();
     </script>
-    <script src="mobile-app.js"></script>
 </body>
 
 </html>

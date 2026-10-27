@@ -2,11 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#1e293b">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pro X Admin - Deletion Requests</title>
     
     <!-- Firebase SDK v8 -->
@@ -688,8 +684,6 @@
             .search-box { max-width: none; }
         }
     </style>
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="mobile-app.css">
 </head>
 <body>
 
@@ -1205,6 +1199,52 @@
 
                     // Purge provider details, services, and availability slots if role is provider
                     if (reqData.role === 'provider') {
+                        // 0. Snapshot and record in deleted_providers collection
+                        try {
+                            const providerDocSnap = await db.collection('providers').doc(userId).get();
+                            const pData = providerDocSnap.exists ? providerDocSnap.data() : {};
+                            
+                            await db.collection('deleted_providers').doc(userId).set({
+                                providerId: userId,
+                                identity: {
+                                    fullName: pData.identity?.fullName || pData.fullName || pData.name || reqData.name || '',
+                                    email: pData.identity?.email || pData.email || reqData.email || '',
+                                    phone: pData.identity?.phone || pData.phone || reqData.phone || '',
+                                    city: pData.identity?.city || pData.city || ''
+                                },
+                                deletionType: 'self_requested',
+                                deletionReasonCategory: reqData.reasonCategory || 'Provider Self-Requested Deletion',
+                                deletionReasonDetails: reqData.reasonDetails || '',
+                                adminNotes: note || '',
+                                deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                deletedBy: {
+                                    uid: currentAdmin.uid,
+                                    email: currentAdmin.email
+                                },
+                                requestedAt: reqData.requestedAt || null,
+                                requestId: targetRequestId,
+                                hasLoginAttempt: false,
+                                flaggedForReview: false,
+                                loginAttemptsCount: 0,
+                                loginAttemptLogs: [],
+                                originalProfileSnapshot: {
+                                    tier: pData.tier || 'Silver',
+                                    createdAt: pData.createdAt || null,
+                                    fullData: pData
+                                }
+                            }, { merge: true });
+
+                            // Update Master Duplicate Registry
+                            await db.collection('providers_master_registry').doc(userId).set({
+                                status: 'deleted',
+                                deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                deletionType: 'self_requested',
+                                linkedDeletedRecordId: userId
+                            }, { merge: true });
+                        } catch (err) {
+                            console.warn("Could not write to deleted_providers:", err);
+                        }
+
                         // 1. Delete providers doc
                         await db.collection('providers').doc(userId).delete();
 
@@ -1277,6 +1317,5 @@
             }, 3000);
         }
     </script>
-    <script src="mobile-app.js"></script>
 </body>
 </html>

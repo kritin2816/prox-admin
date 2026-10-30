@@ -183,22 +183,63 @@
         }
 
         .user-avatar {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
-            background: var(--color-primary);
-            color: white;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
+            font-weight: 700;
+            font-size: 1.05rem;
             flex-shrink: 0;
             object-fit: cover;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+            text-transform: uppercase;
         }
 
-        .user-info h4 { margin-bottom: 0.2rem; font-size: 0.95rem; }
-        .user-info p { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.2rem; }
+        .user-item-content,
+        .user-info {
+            flex: 1;
+            min-width: 0;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 2px;
+        }
+
+        .user-item-content h4,
+        .user-info h4 {
+            margin: 0;
+            font-size: 0.975rem;
+            font-weight: 700;
+            color: var(--text-primary) !important;
+            line-height: 1.3;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block !important;
+        }
+
+        .user-item-content p,
+        .user-info p {
+            margin: 0;
+            font-size: 0.8125rem;
+            color: var(--text-secondary) !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block !important;
+        }
+
+        .user-item-meta {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 1px;
+        }
         
         .badge {
             display: inline-block;
@@ -383,13 +424,238 @@
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .sidebar { width: 300px; }
+        .analytics-charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
         }
+
+        /* Responsive & Mobile Native App Styling */
+        @media (max-width: 1024px) {
+            .sidebar { width: 320px; }
+        }
+
         @media (max-width: 768px) {
-            .main-layout { flex-direction: column; }
-            .sidebar { width: 100%; height: 300px; border-right: none; border-bottom: 1px solid var(--border-color); }
+            html, body {
+                height: auto !important;
+                min-height: 100vh;
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+            }
+
+            .main-layout {
+                flex-direction: column !important;
+                height: auto !important;
+                min-height: calc(100vh - 65px);
+                overflow: visible !important;
+            }
+
+            /* In list mode (default on mobile): sidebar takes full screen */
+            .sidebar {
+                width: 100% !important;
+                height: auto !important;
+                min-height: calc(100vh - 65px);
+                border-right: none !important;
+                border-bottom: none !important;
+                flex: 1;
+                display: flex !important;
+            }
+
+            .user-list {
+                max-height: none !important;
+                height: auto !important;
+                overflow-y: visible !important;
+                padding: 0.75rem;
+                padding-bottom: 95px; /* space for mobile bottom navigation */
+            }
+
+            .user-item {
+                padding: 0.875rem 1rem !important;
+                gap: 0.875rem !important;
+                border-radius: 14px !important;
+                background: var(--bg-card) !important;
+                border: 1px solid var(--border-color) !important;
+                margin-bottom: 0.65rem !important;
+                box-shadow: var(--shadow-sm) !important;
+                min-height: 64px;
+            }
+
+            .user-item:hover,
+            .user-item:active {
+                background: var(--bg-tertiary) !important;
+            }
+
+            .user-item-content h4,
+            .user-info h4 {
+                font-size: 1.05rem !important;
+                font-weight: 750 !important;
+                color: var(--text-primary) !important;
+            }
+
+            .user-item-content p,
+            .user-info p {
+                font-size: 0.85rem !important;
+                color: var(--text-secondary) !important;
+            }
+
+            .user-item-meta {
+                font-size: 0.775rem !important;
+            }
+
+            /* Empty state hidden on mobile */
+            .empty-state {
+                display: none !important;
+            }
+
+            /* Detail area full-screen when user selected */
+            .detail-area {
+                width: 100% !important;
+                height: auto !important;
+                padding: 1rem !important;
+                padding-bottom: 105px !important;
+                overflow-y: visible !important;
+            }
+
+            /* Master-detail mobile toggling */
+            body:not(.mobile-detail-active) .detail-area {
+                display: none !important;
+            }
+
+            body:not(.mobile-detail-active) .sidebar {
+                display: flex !important;
+            }
+
+            body.mobile-detail-active .sidebar {
+                display: none !important;
+            }
+
+            body.mobile-detail-active .detail-area {
+                display: block !important;
+            }
+
+            .mobile-back-to-master-btn {
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                width: 100%;
+                padding: 12px 18px;
+                border-radius: 12px;
+                background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)) !important;
+                border: none !important;
+                color: #ffffff !important;
+                font-weight: 700 !important;
+                font-size: 15px !important;
+                cursor: pointer;
+                margin-bottom: 16px;
+                box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+            }
+
+            .mobile-back-to-master-btn:active {
+                transform: scale(0.98);
+            }
+
+            /* Detail Header Mobile */
+            .detail-header {
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
+                padding: 1.5rem 1rem !important;
+                gap: 1rem !important;
+                border-radius: 14px !important;
+            }
+
+            .detail-avatar-large {
+                width: 76px !important;
+                height: 76px !important;
+                font-size: 2.2rem !important;
+            }
+
+            .detail-title h1 {
+                font-size: 1.45rem !important;
+                word-break: break-word;
+            }
+
+            .detail-title p {
+                flex-direction: column !important;
+                gap: 0.5rem !important;
+                align-items: center !important;
+            }
+
+            /* Stats Grid Mobile: 2 columns */
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.75rem !important;
+            }
+
+            .stat-card {
+                padding: 1rem !important;
+                border-radius: 14px !important;
+            }
+
+            .stat-title {
+                font-size: 0.75rem !important;
+            }
+
+            .stat-value {
+                font-size: 1.35rem !important;
+            }
+
+            /* Tabs Mobile */
+            .tabs {
+                gap: 0.35rem !important;
+                padding-bottom: 0.75rem !important;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .tab-btn {
+                padding: 0.55rem 0.85rem !important;
+                font-size: 0.825rem !important;
+            }
+
+            /* Analytics grid on mobile */
+            .analytics-charts-grid {
+                grid-template-columns: 1fr !important;
+                gap: 1rem !important;
+            }
+
+            .content-card {
+                padding: 1.15rem 1rem !important;
+                border-radius: 14px !important;
+            }
+
+            .content-card h3 {
+                font-size: 1.05rem !important;
+                margin-bottom: 1rem !important;
+            }
+
+            /* Data Tables Mobile */
+            .data-table {
+                font-size: 0.8125rem !important;
+            }
+
+            .data-table th, .data-table td {
+                padding: 0.65rem 0.5rem !important;
+            }
+
+            .data-table th {
+                width: 38% !important;
+            }
+
+            /* Header on Mobile */
+            .header-content {
+                padding: 0 1rem !important;
+            }
+
+            .logo {
+                font-size: 1.15rem !important;
+            }
+
+            .header-actions .btn {
+                padding: 0.45rem 0.75rem !important;
+                font-size: 0.8rem !important;
+            }
         }
     </style>
     <link rel="manifest" href="manifest.json">
@@ -433,6 +699,9 @@
 
         <!-- Detail Area -->
         <main class="detail-area" id="detail-area">
+            <button type="button" class="mobile-back-to-master-btn" onclick="backToUserList()">
+                ← Back to User Directory
+            </button>
             
             <div class="detail-header">
                 <div id="detail-avatar-container"></div>
@@ -476,17 +745,19 @@
             <div class="tab-content active" id="tab-profile">
                 <div class="content-card">
                     <h3>Account Profile Details</h3>
-                    <table class="data-table">
-                        <tbody id="profile-table">
-                            <!-- Populated via JS -->
-                        </tbody>
-                    </table>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <tbody id="profile-table">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
             <!-- Tab Content: Analytics -->
             <div class="tab-content" id="tab-analytics">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div class="analytics-charts-grid">
                     <div class="content-card">
                         <h3>Bookings Status Distribution</h3>
                         <div style="height: 300px; position: relative;">
@@ -650,37 +921,64 @@
             });
         }
 
-        function getInitials(fullName, name) {
-            const display = fullName || name || 'Unknown';
-            const parts = display.split(' ').filter(Boolean);
+        // Helper: Get robust display name across all user document shapes
+        function getUserDisplayName(u) {
+            if (!u) return 'Unknown User';
+            if (u.fullName && String(u.fullName).trim()) return String(u.fullName).trim();
+            if (u.identity?.fullName && String(u.identity.fullName).trim()) return String(u.identity.fullName).trim();
+            if (u.firstName || u.lastName) {
+                const combined = `${u.firstName || ''} ${u.lastName || ''}`.trim();
+                if (combined) return combined;
+            }
+            if (u.name && String(u.name).trim()) return String(u.name).trim();
+            if (u.identity?.name && String(u.identity.name).trim()) return String(u.identity.name).trim();
+            if (u.username && String(u.username).trim()) return String(u.username).trim();
+            if (u.email && String(u.email).trim()) return String(u.email).trim().split('@')[0];
+            if (u.identity?.email && String(u.identity.email).trim()) return String(u.identity.email).trim().split('@')[0];
+            if (u.userId || u.id) return `User ${(u.userId || u.id).slice(0, 6)}`;
+            return 'Unknown User';
+        }
+
+        // Helper: Get user initials
+        function getInitials(displayName) {
+            const display = String(displayName || 'Unknown').trim();
+            const parts = display.split(/\s+/).filter(Boolean);
             if (parts.length >= 2) {
                 return (parts[0][0] + parts[1][0]).toUpperCase();
             }
-            return display.substring(0, 2).toUpperCase();
+            if (parts.length === 1 && parts[0].length > 0) {
+                return parts[0].substring(0, 2).toUpperCase();
+            }
+            return 'U';
         }
 
         // Render Sidebar
         function renderUserSidebar(searchQuery = '') {
+            const q = searchQuery.toLowerCase().trim();
             const filtered = allUsers.filter(u => {
-                const name = (u.fullName || u.name || '').toLowerCase();
+                const name = getUserDisplayName(u).toLowerCase();
                 const email = (u.email || u.identity?.email || '').toLowerCase();
                 const username = (u.username || '').toLowerCase();
-                return name.includes(searchQuery) || email.includes(searchQuery) || username.includes(searchQuery);
+                const phone = (u.phone || u.identity?.phone || u.phoneNumber || '').toLowerCase();
+                return name.includes(q) || email.includes(q) || username.includes(q) || phone.includes(q);
             });
 
             if (filtered.length === 0) {
-                userList.innerHTML = '<p style="padding:1rem;text-align:center;color:var(--text-tertiary)">No users found</p>';
+                userList.innerHTML = '<p style="padding:1.5rem 1rem;text-align:center;color:var(--text-tertiary)">No users found</p>';
                 return;
             }
 
             userList.innerHTML = filtered.map(u => {
-                const name = u.fullName || u.name || 'Unknown User';
+                const name = getUserDisplayName(u);
                 const email = u.email || u.identity?.email || 'No email provided';
-                const initials = getInitials(u.fullName, u.name);
-                
+                const phone = u.phone || u.identity?.phone || u.phoneNumber || '';
+                const initials = getInitials(name);
+                const status = (u.status || 'Active').toLowerCase();
+                const statusBadgeClass = status === 'active' ? 'badge-success' : 'badge-warning';
+
                 let avatarHtml = `<div class="user-avatar">${initials}</div>`;
                 const photo = u.profilePhoto || u.profilePic;
-                if(photo) {
+                if (photo) {
                     avatarHtml = `<img src="${photo}" class="user-avatar" onerror="this.outerHTML='<div class=user-avatar>${initials}</div>'">`;
                 }
 
@@ -689,14 +987,29 @@
                 return `
                     <div class="user-item ${activeClass}" data-id="${u.id}" onclick="selectUser('${u.id}')">
                         ${avatarHtml}
-                        <div class="user-info">
-                            <h4>${escapeHtml(name)}</h4>
+                        <div class="user-item-content">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px;">
+                                <h4>${escapeHtml(name)}</h4>
+                                <span class="badge ${statusBadgeClass}" style="font-size: 0.65rem; padding: 1px 6px;">${escapeHtml(status)}</span>
+                            </div>
                             <p>${escapeHtml(email)}</p>
+                            ${phone ? `<span class="user-item-meta">📞 ${escapeHtml(phone)}</span>` : ''}
                         </div>
                     </div>
                 `;
             }).join('');
         }
+
+        // Back to user list navigation for mobile
+        window.backToUserList = function() {
+            document.body.classList.remove('mobile-detail-active');
+            detailArea.style.display = 'none';
+            if (window.innerWidth > 768) {
+                emptyState.style.display = 'flex';
+            }
+            document.querySelectorAll('.user-item').forEach(el => el.classList.remove('active'));
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
 
         // Escape HTML helper
         function escapeHtml(str) {
@@ -717,13 +1030,21 @@
             currentUser = allUsers.find(u => u.id === userId);
             if (!currentUser) return;
 
+            // Trigger mobile detail active state so detail screen shows full-screen on mobile
+            document.body.classList.add('mobile-detail-active');
+
             // Show UI
             emptyState.style.display = 'none';
             detailArea.style.display = 'block';
 
+            // Smooth scroll to top of details
+            if (window.innerWidth <= 768) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
             // Populate Overview Header
-            const name = currentUser.fullName || currentUser.name || 'Unknown';
-            const initials = getInitials(currentUser.fullName, currentUser.name);
+            const name = getUserDisplayName(currentUser);
+            const initials = getInitials(name);
             
             const photo = currentUser.profilePhoto || currentUser.profilePic;
             const avatarContainer = document.getElementById('detail-avatar-container');
@@ -814,12 +1135,15 @@
                 addressStr = identity.city + (identity.country ? ', ' + identity.country : '');
             }
 
+            const displayName = getUserDisplayName(u);
             const table = document.getElementById('profile-table');
             const rows = [
-                ['Full Name', identity.fullName || u.fullName || u.name || 'N/A'],
+                ['Full Name', displayName !== 'Unknown User' ? displayName : 'N/A'],
                 ['Username', u.username || 'N/A'],
                 ['Email', u.email || identity.email || 'N/A'],
                 ['Phone', identity.phone || u.phone || u.phoneNumber || 'N/A'],
+                ['Role', u.role || 'user'],
+                ['Account Status', u.status || 'active'],
                 ['Date of Birth', u.dob || 'N/A'],
                 ['Gender', identity.gender || u.gender || 'N/A'],
                 ['Address', addressStr],

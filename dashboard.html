@@ -290,7 +290,7 @@
         /* Priority Metrics - F-pattern layout */
         .priority-metrics {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
             gap: 1rem;
             margin-bottom: 2rem;
         }
@@ -926,6 +926,98 @@
             white-space: nowrap;
         }
 
+        /* New Users Card Styles */
+        .users-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .user-card-item {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            padding: 0.875rem 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .user-card-item:hover {
+            background: var(--bg-card);
+            border-color: var(--border-color);
+            box-shadow: var(--shadow-sm);
+            transform: translateX(4px);
+        }
+
+        .user-card-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #a044ff, #6a3093);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+            text-transform: uppercase;
+            box-shadow: 0 2px 6px rgba(160, 68, 255, 0.25);
+        }
+
+        .user-card-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-card-name-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.2rem;
+            flex-wrap: wrap;
+        }
+
+        .user-card-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 160px;
+        }
+
+        .user-card-status {
+            font-size: 0.6875rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            text-transform: capitalize;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--color-success);
+        }
+
+        .user-card-contact {
+            font-size: 0.775rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-card-time {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            flex-shrink: 0;
+            font-weight: 500;
+            margin-left: auto;
+        }
+
         /* Loading & Empty States */
         .loading {
             text-align: center;
@@ -1215,6 +1307,24 @@
                     </div>
                 </div>
             </div>
+
+            <div class="metric-card priority-normal">
+                <div class="metric-header">
+                    <div class="metric-label">New Users</div>
+                    <div class="metric-icon icon-purple">👥</div>
+                </div>
+                <div class="metric-value" id="hero-new-users">-</div>
+                <div class="metric-footer">
+                    <div class="metric-change positive">
+                        <span>●</span>
+                        <span id="hero-users-total">Loading...</span>
+                    </div>
+                    <a href="master-user.html" class="metric-action">
+                        <span>Directory</span>
+                        <span>→</span>
+                    </a>
+                </div>
+            </div>
         </div>
 
         <!-- Analytics Layout (F-Pattern: Left & Sidebar) -->
@@ -1329,6 +1439,25 @@
                         <div class="loading">
                             <div class="loading-spinner"></div>
                             Loading...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- New Users Card -->
+                <div class="metrics-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                        <div>
+                            <h3 class="chart-title" style="margin-bottom: 0.25rem;">New Users</h3>
+                            <p class="chart-subtitle" style="font-size: 0.8125rem; color: var(--text-secondary);">Recently joined clients</p>
+                        </div>
+                        <a href="master-user.html" style="font-size: 0.8125rem; font-weight: 600; color: var(--color-primary); text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+                            View all →
+                        </a>
+                    </div>
+                    <div class="users-list" id="new-users-list">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            Loading users...
                         </div>
                     </div>
                 </div>
@@ -1786,22 +1915,97 @@
             document.getElementById('last-updated').innerHTML = `<span>🕐</span><span>Last updated: ${timeStr}</span>`;
         }
 
-        // Helper: Get status
+        // Escape HTML helper
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // Provider approval status mapping consistent with Provider-Management.html
+        function getProviderApprovalStatus(p) {
+            if (!p) return 'pending';
+            // 1. Direct explicit approvalStatus
+            const explicit = String(p.approvalStatus || '').toLowerCase().trim();
+            if (explicit === 'approved') return 'approved';
+            if (explicit === 'rejected') return 'rejected';
+            if (explicit === 'needs_changes') return 'needs_changes';
+            if (explicit === 'in_progress') return 'in_progress';
+            if (explicit === 'pending') return 'pending';
+
+            // 2. Original status or raw status
+            const raw = String(p.status || p.originalStatus || p.onboarding?.status || 'waiting').toLowerCase().trim();
+            const onboarding = p.onboarding || {};
+
+            if (
+                raw === 'in_progress' ||
+                raw === 'onboarding_required' ||
+                raw === 'draft' ||
+                raw === 'incomplete' ||
+                raw === 'unsubmitted'
+            ) {
+                return 'in_progress';
+            }
+
+            if (onboarding.completed === false || p.onboardingCompleted === false) {
+                if (raw !== 'approved' && raw !== 'rejected' && raw !== 'needs_changes') {
+                    return 'in_progress';
+                }
+            }
+
+            switch (raw) {
+                case 'approved':
+                    return 'approved';
+                case 'rejected':
+                    return 'rejected';
+                case 'needs_changes':
+                case 'retry':
+                    return 'needs_changes';
+                case 'waiting':
+                case 'processing':
+                case 'pending':
+                case 'pending_approval':
+                case 'waiting_for_approval':
+                case 'submitted':
+                default:
+                    return 'pending';
+            }
+        }
+
+        // Helper: Get status (general fallback for bookings, cancellations, etc.)
         function getStatus(item) {
             if (!item) return '';
-            if (typeof item.status === 'string') return item.status.toLowerCase();
+            const statusVal = item.approvalStatus || item.status || item.state;
+            if (typeof statusVal === 'string') {
+                const s = statusVal.toLowerCase().trim();
+                if (s === 'waiting' || s === 'pending_approval' || s === 'waiting_for_approval' || s === 'submitted') {
+                    return 'pending';
+                }
+                return s;
+            }
             if (item.status?.state) return item.status.state.toLowerCase();
             if (item.state) return item.state.toLowerCase();
             return '';
         }
 
-        // Helper: Parse timestamp
+        // Helper: Parse timestamp safely across formats
         function parseTimestamp(ts) {
             if (!ts) return new Date(0);
-            if (ts.toDate) return ts.toDate();
-            if (ts instanceof Date) return ts;
-            if (typeof ts === 'string') return new Date(ts);
-            if (ts.seconds) return new Date(ts.seconds * 1000);
+            if (typeof ts.toDate === 'function') return ts.toDate();
+            if (ts instanceof Date) return isNaN(ts.getTime()) ? new Date(0) : ts;
+            if (typeof ts === 'number') return new Date(ts);
+            if (typeof ts === 'object') {
+                if (ts.seconds != null) return new Date(ts.seconds * 1000 + (ts.nanoseconds || 0) / 1e6);
+                if (ts._seconds != null) return new Date(ts._seconds * 1000 + (ts._nanoseconds || 0) / 1e6);
+            }
+            if (typeof ts === 'string') {
+                const cleaned = ts.replace(/\s+at\s+/i, ' ');
+                const d = new Date(cleaned);
+                if (!isNaN(d.getTime())) return d;
+                const d2 = new Date(ts);
+                if (!isNaN(d2.getTime())) return d2;
+            }
             return new Date(0);
         }
 
@@ -1831,8 +2035,13 @@
                     updateDeletedProvidersStats();
                 });
 
+                onSnapshot(collection(db, 'users'), (snapshot) => {
+                    allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    updateUI();
+                });
+
                 // Fetch other collections once
-                const [enquiriesSnap, reviewsSnap, cancellationsSnap, reassignmentsSnap, featuredSnap, serviceReviewsSnap, promoCodesSnap, deletionRequestsSnap, usersSnap] =
+                const [enquiriesSnap, reviewsSnap, cancellationsSnap, reassignmentsSnap, featuredSnap, serviceReviewsSnap, promoCodesSnap, deletionRequestsSnap] =
                     await Promise.all([
                         getDocs(collection(db, 'enquiries')),
                         getDocs(collection(db, 'reviews')),
@@ -1841,8 +2050,7 @@
                         getDocs(collection(db, 'featured_providers')),
                         getDocs(collection(db, 'service_review_requests')),
                         getDocs(collection(db, 'promo_codes')),
-                        getDocs(collection(db, 'accountDeletionRequests')),
-                        getDocs(collection(db, 'users'))
+                        getDocs(collection(db, 'accountDeletionRequests'))
                     ]);
 
                 allEnquiries = enquiriesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -1853,7 +2061,6 @@
                 allServiceReviewRequests = serviceReviewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allDeletionRequests = deletionRequestsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allPromoCodes = promoCodesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                allUsers = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
                 updateUI();
 
@@ -1869,6 +2076,7 @@
             initializeAllCharts();
             loadPerformanceMetrics();
             loadTopPerformers();
+            loadNewUsers();
             loadRecentActivity();
         }
 
@@ -1889,8 +2097,8 @@
         // Calculate stats
         function calculateStats() {
             const totalProviders = allProviders.length;
-            const pendingProviders = allProviders.filter(p => getStatus(p) === 'pending').length;
-            const approvedProviders = allProviders.filter(p => getStatus(p) === 'approved').length;
+            const pendingProviders = allProviders.filter(p => getProviderApprovalStatus(p) === 'pending').length;
+            const approvedProviders = allProviders.filter(p => getProviderApprovalStatus(p) === 'approved').length;
 
             const totalBookings = allBookings.length;
             const confirmedBookings = allBookings.filter(b => getStatus(b) === 'confirmed').length;
@@ -1906,6 +2114,15 @@
             const completionRate = totalBookings > 0 ? ((completedBookings / totalBookings) * 100).toFixed(0) : 0;
             const pendingActions = pendingProviders + pendingCancellations + pendingReassignments + pendingReviews;
 
+            // Calculate new users (registered in last 30 days) and total registered
+            const thirtyDaysAgo = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000));
+            const newUsersList = allUsers.filter(u => {
+                const d = parseTimestamp(u.createdAt || u.termsAcceptedAt || u.updatedAt);
+                return d && d.getTime() > 0 && d >= thirtyDaysAgo;
+            });
+            const newUsersCount = newUsersList.length;
+            const totalUsersCount = allUsers.length;
+
             // Hero stats
             document.getElementById('hero-providers').textContent = totalProviders;
             document.getElementById('hero-bookings').textContent = totalBookings;
@@ -1918,6 +2135,11 @@
             document.getElementById('active-providers').textContent = approvedProviders;
             document.getElementById('active-change').textContent = `${((approvedProviders / totalProviders) * 100).toFixed(0)}%`;
             document.getElementById('completion-rate').textContent = `${completionRate}%`;
+
+            const heroNewUsersEl = document.getElementById('hero-new-users');
+            if (heroNewUsersEl) heroNewUsersEl.textContent = newUsersCount;
+            const heroUsersTotalEl = document.getElementById('hero-users-total');
+            if (heroUsersTotalEl) heroUsersTotalEl.textContent = `${totalUsersCount} total registered`;
 
             // Subscription eligibility count
             const eligibleCount = allProviders.filter(p => {
@@ -1953,7 +2175,7 @@
             updateBadge('badge-providers', pendingProviders);
             updateBadge('badge-reviews', pendingReviews);
             updateBadge('badge-master', 0);
-            updateBadge('badge-users', 0);
+            updateBadge('badge-users', newUsersCount);
             updateBadge('badge-featured', 0);
             updateBadge('badge-bookings', confirmedBookings);
             updateBadge('badge-progress', activeProgressCount);
@@ -2041,9 +2263,9 @@
 
         // Provider Chart
         function initializeProviderChart() {
-            const approved = allProviders.filter(p => getStatus(p) === 'approved').length;
-            const pending = allProviders.filter(p => getStatus(p) === 'pending').length;
-            const rejected = allProviders.filter(p => getStatus(p) === 'rejected').length;
+            const approved = allProviders.filter(p => getProviderApprovalStatus(p) === 'approved').length;
+            const pending = allProviders.filter(p => getProviderApprovalStatus(p) === 'pending').length;
+            const rejected = allProviders.filter(p => getProviderApprovalStatus(p) === 'rejected').length;
 
             const ctx = document.getElementById('providerChart').getContext('2d');
             if (chartInstances.provider) chartInstances.provider.destroy();
@@ -2310,7 +2532,7 @@
         // Performance Metrics
         function loadPerformanceMetrics() {
             const totalProviders = allProviders.length;
-            const approvedProviders = allProviders.filter(p => getStatus(p) === 'approved').length;
+            const approvedProviders = allProviders.filter(p => getProviderApprovalStatus(p) === 'approved').length;
             const approvalRate = totalProviders > 0 ? ((approvedProviders / totalProviders) * 100).toFixed(0) : 0;
 
             const avgRating = allReviews.length > 0
@@ -2336,7 +2558,7 @@
 
         // Top Performers
         function loadTopPerformers() {
-            const approvedProviders = allProviders.filter(p => getStatus(p) === 'approved');
+            const approvedProviders = allProviders.filter(p => getProviderApprovalStatus(p) === 'approved');
 
             const tierOrder = { 'Platinum': 4, 'Gold': 3, 'Silver': 2, 'Bronze': 1 };
             const sorted = approvedProviders.sort((a, b) => {
@@ -2375,6 +2597,63 @@
             `).join('');
         }
 
+        // New Users
+        function loadNewUsers() {
+            const container = document.getElementById('new-users-list');
+            if (!container) return;
+
+            // Sort users by registration timestamp descending
+            const sortedUsers = [...allUsers].sort((a, b) => {
+                const timeA = parseTimestamp(a.createdAt || a.termsAcceptedAt || a.updatedAt).getTime();
+                const timeB = parseTimestamp(b.createdAt || b.termsAcceptedAt || b.updatedAt).getTime();
+                return timeB - timeA;
+            }).slice(0, 5);
+
+            if (sortedUsers.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 1.5rem 0;">
+                        <div class="empty-state-icon">👥</div>
+                        <div class="empty-state-text">No registered users yet</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = sortedUsers.map(u => {
+                const fullName = u.fullName || (u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : '') || u.identity?.fullName || 'User';
+                const email = u.email || u.identity?.email || 'No email';
+                const phone = u.phone || u.identity?.phone || '';
+                const status = (u.status || 'active').toLowerCase();
+                const date = parseTimestamp(u.createdAt || u.termsAcceptedAt || u.updatedAt);
+                const timeStr = formatTime(date);
+
+                // Initials
+                const parts = fullName.trim().split(/\s+/).filter(Boolean);
+                let initials = 'U';
+                if (parts.length >= 2) {
+                    initials = (parts[0][0] + parts[1][0]).toUpperCase();
+                } else if (parts.length === 1 && parts[0].length > 0) {
+                    initials = parts[0].substring(0, 2).toUpperCase();
+                }
+
+                const contactSub = phone ? `${escapeHtml(email)} • ${escapeHtml(phone)}` : escapeHtml(email);
+
+                return `
+                    <a href="master-user.html" class="user-card-item" title="View ${escapeHtml(fullName)} in User Directory">
+                        <div class="user-card-avatar">${initials}</div>
+                        <div class="user-card-info">
+                            <div class="user-card-name-row">
+                                <span class="user-card-name">${escapeHtml(fullName)}</span>
+                                <span class="user-card-status">${escapeHtml(status)}</span>
+                            </div>
+                            <div class="user-card-contact">${contactSub}</div>
+                        </div>
+                        <div class="user-card-time">${timeStr}</div>
+                    </a>
+                `;
+            }).join('');
+        }
+
         // Recent Activity
         function loadRecentActivity() {
             const activityContainer = document.getElementById('recent-activity');
@@ -2385,8 +2664,18 @@
                 activities.push({
                     icon: '👤',
                     color: 'rgba(59, 130, 246, 0.1)',
-                    text: `New provider: <strong>${p.identity?.fullName || 'Unknown'}</strong>`,
+                    text: `New provider: <strong>${escapeHtml(p.identity?.fullName || 'Unknown')}</strong>`,
                     time: parseTimestamp(p.updatedAt || p.createdAt)
+                });
+            });
+
+            allUsers.slice(0, 5).forEach(u => {
+                const uName = u.fullName || (u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : '') || u.identity?.fullName || 'Client';
+                activities.push({
+                    icon: '👥',
+                    color: 'rgba(118, 75, 162, 0.1)',
+                    text: `New user: <strong>${escapeHtml(uName)}</strong> registered`,
+                    time: parseTimestamp(u.createdAt || u.termsAcceptedAt || u.updatedAt)
                 });
             });
 
@@ -2394,7 +2683,7 @@
                 activities.push({
                     icon: '📅',
                     color: 'rgba(16, 185, 129, 0.1)',
-                    text: `Booking: <strong>${b.packageName || 'Package'}</strong>`,
+                    text: `Booking: <strong>${escapeHtml(b.packageName || 'Package')}</strong>`,
                     time: parseTimestamp(b.createdAt || b.bookingTimestamp)
                 });
             });
@@ -2403,7 +2692,7 @@
                 activities.push({
                     icon: '📧',
                     color: 'rgba(245, 158, 11, 0.1)',
-                    text: `Enquiry from <strong>${e.customerName || 'Customer'}</strong>`,
+                    text: `Enquiry from <strong>${escapeHtml(e.customerName || 'Customer')}</strong>`,
                     time: parseTimestamp(e.createdAt)
                 });
             });

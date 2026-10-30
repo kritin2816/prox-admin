@@ -487,7 +487,8 @@ button:active,
   /* Hide redundant welcome text to keep header clean */
   .admin-welcome,
   .user-email,
-  .user-info {
+  .header .user-info,
+  .topbar .user-info {
     display: none !important;
   }
 

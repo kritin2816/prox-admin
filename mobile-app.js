@@ -16,6 +16,14 @@
     return;
   }
 
+  // Ensure Admin Alerts and Phone Push Notification engine is loaded
+  if (!window.__proxAdminAlertsInit && !document.querySelector('script[src*="admin-alerts.js"]')) {
+    const alertsScript = document.createElement('script');
+    alertsScript.src = 'admin-alerts.js';
+    alertsScript.async = true;
+    document.head.appendChild(alertsScript);
+  }
+
   // Define full list of all admin modules grouped into categories
   const APP_PAGES = [
     {
@@ -261,7 +269,11 @@
         ${menuSectionsHtml}
       </div>
 
-      <div class="mobile-app-drawer-footer">
+      <div class="mobile-app-drawer-footer" style="display:flex; flex-direction:column; gap:8px;">
+        <button type="button" class="mobile-app-drawer-logout" id="mobile-app-alerts-btn" style="background:linear-gradient(135deg, rgba(160,68,255,0.2), rgba(106,48,147,0.3)); border-color:rgba(160,68,255,0.4); color:#c084fc;">
+          <span>🔔</span>
+          <span>Phone Alerts & Activity</span>
+        </button>
         <button type="button" class="mobile-app-drawer-logout" id="mobile-app-logout-btn">
           <span>🚪</span>
           <span>Logout</span>
@@ -297,6 +309,17 @@
         grp.style.display = visibleLinks.length > 0 ? 'block' : 'none';
       });
     });
+
+    // Wire Alerts Button
+    const alertsBtn = document.getElementById('mobile-app-alerts-btn');
+    if (alertsBtn) {
+      alertsBtn.addEventListener('click', function () {
+        closeDrawer();
+        if (window.ProXAdminAlerts) {
+          window.ProXAdminAlerts.toggleDrawer();
+        }
+      });
+    }
 
     // Wire Logout Button
     document.getElementById('mobile-app-logout-btn').addEventListener('click', handleLogoutClick);

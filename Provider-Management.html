@@ -3,8 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1e293b">
     <title>Pro X - Provider Management</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="mobile-app.css">
     <!-- Firebase SDK v8 CDN -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -3075,6 +3081,18 @@
                     await this.loadProvidersFromFirebase();
                     this.renderProviders();
                     this.updateStats();
+
+                    // Auto-open provider review modal if opened via notification click
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const targetId = urlParams.get('providerId') || urlParams.get('id') || urlParams.get('highlight');
+                    if (targetId) {
+                        const targetProv = this.providers.find(p => p.id === targetId);
+                        if (targetProv) {
+                            setTimeout(() => {
+                                this.showProviderModal(targetProv);
+                            }, 300);
+                        }
+                    }
                 });
             }
 
@@ -5348,6 +5366,8 @@
         // Initialize dashboard
         const dashboard = new ProviderDashboard();
     </script>
+    <script src="admin-alerts.js"></script>
+    <script src="mobile-app.js"></script>
 </body>
 
 </html>

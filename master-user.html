@@ -915,6 +915,15 @@
             db.collection('users').onSnapshot(snapshot => {
                 allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderUserSidebar();
+
+                // Check URL for direct deep-link from notification
+                const urlParams = new URLSearchParams(window.location.search);
+                const targetUserId = urlParams.get('userId') || urlParams.get('id');
+                if (targetUserId) {
+                    setTimeout(() => {
+                        selectUser(targetUserId);
+                    }, 300);
+                }
             }, err => {
                 console.error("Error loading users", err);
                 userList.innerHTML = '<p style="padding:1rem;color:var(--color-error)">Failed to load users.</p>';
@@ -1299,6 +1308,7 @@
             });
         }
     </script>
+    <script src="admin-alerts.js"></script>
     <script src="mobile-app.js"></script>
 </body>
 </html>

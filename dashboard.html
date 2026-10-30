@@ -3,8 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1e293b">
     <title>Pro X Admin Dashboard</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="mobile-app.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!-- Firebase SDK v8 (compat) - CDN -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -1205,6 +1211,32 @@
                 </div>
             </div>
             <a href="deleted-providers.html?filter=flagged" style="background: #ef4444; color: white; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">Review Providers →</a>
+        </div>
+
+        <!-- Phone Notifications Live Alert Bar -->
+        <div id="phoneAlertDashboardCard" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(160, 68, 255, 0.12) 0%, rgba(106, 48, 147, 0.22) 100%); border: 1.5px solid rgba(160, 68, 255, 0.4); border-radius: 16px; padding: 18px 24px; color: var(--text-primary); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; box-shadow: 0 4px 14px rgba(106, 48, 147, 0.2);">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="font-size: 28px; line-height: 1;">🔔</div>
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: var(--text-primary);">Real-Time Phone Alerts Active</h4>
+                        <span style="font-size: 11px; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 2px 8px; border-radius: 12px;">● Live Listening</span>
+                    </div>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-secondary);">
+                        Instant alerts whenever a new provider (with location &amp; review status) or customer joins.
+                    </p>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <button type="button" onclick="if(window.ProXAdminAlerts) window.ProXAdminAlerts.sendTestAlert()" style="background: linear-gradient(135deg, #a044ff, #6a3093); color: white; border: none; padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(106, 48, 147, 0.3);">
+                    <span>🧪</span>
+                    <span>Test Phone Alert</span>
+                </button>
+                <button type="button" onclick="if(window.ProXAdminAlerts) window.ProXAdminAlerts.toggleDrawer()" style="background: rgba(255, 255, 255, 0.12); color: var(--text-primary); border: 1px solid rgba(255, 255, 255, 0.2); padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>📋</span>
+                    <span>Alert History</span>
+                </button>
+            </div>
         </div>
 
         <!-- Hero Section -->
@@ -2745,6 +2777,8 @@
             updateLastUpdated();
         }, 300000);
     </script>
+    <script src="admin-alerts.js"></script>
+    <script src="mobile-app.js"></script>
 </body>
 
 </html>

@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1e293b">
+    <title>Pro X - Email Hub & Template Dispatcher</title>
+    
+    <!-- Firebase SDK v8 (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-color: #e2e8f0;
+            --accent: #6d45ff;
+            --accent-gradient: linear-gradient(135deg, #a044ff 0%, #6a3093 100%);
+            --accent-subtle: #f5f3ff;
+            --accent-border: #ddd6fe;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 16px 36px rgba(0,0,0,0.12);
+        }
+
+        html[data-theme="dark"] {
+            --bg-primary: #0b0f19;
+            --bg-secondary: #131b2e;
+            --bg-tertiary: #1e293b;
+            --bg-card: #131b2e;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --border-color: #1e293b;
+            --accent: #8b5cf6;
+            --accent-subtle: #1e1b4b;
+            --accent-border: #4c1d95;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+            --shadow-lg: 0 16px 36px rgba(0,0,0,0.6);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Header */
+        .top-header {
+            background: var(--accent-gradient);
+            color: #fff;
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: var(--shadow-md);
+        }
+        .header-inner {
+            max-width: 1560px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .logo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: #fff;
+        }
+        .logo-badge {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 800;
+        }
+        .logo-text h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+        .logo-text p {
+            font-size: 0.75rem;
+            opacity: 0.85;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .hdr-btn {
+            background: rgba(255,255,255,0.18);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.25);
+            padding: 0.5rem 1rem;
+            border-radius: 9px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+        .hdr-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+
+        /* Main Workspace Layout */
+        .workspace {
+            max-width: 1560px;
+            width: 100%;
+            margin: 1.5rem auto;
+            padding: 0 1rem;
+            display: grid;
+            grid-template-columns: 460px 1fr;
+            gap: 1.5rem;
+            flex: 1;
+            box-sizing: border-box;
+        }
+        @media (max-width: 1100px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Left Column: Directory & Recipient Selector */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .card-header {
+            padding: 1.25rem 1.25rem 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+        }
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Tab Switcher (Providers vs Users) */
+        .tab-group {
+            display: flex;
+            background: var(--bg-tertiary);
+            padding: 4px;
+            border-radius: 10px;
+            margin-top: 0.75rem;
+            gap: 4px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+        }
+        .tab-btn.active {
+            background: var(--bg-card);
+            color: var(--accent);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Search & Filter Bar */
+        .filter-bar {
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-primary);
+        }
+        .search-input {
+            flex: 1;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.8125rem;
+        }
+        .filter-select {
+            padding: 0.5rem 0.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.8125rem;
+            cursor: pointer;
+        }
+
+        /* Recipient List */
+        .recipient-list {
+            flex: 1;
+            overflow-y: auto;
+            max-height: calc(100vh - 280px);
+            min-height: 480px;
+            padding: 0.5rem;
+        }
+        .recipient-item {
+            padding: 0.875rem 1rem;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            margin-bottom: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            background: var(--bg-secondary);
+        }
+        .recipient-item:hover {
+            border-color: var(--accent-border);
+            transform: translateX(2px);
+        }
+        .recipient-item.selected {
+            background: var(--accent-subtle);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent);
+        }
+        .rcp-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .rcp-name-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+        .rcp-name {
+            font-weight: 700;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .rcp-status {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+        .status-approved { background: #dcfce7; color: #15803d; }
+        .status-waiting { background: #fef3c7; color: #b45309; }
+        .status-needs_changes { background: #fee2e2; color: #b91c1c; }
+        .status-rejected { background: #f1f5f9; color: #475569; }
+        .status-client { background: #e0e7ff; color: #4338ca; }
+
+        .rcp-email {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .rcp-meta {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.25rem;
+        }
+        .sent-counter-badge {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .sent-counter-badge.has-sent {
+            background: #ecfdf5;
+            color: #059669;
+            border-color: #a7f3d0;
+        }
+
+        /* Right Column: Template Composer & Live Customer Preview */
+        .preview-pane {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        /* Active Target Bar */
+        .target-banner {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .target-info h3 {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        .target-info p {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+        }
+
+        /* Template Selector Buttons */
+        .template-picker-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.25rem;
+        }
+        .picker-title {
+            font-size: 0.8125rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            margin-bottom: 0.75rem;
+        }
+        .template-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 0.625rem;
+        }
+        .tpl-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.75rem 0.5rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .tpl-btn:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        .tpl-btn.active {
+            background: var(--accent-subtle);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(109, 69, 255, 0.25);
+        }
+        .tpl-icon {
+            font-size: 1.25rem;
+        }
+        .tpl-name {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .tpl-sub {
+            font-size: 0.625rem;
+            color: var(--text-tertiary);
+        }
+
+        /* Dual Tabs: Customer Preview vs Edit Content */
+        .editor-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .editor-header {
+            padding: 0.75rem 1.25rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .view-switch {
+            display: inline-flex;
+            background: var(--bg-tertiary);
+            padding: 3px;
+            border-radius: 8px;
+            gap: 3px;
+        }
+        .vs-btn {
+            padding: 0.375rem 0.875rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .vs-btn.active {
+            background: var(--bg-card);
+            color: var(--accent);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Form Inputs for Editing */
+        .edit-form-wrap {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+        }
+        .field-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+        .field-input, .field-textarea {
+            width: 100%;
+            padding: 0.625rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+        .field-input:focus, .field-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .field-textarea {
+            min-height: 120px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        /* Iframe Preview Box */
+        .preview-frame-wrap {
+            padding: 1rem;
+            background: #e2e8f0;
+            min-height: 520px;
+            display: flex;
+            justify-content: center;
+        }
+        .preview-iframe {
+            width: 100%;
+            max-width: 680px;
+            height: 600px;
+            border: none;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            background: #ffffff;
+        }
+
+        /* Action Dispatch Bar */
+        .dispatch-bar {
+            padding: 1rem 1.25rem;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .dispatch-meta {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+        }
+        .send-action-btn {
+            background: var(--accent-gradient);
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.75rem;
+            border-radius: 10px;
+            font-size: 0.9375rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 14px rgba(106, 48, 147, 0.3);
+        }
+        .send-action-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(106, 48, 147, 0.45);
+        }
+        .send-action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Email History Drawer / Modal */
+        .history-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.25rem;
+        }
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 250px;
+            overflow-y: auto;
+            margin-top: 0.75rem;
+        }
+        .history-entry {
+            padding: 0.75rem;
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            font-size: 0.8125rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 0.875rem;
+            font-weight: 600;
+            z-index: 9999;
+            box-shadow: var(--shadow-lg);
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        .toast.success { background: #059669; }
+        .toast.error { background: #dc2626; }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <!-- Top Header -->
+    <header class="top-header">
+        <div class="header-inner">
+            <a href="dashboard.html" class="logo-wrap">
+                <div class="logo-badge">✉️</div>
+                <div class="logo-text">
+                    <h1>Pro X &bull; Email Hub</h1>
+                    <p>Live Customer Preview &bull; Custom Template Dispatcher &bull; Sent Counter</p>
+                </div>
+            </a>
+            <div class="header-actions">
+                <a href="master-provider.html" class="hdr-btn">👥 Providers</a>
+                <a href="master-user.html" class="hdr-btn">👤 Users</a>
+                <a href="dashboard.html" class="hdr-btn">📊 Dashboard</a>
+                <button class="hdr-btn" id="themeToggle" title="Toggle Dark/Light Mode">🌓 Theme</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+        
+        <!-- Left: Recipient Directory -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span>Recipients Directory</span>
+                    <span id="recipientCount" style="font-size: 0.75rem; color: var(--text-tertiary); font-weight: 600;">0 loaded</span>
+                </div>
+                <!-- Switch Providers vs Users -->
+                <div class="tab-group">
+                    <button class="tab-btn active" id="tabProviders" onclick="switchDirectory('providers')">
+                        <span>👔 Providers</span>
+                    </button>
+                    <button class="tab-btn" id="tabUsers" onclick="switchDirectory('users')">
+                        <span>👥 Customers</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search & Filter -->
+            <div class="filter-bar">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search by name, email, phone..." oninput="filterRecipients()">
+                <select id="statusFilter" class="filter-select" onchange="filterRecipients()">
+                    <option value="all">All Statuses</option>
+                    <option value="waiting">Under Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs_changes">Needs Changes</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+
+            <!-- List -->
+            <div class="recipient-list" id="recipientList">
+                <div style="text-align: center; padding: 40px; color: var(--text-tertiary); font-size: 0.875rem;">
+                    Connecting to Pro X directory...
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Template Picker, Live Preview & Dispatcher -->
+        <div class="preview-pane">
+            
+            <!-- Selected Target Banner -->
+            <div class="target-banner">
+                <div class="target-info">
+                    <h3 id="targetName">Select a recipient from the directory</h3>
+                    <p id="targetDetails">No recipient selected. Click any provider or user on the left to preview templates.</p>
+                </div>
+                <div id="targetCounterWrap" style="display: none;">
+                    <span class="sent-counter-badge" id="targetCounterBadge">
+                        ✉️ 0 emails sent
+                    </span>
+                </div>
+            </div>
+
+            <!-- Template Picker -->
+            <div class="template-picker-card">
+                <div class="picker-title">Select Email Template to Preview & Customize</div>
+                <div class="template-buttons-grid" id="templatePickerGrid">
+                    <!-- Populated dynamically based on Providers vs Users -->
+                </div>
+            </div>
+
+            <!-- Editor / Preview Tabs -->
+            <div class="editor-container">
+                <div class="editor-header">
+                    <div style="font-size: 0.875rem; font-weight: 700;">
+                        <span>Template Customization &amp; Customer View</span>
+                    </div>
+                    <div class="view-switch">
+                        <button class="vs-btn active" id="btnViewPreview" onclick="setViewMode('preview')">👁️ Customer Preview</button>
+                        <button class="vs-btn" id="btnViewEdit" onclick="setViewMode('edit')">✏️ Edit Text &amp; Promo</button>
+                    </div>
+                </div>
+
+                <!-- 1. Customer Live Preview Tab -->
+                <div id="previewTab" class="preview-frame-wrap">
+                    <iframe id="previewIframe" class="preview-iframe" title="Customer Email Preview"></iframe>
+                </div>
+
+                <!-- 2. Edit Text & Promo Tab -->
+                <div id="editTab" class="edit-form-wrap" style="display: none;">
+                    <div class="field-group">
+                        <label class="field-label">Subject Line</label>
+                        <input type="text" id="editSubject" class="field-input" oninput="updateLivePreviewFromInputs()">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="field-group">
+                            <label class="field-label">Top Badge Label</label>
+                            <input type="text" id="editBadge" class="field-input" placeholder="e.g. APPLICATION APPROVED" oninput="updateLivePreviewFromInputs()">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Coupon / Promo Code</label>
+                            <input type="text" id="editPromo" class="field-input" placeholder="e.g. PROX100" oninput="updateLivePreviewFromInputs()">
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Email Body (HTML formatted)</label>
+                        <textarea id="editMessage" class="field-textarea" oninput="updateLivePreviewFromInputs()"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="field-group">
+                            <label class="field-label">Button / CTA Text</label>
+                            <input type="text" id="editCtaText" class="field-input" oninput="updateLivePreviewFromInputs()">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Button Target Link (URL)</label>
+                            <input type="text" id="editCtaLink" class="field-input" oninput="updateLivePreviewFromInputs()">
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Admin Internal Note (optional - saved in audit history)</label>
+                        <input type="text" id="editAdminNotes" class="field-input" placeholder="e.g. Sent after manual phone verification call">
+                    </div>
+                </div>
+
+                <!-- Dispatch / Send Action Bar -->
+                <div class="dispatch-bar">
+                    <div class="dispatch-meta" id="dispatchMeta">
+                        Sender: <b>info@prox.co.in</b> via Google Workspace SMTP
+                    </div>
+                    <button class="send-action-btn" id="sendEmailBtn" onclick="dispatchEmail()" disabled>
+                        <span>🚀 Send Email to Customer</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recipient Email History Log -->
+            <div class="history-card" id="historyCard" style="display: none;">
+                <div class="card-title">
+                    <span>Audit Log: Previously Sent Emails</span>
+                    <span id="historyCount" style="font-size: 0.75rem; color: var(--text-tertiary);">0 sent</span>
+                </div>
+                <div class="history-list" id="historyList">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="pageToast" class="toast"></div>
+
+    <!-- Firebase App Configuration -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
+            authDomain: "phototester555.firebaseapp.com",
+            projectId: "phototester555",
+            storageBucket: "phototester555.firebasestorage.app",
+            messagingSenderId: "953997763616",
+            appId: "1:953997763616:web:4ac177ad8e79c5f38b8845",
+            measurementId: "G-6VS0G0NQ7K"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const functions = firebase.app().functions('us-central1');
+
+        // State variables
+        let currentMode = 'providers'; // 'providers' | 'users'
+        let allProviders = [];
+        let allUsers = [];
+        let selectedRecipient = null;
+        let selectedTemplateKey = 'approved';
+        let currentViewMode = 'preview'; // 'preview' | 'edit'
+
+        // BASE URL for CTA Links
+        const BASE_URL = 'https://prox.co.in';
+        // Official hosted high-res Pro X logo for web preview and email
+        const LOGO_URL = `${BASE_URL}/assets/images/logo/logo-white.png`;
+
+        // Available Email Templates
+        const TEMPLATES = {
+            providers: [
+                {
+                    key: 'approved',
+                    name: 'Approved + Promo',
+                    sub: 'Tier activation & 3mo promo',
+                    icon: '🎉',
+                    badge: 'APPLICATION APPROVED',
+                    promo: 'PROX100',
+                    subject: "You're Approved! Welcome to Pro X 🎉",
+                    ctaText: 'Claim 3 Months Free & Activate Plan →',
+                    ctaLink: `${BASE_URL}/provider/subscription.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Congratulations <b>${name}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">Great news! Your Pro X provider application has been reviewed and <b style="color: #16a34a;">Approved</b>. You are now officially recognized as a verified partner on Pro X.</p>
+                        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px 20px; margin: 20px 0;">
+                            <p style="margin: 0 0 8px 0; font-weight: 700; color: #15803d; font-size: 15px;">Next Step: Select Your Membership Tier</p>
+                            <p style="margin: 0; color: #166534; font-size: 14px; line-height: 1.6;">Choose between <b>Silver</b>, <b>Gold</b>, or <b>Platinum</b> to publish your packages, configure availability, and start receiving direct orders from clients.</p>
+                        </div>
+                        <p style="margin: 0; color: #475569; font-size: 14px;">Ready to start? Select your plan and create your first service listing today.</p>
+                    `
+                },
+                {
+                    key: 'welcome',
+                    name: 'Welcome / Onboard',
+                    sub: 'Profile setup checklist',
+                    icon: '🚀',
+                    badge: 'GET STARTED',
+                    promo: 'PROX100',
+                    subject: "Welcome to Pro X! Let's get your profile set up 🚀",
+                    ctaText: 'Complete Your Profile',
+                    ctaLink: `${BASE_URL}/provider/onboarding.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${name}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">Welcome to <b>Pro X</b>! We're excited to partner with you. You are just a few quick steps away from listing your services and getting booked by top clients.</p>
+                        <div style="background-color: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 20px; margin: 20px 0;">
+                            <p style="margin: 0 0 12px 0; font-weight: 700; color: #0f172a; font-size: 14px;">Your 4-Step Onboarding Checklist:</p>
+                            <ul style="margin: 0; padding-left: 20px; color: #334155; font-size: 14px; line-height: 1.8;">
+                                <li><b>Step 1: Identity &amp; Contact:</b> Legal name &amp; phone details.</li>
+                                <li><b>Step 2: Professional Profile:</b> Primary domain &amp; Government KYC ID.</li>
+                                <li><b>Step 3: Work Evidence:</b> Link your portfolio or upload your CV.</li>
+                                <li><b>Step 4: Payout Details:</b> Bank info for automated client payouts.</li>
+                            </ul>
+                        </div>
+                        <p style="margin: 0 0 8px 0; color: #64748b; font-size: 14px;">The onboarding application takes less than 3 minutes.</p>
+                    `
+                },
+                {
+                    key: 'waiting',
+                    name: 'Review Confirmation',
+                    sub: 'Under review acknowledgement',
+                    icon: '📋',
+                    badge: 'APPLICATION RECEIVED',
+                    promo: '',
+                    subject: 'Application Submitted: Your Profile is Under Review 📋',
+                    ctaText: 'Track Application Status',
+                    ctaLink: `${BASE_URL}/provider/waiting.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${name}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">Thank you for completing your onboarding! We have securely received your documents, KYC verification, and payout details.</p>
+                        <div style="background-color: #f8fafc; border-left: 4px solid #6d45ff; padding: 16px 20px; margin: 20px 0; border-radius: 4px;">
+                            <p style="margin: 0 0 6px 0; font-weight: 700; color: #0f172a;">What happens next?</p>
+                            <p style="margin: 0; color: #475569; font-size: 14px; line-height: 1.6;">Our screening team reviews applications within <b>24 to 48 hours</b> to verify documents and portfolio quality. Once verified, you will be invited to select your membership tier and launch your services.</p>
+                        </div>
+                        <p style="margin: 0; color: #64748b; font-size: 14px;">You can track real-time status and updates directly on your provider portal.</p>
+                    `
+                },
+                {
+                    key: 'needs_changes',
+                    name: 'Action Required',
+                    sub: 'Revision / ID re-upload',
+                    icon: '⚠️',
+                    badge: 'ACTION REQUIRED',
+                    promo: '',
+                    subject: 'Action Required: Updates Needed on Your Application ⚠️',
+                    ctaText: 'Update Application',
+                    ctaLink: `${BASE_URL}/provider/onboarding.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${name}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">Our review team checked your provider application and requires a few quick revisions before we can approve your profile.</p>
+                        <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 16px 20px; margin: 20px 0;">
+                            <p style="margin: 0 0 6px 0; font-weight: 700; color: #92400e; font-size: 14px;">Review Feedback:</p>
+                            <p style="margin: 0; color: #78350f; font-size: 14px; line-height: 1.6;">Please re-upload a clearer image of your government ID card (Aadhaar / Passport) to verify name and address.</p>
+                        </div>
+                        <p style="margin: 0 0 16px 0; color: #475569; font-size: 14px;">Your draft data is safely saved. Simply click below to update the requested items and resubmit.</p>
+                    `
+                },
+                {
+                    key: 'rejected',
+                    name: 'Application Declined',
+                    sub: 'Review notice',
+                    icon: '❌',
+                    badge: 'APPLICATION UPDATE',
+                    promo: '',
+                    subject: 'Update on Your Pro X Provider Application',
+                    ctaText: 'Contact Support',
+                    ctaLink: `${BASE_URL}/provider/help.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${name}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">Thank you for your interest in joining Pro X. After reviewing your submission, we regret to inform you that we are unable to accept your provider application at this time.</p>
+                        <div style="background-color: #f8fafc; border-radius: 8px; padding: 16px 20px; margin: 20px 0; color: #475569; font-size: 14px; line-height: 1.6;">
+                            <b>Reason:</b> Portfolio work does not meet our minimum verification requirements.
+                        </div>
+                        <p style="margin: 0; color: #64748b; font-size: 14px;">If you feel this was in error or if your credentials have changed, you may contact our support team.</p>
+                    `
+                },
+                {
+                    key: 'custom',
+                    name: 'Custom Email',
+                    sub: 'Write custom message',
+                    icon: '✍️',
+                    badge: 'ANNOUNCEMENT',
+                    promo: '',
+                    subject: 'Special Update from Pro X',
+                    ctaText: 'Visit Pro X Portal',
+                    ctaLink: `${BASE_URL}/provider/dashboard.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${name}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">We are writing with an important update regarding your partner account on Pro X.</p>
+                        <p style="margin: 0 0 16px 0; color: #475569; font-size: 14px;">We're continuously enhancing our platform to deliver more bookings and higher earnings for our verified partners.</p>
+                    `
+                }
+            ],
+            users: [
+                {
+                    key: 'user_welcome',
+                    name: 'Welcome Client',
+                    sub: 'Welcome to Pro X Marketplace',
+                    icon: '👋',
+                    badge: 'WELCOME TO PRO X',
+                    promo: 'CLIENTFIRST',
+                    subject: 'Welcome to Pro X! Discover Top Creative Talent 🚀',
+                    ctaText: 'Explore Verified Services',
+                    ctaLink: `${BASE_URL}/user/search.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${name}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">Welcome to <b>Pro X</b>! You now have direct access to India's top-rated, verified creative freelancers, photographers, designers, and developers.</p>
+                        <p style="margin: 0 0 16px 0; color: #475569; font-size: 14px;">Book transparent service packages with escrow payment security and guaranteed satisfaction.</p>
+                    `
+                },
+                {
+                    key: 'user_promo',
+                    name: 'Client Promo Discount',
+                    sub: 'Special booking coupon',
+                    icon: '🎁',
+                    badge: 'SPECIAL OFFER',
+                    promo: 'PROXDISCOUNT',
+                    subject: 'Enjoy ₹500 OFF Your Next Booking on Pro X! 🎁',
+                    ctaText: 'Book a Service Now',
+                    ctaLink: `${BASE_URL}/user/search.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${name}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">Ready to kickstart your next project? We're gifting you an exclusive coupon code to save on any verified service listing.</p>
+                        <p style="margin: 0 0 16px 0; color: #475569; font-size: 14px;">Apply this coupon at checkout to redeem your reward instantly.</p>
+                    `
+                },
+                {
+                    key: 'custom',
+                    name: 'Custom Email',
+                    sub: 'Write custom message',
+                    icon: '✍️',
+                    badge: 'PRO X UPDATE',
+                    promo: '',
+                    subject: 'Update from Pro X Support',
+                    ctaText: 'Go to My Account',
+                    ctaLink: `${BASE_URL}/user/dashboard.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${name}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">Thank you for being a valued client of Pro X. We have an update regarding your bookings and account.</p>
+                    `
+                }
+            ]
+        };
+
+        // Initialize and Listeners
+        window.addEventListener('DOMContentLoaded', () => {
+            initAuth();
+            renderTemplateButtons();
+            setupTheme();
+        });
+
+        function setupTheme() {
+            const saved = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', saved);
+            document.getElementById('themeToggle').addEventListener('click', () => {
+                const current = document.documentElement.getAttribute('data-theme');
+                const next = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+            });
+        }
+
+        function initAuth() {
+            auth.onAuthStateChanged(user => {
+                if (!user) {
+                    console.warn('Admin user not authenticated. Redirecting to index.html...');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // Check admin authorization
+                db.collection('admin_users').doc(user.uid).get().then(doc => {
+                    if (!doc.exists) {
+                        console.warn('User does not have admin permissions.');
+                        auth.signOut();
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    console.log('Admin session authenticated:', user.email);
+                    document.getElementById('dispatchMeta').innerHTML = `Sender: <b>info@prox.co.in</b> via Google Workspace &bull; Admin: <b>${esc(user.email)}</b>`;
+                    loadDirectoryData();
+                }).catch(err => {
+                    console.error('Error verifying admin authorization:', err);
+                    loadDirectoryData();
+                });
+            });
+        }
+
+        // Load data from Firestore
+        async function loadDirectoryData() {
+            try {
+                // Providers
+                db.collection('providers').onSnapshot(snap => {
+                    allProviders = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    if (currentMode === 'providers') renderRecipientList();
+                });
+
+                // Users
+                db.collection('users').onSnapshot(snap => {
+                    allUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    if (currentMode === 'users') renderRecipientList();
+                });
+            } catch (err) {
+                console.error('Error reading Firestore collections:', err);
+                document.getElementById('recipientList').innerHTML = `<div style="padding: 20px; color: #ef4444;">Error loading data: ${err.message}</div>`;
+            }
+        }
+
+        // Switch Directory: Providers vs Users
+        function switchDirectory(mode) {
+            currentMode = mode;
+            document.getElementById('tabProviders').classList.toggle('active', mode === 'providers');
+            document.getElementById('tabUsers').classList.toggle('active', mode === 'users');
+
+            // Reset template selection to default for mode
+            selectedTemplateKey = mode === 'providers' ? 'approved' : 'user_welcome';
+            renderTemplateButtons();
+
+            // Clear search filter
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = 'all';
+
+            // Auto-select first if available
+            selectedRecipient = null;
+            document.getElementById('targetName').textContent = 'Select a recipient from the directory';
+            document.getElementById('targetDetails').textContent = 'No recipient selected. Click any contact on the left.';
+            document.getElementById('targetCounterWrap').style.display = 'none';
+            document.getElementById('sendEmailBtn').disabled = true;
+
+            renderRecipientList();
+        }
+
+        // Render recipient items in sidebar
+        function renderRecipientList() {
+            const listEl = document.getElementById('recipientList');
+            const data = currentMode === 'providers' ? allProviders : allUsers;
+            const search = document.getElementById('searchInput').value.trim().toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            const filtered = data.filter(item => {
+                const name = (item.firstName || item.identity?.fullName || item.fullName || item.name || '').toLowerCase();
+                const email = (item.email || item.identity?.email || '').toLowerCase();
+                const phone = (item.phone || item.mobileNumber || '').toLowerCase();
+                const status = (item.status || item.onboarding?.status || 'active').toLowerCase();
+
+                const matchSearch = !search || name.includes(search) || email.includes(search) || phone.includes(search);
+                const matchStatus = statusFilter === 'all' || status === statusFilter;
+                return matchSearch && matchStatus;
+            });
+
+            document.getElementById('recipientCount').textContent = `${filtered.length} found`;
+
+            if (!filtered.length) {
+                listEl.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-tertiary); font-size: 0.875rem;">No contacts found matching criteria.</div>`;
+                return;
+            }
+
+            listEl.innerHTML = filtered.map(item => {
+                const name = item.firstName || item.identity?.fullName || item.fullName || item.name || 'Unnamed Contact';
+                const email = item.email || item.identity?.email || 'No email registered';
+                const status = (item.status || item.onboarding?.status || (currentMode === 'users' ? 'Client' : 'Active')).toLowerCase();
+                const sentCount = item.emailSentCount || 0;
+                const isSelected = selectedRecipient && selectedRecipient.id === item.id;
+
+                let statusBadgeClass = 'status-client';
+                if (status === 'approved') statusBadgeClass = 'status-approved';
+                else if (status === 'waiting') statusBadgeClass = 'status-waiting';
+                else if (['needs_changes', 'retry'].includes(status)) statusBadgeClass = 'status-needs_changes';
+                else if (status === 'rejected') statusBadgeClass = 'status-rejected';
+
+                const counterBadgeClass = sentCount > 0 ? 'sent-counter-badge has-sent' : 'sent-counter-badge';
+
+                return `
+                    <div class="recipient-item ${isSelected ? 'selected' : ''}" onclick="selectRecipient('${item.id}')">
+                        <div class="rcp-info">
+                            <div class="rcp-name-row">
+                                <span class="rcp-name">${esc(name)}</span>
+                                <span class="rcp-status ${statusBadgeClass}">${esc(status)}</span>
+                            </div>
+                            <div class="rcp-email">${esc(email)}</div>
+                        </div>
+                        <div class="rcp-meta">
+                            <span class="${counterBadgeClass}" title="Emails sent from Admin to this contact">
+                                ✉️ ${sentCount} sent
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterRecipients() {
+            renderRecipientList();
+        }
+
+        // When admin clicks a recipient
+        function selectRecipient(id) {
+            const pool = currentMode === 'providers' ? allProviders : allUsers;
+            selectedRecipient = pool.find(i => i.id === id);
+            if (!selectedRecipient) return;
+
+            // Highlight in list
+            renderRecipientList();
+
+            // Populate Target Banner
+            const name = selectedRecipient.firstName || selectedRecipient.identity?.fullName || selectedRecipient.fullName || selectedRecipient.name || 'Partner';
+            const email = selectedRecipient.email || selectedRecipient.identity?.email || '';
+            const status = selectedRecipient.status || selectedRecipient.onboarding?.status || 'Active';
+            const sentCount = selectedRecipient.emailSentCount || 0;
+
+            document.getElementById('targetName').textContent = `${name} (${currentMode === 'providers' ? 'Provider' : 'Client'})`;
+            document.getElementById('targetDetails').textContent = `Email: ${email || 'None'} • Status: ${status} • ID: ${selectedRecipient.id}`;
+            
+            const badgeEl = document.getElementById('targetCounterBadge');
+            badgeEl.className = sentCount > 0 ? 'sent-counter-badge has-sent' : 'sent-counter-badge';
+            badgeEl.textContent = `✉️ ${sentCount} email${sentCount === 1 ? '' : 's'} sent previously`;
+            document.getElementById('targetCounterWrap').style.display = 'block';
+
+            // Auto-switch template if provider status matches
+            if (currentMode === 'providers') {
+                const normStatus = status.toLowerCase();
+                if (['approved', 'waiting', 'needs_changes', 'rejected'].includes(normStatus)) {
+                    selectedTemplateKey = normStatus;
+                    renderTemplateButtons();
+                }
+            }
+
+            // Sync Editor Inputs with template and recipient
+            loadTemplateIntoInputs();
+            renderCustomerPreview();
+            loadRecipientHistory(selectedRecipient.id);
+
+            // Enable send button if email exists
+            document.getElementById('sendEmailBtn').disabled = !email;
+        }
+
+        // Render template options buttons
+        function renderTemplateButtons() {
+            const grid = document.getElementById('templatePickerGrid');
+            const list = TEMPLATES[currentMode] || [];
+
+            grid.innerHTML = list.map(t => {
+                const isActive = t.key === selectedTemplateKey;
+                return `
+                    <div class="tpl-btn ${isActive ? 'active' : ''}" onclick="pickTemplate('${t.key}')">
+                        <span class="tpl-icon">${t.icon}</span>
+                        <span class="tpl-name">${t.name}</span>
+                        <span class="tpl-sub">${t.sub}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function pickTemplate(key) {
+            selectedTemplateKey = key;
+            renderTemplateButtons();
+            loadTemplateIntoInputs();
+            renderCustomerPreview();
+        }
+
+        // Populate edit inputs from chosen template + recipient details
+        function loadTemplateIntoInputs() {
+            const list = TEMPLATES[currentMode] || [];
+            const tpl = list.find(t => t.key === selectedTemplateKey) || list[0];
+            const name = selectedRecipient 
+                ? (selectedRecipient.firstName || selectedRecipient.identity?.fullName || selectedRecipient.fullName || selectedRecipient.name || 'Valued Partner')
+                : 'Customer Name';
+
+            document.getElementById('editSubject').value = tpl.subject;
+            document.getElementById('editBadge').value = tpl.badge || '';
+            document.getElementById('editPromo').value = tpl.promo || '';
+            document.getElementById('editMessage').value = tpl.getMessage(name).trim();
+            document.getElementById('editCtaText').value = tpl.ctaText || '';
+            document.getElementById('editCtaLink').value = tpl.ctaLink || '';
+        }
+
+        // Helper: Generates full HTML email matching production Google Workspace templates
+        function buildFullEmailHtml({ title, message, badgeText, promoCode, ctaLink, ctaText }) {
+            const badgeHtml = badgeText ? `
+                <div style="margin-bottom: 20px;">
+                  <span style="display: inline-block; background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; padding: 6px 14px; border-radius: 999px;">
+                    ✓ ${badgeText}
+                  </span>
+                </div>
+            ` : '';
+
+            const promoHtml = promoCode ? `
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border: 2px dashed #9333ea; border-radius: 16px; margin: 28px 0; text-align: center; overflow: hidden; box-shadow: 0 4px 16px rgba(147, 51, 234, 0.08);">
+                  <tr>
+                    <td style="padding: 26px 20px;">
+                      <span style="display: inline-block; background: linear-gradient(135deg, #9333ea, #6d45ff); color: #ffffff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; padding: 5px 14px; border-radius: 20px; margin-bottom: 12px;">
+                        EXCLUSIVE PROMO REWARD
+                      </span>
+                      <h3 style="margin: 0 0 6px 0; font-size: 22px; font-weight: 800; color: #1e1b4b; letter-spacing: -0.01em;">
+                        Free 3 Months Subscription
+                      </h3>
+                      <p style="margin: 0 0 16px 0; font-size: 14px; color: #6b21a8; font-weight: 500;">
+                        Enjoy 90 days of complete premium access with zero upfront fees.
+                      </p>
+                      <table border="0" cellspacing="0" cellpadding="0" align="center">
+                        <tr>
+                          <td align="center" style="background-color: #ffffff; border: 2px solid #c084fc; border-radius: 10px; padding: 12px 32px; box-shadow: 0 2px 8px rgba(147, 51, 234, 0.15);">
+                            <span style="font-family: 'SF Mono', Monaco, Inconsolata, 'Fira Code', 'Courier New', monospace; font-size: 26px; font-weight: 900; letter-spacing: 4px; color: #581c87;">
+                              ${promoCode}
+                            </span>
+                          </td>
+                        </tr>
+                      </table>
+                      <p style="margin: 14px 0 0 0; font-size: 12px; color: #7e22ce;">
+                        Valid for <b>Silver</b>, <b>Gold</b>, and <b>Platinum</b> plans &bull; Limited-time launch offer
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+            ` : '';
+
+            const ctaButtonHtml = (ctaLink && ctaText) ? `
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 28px 0 20px 0;">
+                  <tr>
+                    <td align="center">
+                      <a href="${ctaLink}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #a044ff 0%, #6a3093 100%); color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; padding: 15px 36px; border-radius: 12px; box-shadow: 0 6px 18px rgba(106, 48, 147, 0.35); letter-spacing: 0.3px;">
+                        ${ctaText}
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+            ` : '';
+
+            return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 30px 12px;">
+    <tr>
+      <td align="center">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0;">
+          
+          <!-- Header with Pro X Branding -->
+          <tr>
+            <td align="center" style="background: linear-gradient(145deg, #09090b 0%, #181126 50%, #1e1b4b 100%); padding: 36px 20px; text-align: center;">
+              <table border="0" cellspacing="0" cellpadding="0" align="center">
+                <tr>
+                  <td align="center">
+                    <img src="${LOGO_URL}" alt="Pro X" width="64" height="64" style="width: 64px; height: 64px; display: block; border: 0; border-radius: 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.35);" />
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-top: 12px;">
+                    <span style="display: block; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.2px;">Pro <span style="color: #a855f7;">X</span></span>
+                    <span style="display: block; color: #a1a1aa; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-top: 4px;">Verified Partner Network</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Content Body -->
+          <tr>
+            <td style="padding: 36px 32px; text-align: left;">
+              ${badgeHtml}
+              <h1 style="margin: 0 0 16px 0; color: #0f172a; font-size: 22px; font-weight: 800; line-height: 1.3; letter-spacing: -0.02em;">
+                ${title}
+              </h1>
+              <div style="color: #475569; font-size: 15px; line-height: 1.65;">
+                ${message}
+              </div>
+              ${promoHtml}
+              ${ctaButtonHtml}
+              <p style="margin: 20px 0 0 0; text-align: center; color: #94a3b8; font-size: 13px;">
+                Questions? Contact us anytime at <a href="mailto:info@prox.co.in" style="color: #6d45ff; text-decoration: underline;">info@prox.co.in</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8fafc; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 12px; line-height: 1.6;">
+              <p style="margin: 0 0 6px 0; color: #64748b; font-weight: 500;">
+                Pro X Marketplace &bull; India's Premier Creative Network
+              </p>
+              <p style="margin: 0 0 6px 0;">
+                <a href="https://prox.co.in" style="color: #94a3b8; text-decoration: none; margin: 0 8px;">Home</a> &bull;
+                <a href="https://prox.co.in/provider/help.html" style="color: #94a3b8; text-decoration: none; margin: 0 8px;">Help Center</a> &bull;
+                <a href="https://prox.co.in/provider/subscription.html" style="color: #94a3b8; text-decoration: none; margin: 0 8px;">Pricing Plans</a>
+              </p>
+              <p style="margin: 0;">&copy; ${new Date().getFullYear()} Pro X. All rights reserved.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+            `;
+        }
+
+        // Render customer view in iframe
+        function renderCustomerPreview() {
+            const title = document.getElementById('editSubject').value || 'Subject';
+            const message = document.getElementById('editMessage').value || '';
+            const badgeText = document.getElementById('editBadge').value.trim();
+            const promoCode = document.getElementById('editPromo').value.trim();
+            const ctaText = document.getElementById('editCtaText').value.trim();
+            const ctaLink = document.getElementById('editCtaLink').value.trim();
+
+            const fullHtml = buildFullEmailHtml({
+                title,
+                message,
+                badgeText,
+                promoCode,
+                ctaLink,
+                ctaText
+            });
+
+            const iframe = document.getElementById('previewIframe');
+            iframe.srcdoc = fullHtml;
+        }
+
+        function updateLivePreviewFromInputs() {
+            renderCustomerPreview();
+        }
+
+        // Switch between Customer Preview and Edit Inputs
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            document.getElementById('btnViewPreview').classList.toggle('active', mode === 'preview');
+            document.getElementById('btnViewEdit').classList.toggle('active', mode === 'edit');
+
+            document.getElementById('previewTab').style.display = mode === 'preview' ? 'flex' : 'none';
+            document.getElementById('editTab').style.display = mode === 'edit' ? 'flex' : 'none';
+
+            if (mode === 'preview') {
+                renderCustomerPreview();
+            }
+        }
+
+        // Dispatch Email using Firebase Callable Cloud Function: sendCustomAdminEmail
+        async function dispatchEmail() {
+            if (!selectedRecipient) {
+                showToast('Please select a recipient from the directory first.', 'error');
+                return;
+            }
+
+            const email = selectedRecipient.email || selectedRecipient.identity?.email;
+            if (!email) {
+                showToast('Selected contact does not have a valid email address.', 'error');
+                return;
+            }
+
+            const name = selectedRecipient.firstName || selectedRecipient.identity?.fullName || selectedRecipient.fullName || selectedRecipient.name || 'Partner';
+            const subject = document.getElementById('editSubject').value.trim();
+            const message = document.getElementById('editMessage').value.trim();
+            const badgeText = document.getElementById('editBadge').value.trim();
+            const promoCode = document.getElementById('editPromo').value.trim();
+            const ctaText = document.getElementById('editCtaText').value.trim();
+            const ctaLink = document.getElementById('editCtaLink').value.trim();
+            const adminNotes = document.getElementById('editAdminNotes').value.trim();
+
+            if (!subject) {
+                showToast('Subject line cannot be empty.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('sendEmailBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳ Sending via Google Workspace...</span>';
+
+            const fullHtml = buildFullEmailHtml({
+                title: subject,
+                message,
+                badgeText,
+                promoCode,
+                ctaLink,
+                ctaText
+            });
+
+            try {
+                const sendFn = functions.httpsCallable('sendCustomAdminEmail');
+                const res = await sendFn({
+                    recipientId: selectedRecipient.id,
+                    recipientType: currentMode === 'users' ? 'user' : 'provider',
+                    targetEmail: email,
+                    targetName: name,
+                    subject: subject,
+                    htmlBody: fullHtml,
+                    templateKey: selectedTemplateKey,
+                    badgeText: badgeText || null,
+                    promoCode: promoCode || null,
+                    adminNotes: adminNotes || ''
+                });
+
+                showToast(`✅ Email successfully sent to ${email}!`, 'success');
+
+                // Update local sent counter
+                selectedRecipient.emailSentCount = (selectedRecipient.emailSentCount || 0) + 1;
+                const badgeEl = document.getElementById('targetCounterBadge');
+                badgeEl.className = 'sent-counter-badge has-sent';
+                badgeEl.textContent = `✉️ ${selectedRecipient.emailSentCount} email${selectedRecipient.emailSentCount === 1 ? '' : 's'} sent previously`;
+
+                renderRecipientList();
+                loadRecipientHistory(selectedRecipient.id);
+
+                // Clear admin note
+                document.getElementById('editAdminNotes').value = '';
+
+            } catch (err) {
+                console.error('Dispatch error:', err);
+                showToast(`❌ Failed to send email: ${err.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>🚀 Send Email to Customer</span>';
+            }
+        }
+
+        // Load audit log for recipient
+        async function loadRecipientHistory(recipientId) {
+            const card = document.getElementById('historyCard');
+            const list = document.getElementById('historyList');
+            const countEl = document.getElementById('historyCount');
+
+            try {
+                // Query by recipientId only (does not require a composite index in Firestore)
+                const snap = await db.collection('email_history')
+                    .where('recipientId', '==', recipientId)
+                    .limit(50)
+                    .get();
+
+                if (snap.empty) {
+                    card.style.display = 'block';
+                    countEl.textContent = '0 sent';
+                    list.innerHTML = `<div style="padding: 12px; color: var(--text-tertiary); font-size: 0.75rem; text-align: center;">No previous emails logged for this recipient.</div>`;
+                    return;
+                }
+
+                // Sort client-side by sentAt descending
+                const docs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                docs.sort((a, b) => {
+                    const timeA = a.sentAt?.toMillis?.() || (a.sentAt ? new Date(a.sentAt).getTime() : 0);
+                    const timeB = b.sentAt?.toMillis?.() || (b.sentAt ? new Date(b.sentAt).getTime() : 0);
+                    return timeB - timeA;
+                });
+
+                card.style.display = 'block';
+                countEl.textContent = `${docs.length} logged`;
+
+                list.innerHTML = docs.slice(0, 20).map(data => {
+                    const dateStr = data.sentAt ? data.sentAt.toDate().toLocaleString('en-IN') : 'Just now';
+                    return `
+                        <div class="history-entry">
+                            <div>
+                                <div style="font-weight: 700; color: var(--text-primary);">${esc(data.subject)}</div>
+                                <div style="font-size: 0.6875rem; color: var(--text-tertiary); margin-top: 2px;">
+                                    Template: <b>${esc(data.templateKey)}</b> • To: ${esc(data.recipientEmail)} • By: ${esc(data.sentByEmail || 'Admin')}
+                                    ${data.adminNotes ? ` • Note: <i>${esc(data.adminNotes)}</i>` : ''}
+                                </div>
+                            </div>
+                            <div style="font-size: 0.6875rem; color: var(--text-tertiary); white-space: nowrap;">
+                                🕒 ${dateStr}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.warn('Could not load history:', err);
+                card.style.display = 'none';
+            }
+        }
+
+        // Utility: Escapes HTML strings
+        function esc(s) {
+            return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        // Utility: Show page toast
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('pageToast');
+            t.textContent = msg;
+            t.className = `toast ${type}`;
+            t.style.display = 'block';
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
+                t.style.display = 'none';
+            }, 4500);
+        }
+    </script>
+</body>
+</html>

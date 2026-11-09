@@ -993,13 +993,20 @@
 
                 const activeClass = currentUser && currentUser.id === u.id ? 'active' : '';
 
+                const sentCount = u.emailSentCount || 0;
+                const counterBadge = `<span class="badge" style="background: ${sentCount > 0 ? '#ecfdf5' : '#f1f5f9'}; color: ${sentCount > 0 ? '#059669' : '#64748b'}; border: 1px solid ${sentCount > 0 ? '#a7f3d0' : '#e2e8f0'}; font-size: 0.65rem; padding: 1px 6px;" title="Emails sent to this customer">✉️ ${sentCount}</span>`;
+
                 return `
                     <div class="user-item ${activeClass}" data-id="${u.id}" onclick="selectUser('${u.id}')">
                         ${avatarHtml}
                         <div class="user-item-content">
                             <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px;">
                                 <h4>${escapeHtml(name)}</h4>
-                                <span class="badge ${statusBadgeClass}" style="font-size: 0.65rem; padding: 1px 6px;">${escapeHtml(status)}</span>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <span class="badge ${statusBadgeClass}" style="font-size: 0.65rem; padding: 1px 6px;">${escapeHtml(status)}</span>
+                                    ${counterBadge}
+                                    <a href="email-hub.html" onclick="event.stopPropagation();" title="Open Email Hub for ${escapeHtml(name)}" style="text-decoration:none; font-size:11px; background:var(--bg-tertiary); padding:1px 6px; border-radius:4px; border:1px solid var(--border-color); color:var(--color-primary);">✉️</a>
+                                </div>
                             </div>
                             <p>${escapeHtml(email)}</p>
                             ${phone ? `<span class="user-item-meta">📞 ${escapeHtml(phone)}</span>` : ''}

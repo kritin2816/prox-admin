@@ -742,14 +742,23 @@
                 let badgeClass = 'badge-warning';
                 if (status === 'approved') badgeClass = 'badge-success';
                 
+                const sentCount = p.emailSentCount || 0;
+                const counterBadge = `<span class="badge" style="background: ${sentCount > 0 ? '#ecfdf5' : '#f1f5f9'}; color: ${sentCount > 0 ? '#059669' : '#64748b'}; border: 1px solid ${sentCount > 0 ? '#a7f3d0' : '#e2e8f0'}; margin-left: 4px;" title="Total emails sent to this provider">✉️ ${sentCount} sent</span>`;
+
                 return `
                     <div class="provider-item" data-id="${p.id}" onclick="selectProvider('${p.id}')">
                         <div class="provider-avatar">${initial}</div>
                         <div class="provider-info" style="flex:1">
-                            <h4>${name}</h4>
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                <h4>${name}</h4>
+                                <a href="email-hub.html" onclick="event.stopPropagation();" title="Open Email Hub for ${name}" style="text-decoration:none; font-size:12px; background:var(--bg-tertiary); padding:2px 8px; border-radius:6px; border:1px solid var(--border-color); color:var(--color-primary);">✉️ Email</a>
+                            </div>
                             <p>${email}</p>
-                            <span class="badge ${badgeClass}">${status}</span>
-                            ${!isActive ? '<span class="badge badge-warning" style="margin-left:5px">Inactive</span>' : ''}
+                            <div style="margin-top: 4px; display:flex; flex-wrap:wrap; gap:4px; align-items:center;">
+                                <span class="badge ${badgeClass}">${status}</span>
+                                ${!isActive ? '<span class="badge badge-warning">Inactive</span>' : ''}
+                                ${counterBadge}
+                            </div>
                         </div>
                     </div>
                 `;

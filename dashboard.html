@@ -7,852 +7,1062 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#1e293b">
-    <title>Pro X Admin Dashboard</title>
+    <meta name="theme-color" content="#6a3093">
+    <title>Pro X &bull; Executive Admin Dashboard</title>
+
+    <!-- PWA Manifest & Native Mobile Stylesheet -->
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="mobile-app.css">
+
+    <!-- Chart.js 4.4 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <!-- Firebase SDK v8 (compat) - CDN -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- Google Fonts: Plus Jakarta Sans & Fira Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        /* CSS Variables for Theming */
         :root {
-            --color-primary: #667eea;
-            --color-primary-dark: #5568d3;
-            --color-secondary: #764ba2;
+            --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'Fira Code', monospace;
+
+            /* Light Theme Palette */
+            --bg-page: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-subtle: #f1f5f9;
+            --bg-card: #ffffff;
+            --bg-glass: rgba(255, 255, 255, 0.82);
+
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-color: #e2e8f0;
+            --border-strong: #cbd5e1;
+
+            /* Brand Accents & Gradients */
+            --brand-primary: #7c3aed;
+            --brand-primary-hover: #6d28d9;
+            --brand-gradient: linear-gradient(135deg, #a044ff 0%, #6a3093 100%);
+            --brand-subtle: #f5f3ff;
+            --brand-border: #ddd6fe;
+
+            --color-primary: #7c3aed;
             --color-success: #10b981;
             --color-warning: #f59e0b;
             --color-error: #ef4444;
             --color-info: #3b82f6;
 
-            /* Light theme */
-            --bg-primary: #f8fafc;
-            --bg-secondary: #ffffff;
-            --bg-tertiary: #f1f5f9;
-            --bg-card: #ffffff;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --text-tertiary: #94a3b8;
-            --border-color: #e2e8f0;
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            --success-subtle: #ecfdf5;
+            --success-border: #a7f3d0;
+            --warning-subtle: #fffbeb;
+            --warning-border: #fde68a;
+            --error-subtle: #fef2f2;
+            --error-border: #fecaca;
+            --info-subtle: #eff6ff;
+            --info-border: #bfdbfe;
+
+            --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.07);
+            --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.14);
+
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-pill: 9999px;
         }
 
         [data-theme="dark"] {
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-tertiary: #334155;
-            --bg-card: #1e293b;
-            --text-primary: #f1f5f9;
+            --bg-page: #090d16;
+            --bg-surface: #111827;
+            --bg-subtle: #1e293b;
+            --bg-card: #111827;
+            --bg-glass: rgba(17, 24, 39, 0.88);
+
+            --text-primary: #f8fafc;
             --text-secondary: #cbd5e1;
-            --text-tertiary: #94a3b8;
-            --border-color: #334155;
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+            --text-tertiary: #64748b;
+            --border-color: #1f293d;
+            --border-strong: #334155;
+
+            --brand-primary: #a855f7;
+            --brand-primary-hover: #9333ea;
+            --brand-subtle: rgba(168, 85, 247, 0.14);
+            --brand-border: rgba(168, 85, 247, 0.32);
+
+            --color-primary: #a855f7;
+            --color-success: #34d399;
+            --color-warning: #fbbf24;
+            --color-error: #f87171;
+            --color-info: #60a5fa;
+
+            --success-subtle: rgba(16, 185, 129, 0.12);
+            --success-border: rgba(16, 185, 129, 0.3);
+            --warning-subtle: rgba(245, 158, 11, 0.12);
+            --warning-border: rgba(245, 158, 11, 0.3);
+            --error-subtle: rgba(239, 68, 68, 0.12);
+            --error-border: rgba(239, 68, 68, 0.3);
+            --info-subtle: rgba(59, 130, 246, 0.12);
+            --info-border: rgba(59, 130, 246, 0.3);
+
+            --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.65);
+            --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.8);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg-primary);
-            background-image: 
-                radial-gradient(circle at 15% 25%, rgba(102, 126, 234, 0.08) 0%, transparent 45%),
-                radial-gradient(circle at 85% 75%, rgba(118, 75, 162, 0.08) 0%, transparent 45%),
-                radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.04) 0%, transparent 50%);
-            background-attachment: fixed;
+            font-family: var(--font-main);
+            background: var(--bg-page);
             color: var(--text-primary);
-            line-height: 1.6;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 12%, rgba(160, 68, 255, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 88%, rgba(106, 48, 147, 0.05) 0%, transparent 45%);
+            background-attachment: fixed;
+            padding-bottom: calc(var(--mobile-app-nav-h, 62px) + env(safe-area-inset-bottom, 20px) + 24px);
         }
 
-        /* Header with improved styling */
-        .header {
-            background: #6a3093;
-            /* fallback for old browsers */
-            background: -webkit-linear-gradient(to right, #a044ff, #6a3093);
-            /* Chrome 10-25, Safari 5.1-6 */
-            background: linear-gradient(to right, #a044ff, #6a3093);
-            /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-
-            color: white;
-            padding: 1rem 0;
+        /* Top Header */
+        .dash-header {
+            background: var(--brand-gradient);
+            color: #ffffff;
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: var(--shadow-lg);
+            box-shadow: var(--shadow-md);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.16);
         }
 
-        .header-content {
-            max-width: 1400px;
+        .dash-header-inner {
+            max-width: 1560px;
             margin: 0 auto;
-            padding: 0 1.5rem;
+            padding: 0.85rem 1.5rem;
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
             gap: 1rem;
+            flex-wrap: wrap;
         }
 
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
+        .brand-cluster {
             display: flex;
             align-items: center;
-            gap: 0.625rem;
-            letter-spacing: -0.5px;
+            gap: 0.85rem;
+            text-decoration: none;
+            color: #ffffff;
         }
 
-        .logo-icon {
-            font-size: 2rem;
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .theme-toggle {
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 0.5rem;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 1.25rem;
+        .brand-badge-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 44px;
-            height: 44px;
-            transition: all 0.2s;
-            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 1.3rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
-        .theme-toggle:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: scale(1.05);
-        }
-
-        .user-info {
+        .brand-name-group h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            padding: 0.5rem 1rem;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
+            gap: 0.45rem;
         }
 
-        .user-email {
-            font-size: 0.875rem;
-            opacity: 0.95;
-            display: none;
-            font-weight: 500;
+        .brand-name-group h1 span.pill-pro {
+            font-size: 0.65rem;
+            background: rgba(255, 255, 255, 0.25);
+            padding: 2px 7px;
+            border-radius: var(--radius-pill);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 800;
         }
 
-        .logout-btn {
-            padding: 0.625rem 1.25rem;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
+        .brand-subline {
+            font-size: 0.725rem;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pulse-live {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.35);
+            animation: pulseLight 2s infinite;
+        }
+
+        @keyframes pulseLight {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+        }
+
+        .hdr-chip-btn {
+            background: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 0.45rem 0.85rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.8125rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
             cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 600;
-            transition: all 0.2s;
-            backdrop-filter: blur(10px);
-            min-height: 44px;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(8px);
         }
 
-        .logout-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
+        .hdr-chip-btn:hover {
+            background: rgba(255, 255, 255, 0.28);
             transform: translateY(-1px);
         }
 
-        /* Main Container with better spacing */
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 1.5rem;
-        }
-
-        /* Hero Section - Improved visual hierarchy */
-        .hero-section {
-            background: #673AB7;
-            /* fallback for old browsers */
-            background: -webkit-linear-gradient(to right, #512DA8, #673AB7);
-            /* Chrome 10-25, Safari 5.1-6 */
-            background: linear-gradient(to right, #512DA8, #673AB7);
-            /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-
-            border-radius: 16px;
-            padding: 2rem 1.5rem;
-            margin-bottom: 2rem;
-            color: white;
-            box-shadow: var(--shadow-xl);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-            border-radius: 50%;
-            transform: translate(30%, -30%);
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .page-title {
-            font-size: 2rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.5px;
-        }
-
-        .page-subtitle {
-            font-size: 1.125rem;
-            opacity: 0.9;
-            margin-bottom: 1rem;
-            font-weight: 400;
-        }
-
-        .hero-stats {
+        .theme-toggle-btn {
+            width: 38px;
+            height: 38px;
             display: flex;
-            gap: 2rem;
-            flex-wrap: wrap;
-            margin-top: 1.5rem;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border-radius: var(--radius-md);
+            font-size: 1.15rem;
         }
 
-        .hero-stat {
+        .admin-profile-pill {
             display: flex;
-            flex-direction: column;
-        }
-
-        .hero-stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            line-height: 1;
-            margin-bottom: 0.25rem;
-        }
-
-        .hero-stat-label {
-            font-size: 0.875rem;
-            opacity: 0.85;
-        }
-
-        .last-updated {
-            display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 8px;
-            font-size: 0.8125rem;
-            backdrop-filter: blur(10px);
-            margin-top: 1rem;
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-pill);
+            backdrop-filter: blur(8px);
         }
 
-        /* Section Headers */
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.25rem;
+        .admin-email-text {
+            font-size: 0.75rem;
+            font-weight: 600;
+            max-width: 160px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .section-title {
-            font-size: 1.25rem;
+        @media (max-width: 640px) {
+            .admin-email-text { display: none; }
+        }
+
+        .btn-logout-mini {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: #ffffff;
+            padding: 3px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 0.7rem;
             font-weight: 700;
-            letter-spacing: -0.3px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-logout-mini:hover {
+            background: rgba(239, 68, 68, 0.85);
+        }
+
+        /* Main Workspace Container */
+        .dashboard-container {
+            max-width: 1560px;
+            width: 100%;
+            margin: 1.25rem auto;
+            padding: 0 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        /* Urgent Alert Banners */
+        .alert-banner {
+            border-radius: var(--radius-lg);
+            padding: 1rem 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.25rem;
+            flex-wrap: wrap;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+
+        .alert-banner.banner-danger {
+            background: var(--error-subtle);
+            border: 1.5px solid var(--color-error);
             color: var(--text-primary);
         }
 
-        .section-subtitle {
-            font-size: 0.875rem;
+        .alert-banner.banner-phone {
+            background: linear-gradient(135deg, rgba(160, 68, 255, 0.08) 0%, rgba(106, 48, 147, 0.16) 100%);
+            border: 1.5px solid var(--brand-border);
+            color: var(--text-primary);
+        }
+
+        .alert-banner-left {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .alert-banner-icon {
+            font-size: 1.65rem;
+            line-height: 1;
+        }
+
+        .alert-banner-text h4 {
+            font-size: 0.95rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-banner-text p {
+            font-size: 0.8rem;
             color: var(--text-secondary);
-            margin-top: 0.25rem;
+            margin-top: 2px;
         }
 
-        /* Priority Metrics - F-pattern layout */
-        .priority-metrics {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
+        .alert-actions-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
-        .metric-card {
-            background: rgba(255, 255, 255, 0.45);
-            padding: 1.5rem;
-            border-radius: 14px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.4);
+        /* Executive Command Hero */
+        .executive-hero-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 1.4rem 1.65rem;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+            flex-wrap: wrap;
             position: relative;
             overflow: hidden;
         }
 
-        [data-theme="dark"] .metric-card {
-            background: rgba(30, 41, 59, 0.45);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .metric-card::before {
+        .executive-hero-card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             width: 4px;
             height: 100%;
-            background: var(--metric-color, var(--color-primary));
-            opacity: 0;
-            transition: opacity 0.3s;
+            background: var(--brand-gradient);
         }
 
-        .metric-card:hover::before {
-            opacity: 1;
-        }
-
-        .metric-card.priority-high {
-            --metric-color: var(--color-error);
-        }
-
-        .metric-card.priority-medium {
-            --metric-color: var(--color-warning);
-        }
-
-        .metric-card.priority-normal {
-            --metric-color: var(--color-info);
-        }
-
-        .metric-header {
+        .hero-welcome-group {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-        }
-
-        .metric-label {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .metric-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            flex-shrink: 0;
-        }
-
-        .metric-value {
-            font-size: 2.5rem;
-            font-weight: 800;
-            line-height: 1;
-            margin-bottom: 0.75rem;
-            letter-spacing: -1px;
-        }
-
-        .metric-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .metric-change {
-            font-size: 0.8125rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.375rem;
-            padding: 0.375rem 0.75rem;
-            border-radius: 8px;
-        }
-
-        .metric-change.positive {
-            color: var(--color-success);
-            background: rgba(16, 185, 129, 0.1);
-        }
-
-        .metric-change.negative {
-            color: var(--color-error);
-            background: rgba(239, 68, 68, 0.1);
-        }
-
-        .metric-change.neutral {
-            color: var(--text-tertiary);
-            background: var(--bg-tertiary);
-        }
-
-        .metric-action {
-            font-size: 0.8125rem;
-            color: var(--color-primary);
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
+            flex-direction: column;
             gap: 0.25rem;
-            transition: transform 0.2s;
         }
 
-        .metric-action:hover {
-            transform: translateX(3px);
-        }
-
-        /* Icon Colors */
-        .icon-blue {
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--color-info);
-        }
-
-        .icon-green {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--color-success);
-        }
-
-        .icon-orange {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--color-warning);
-        }
-
-        .icon-purple {
-            background: rgba(147, 51, 234, 0.1);
-            color: #9333ea;
-        }
-
-        .icon-red {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--color-error);
-        }
-
-        .icon-yellow {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--color-warning);
-        }
-
-        .icon-pink {
-            background: rgba(219, 39, 119, 0.1);
-            color: #db2777;
-        }
-
-        .icon-cyan {
-            background: rgba(8, 145, 178, 0.1);
-            color: #0891b2;
-        }
-
-        /* Two-column layout for desktop */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        /* Chart Cards - Improved design */
-        .chart-card {
-            background: var(--bg-card);
-            padding: 1.5rem;
-            border-radius: 14px;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border-color);
-            transition: box-shadow 0.3s;
-        }
-
-        .chart-card:hover {
-            box-shadow: var(--shadow-md);
-        }
-
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .chart-title {
-            font-size: 1.125rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            letter-spacing: -0.3px;
-        }
-
-        .chart-subtitle {
+        .hero-date-badge {
             font-size: 0.75rem;
-            color: var(--text-tertiary);
-            margin-top: 0.25rem;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 280px;
-        }
-
-        /* Sidebar Layout for Analytics */
-        .analytics-layout {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .main-analytics {
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--brand-primary);
             display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .sidebar-analytics {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        /* Performance Metrics Card */
-        .metrics-card {
-            background: var(--bg-card);
-            padding: 1.5rem;
-            border-radius: 14px;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border-color);
-        }
-
-        .metrics-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-        }
-
-        .metric-item {
-            display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 1rem;
-            background: var(--bg-tertiary);
-            border-radius: 10px;
-            transition: transform 0.2s;
+            gap: 0.35rem;
         }
 
-        .metric-item:hover {
-            transform: translateX(4px);
-        }
-
-        .metric-item-label {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            font-weight: 600;
-        }
-
-        .metric-item-value {
+        .hero-welcome-title {
             font-size: 1.5rem;
-            font-weight: 700;
+            font-weight: 800;
+            letter-spacing: -0.02em;
             color: var(--text-primary);
         }
 
-        .metric-item-status {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-weight: 600;
-            margin-left: 0.5rem;
+        .hero-welcome-sub {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
-        .status-excellent {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--color-success);
-        }
-
-        .status-good {
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--color-info);
-        }
-
-        .status-fair {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--color-warning);
-        }
-
-        .status-poor {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--color-error);
-        }
-
-        /* Operations Workflow Pipeline Grid */
-        .pipeline-section {
-            margin-bottom: 2.5rem;
-            background: rgba(255, 255, 255, 0.45);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            border-radius: 24px;
-            padding: 2rem 1.75rem;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        [data-theme="dark"] .pipeline-section {
-            background: rgba(30, 41, 59, 0.45);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-        }
-
-        .pipeline-section-header {
+        .hero-kpi-strip {
             display: flex;
             align-items: center;
             gap: 0.85rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.85rem;
-            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
         }
 
-        .pipeline-section-icon {
-            font-size: 1.65rem;
-            filter: drop-shadow(0 2px 8px rgba(102, 126, 234, 0.3));
+        .hero-kpi-chip {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            padding: 0.65rem 1rem;
+            border-radius: var(--radius-md);
+            display: flex;
+            flex-direction: column;
+            min-width: 105px;
+            transition: all 0.2s ease;
         }
 
-        .pipeline-section-title {
-            font-size: 1.25rem;
+        .hero-kpi-chip:hover {
+            border-color: var(--brand-primary);
+            background: var(--brand-subtle);
+            transform: translateY(-2px);
+        }
+
+        .hero-kpi-val {
+            font-size: 1.35rem;
             font-weight: 800;
+            line-height: 1.1;
             color: var(--text-primary);
-            letter-spacing: -0.4px;
         }
 
-        .quick-actions {
+        .hero-kpi-lbl {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-tertiary);
+            margin-top: 2px;
+        }
+
+        /* Priority KPI Grid */
+        .priority-kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 1rem;
+        }
+
+        .kpi-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.15rem 1.25rem;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .kpi-card:hover {
+            border-color: var(--brand-primary);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .kpi-top-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 0.65rem;
+        }
+
+        .kpi-title {
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+
+        .kpi-icon-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .kpi-main-val {
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-footer-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+            padding-top: 0.5rem;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        .kpi-tag {
+            font-size: 0.725rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: var(--radius-pill);
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .kpi-action-link {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--brand-primary);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            transition: transform 0.2s;
+        }
+
+        .kpi-action-link:hover {
+            transform: translateX(3px);
+        }
+
+        /* Operations Workflow Pipeline Section */
+        .pipeline-master-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 1.4rem 1.6rem;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
             gap: 1.25rem;
         }
 
-        .action-card {
-            background: rgba(255, 255, 255, 0.55);
-            padding: 1.75rem 1.5rem;
-            border-radius: 18px;
-            box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.03);
+        .pipeline-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .pipeline-title-group h2 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .pipeline-title-group p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Category Filter Tabs & Fast Search */
+        .pipeline-controls-strip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            background: var(--bg-subtle);
+            padding: 0.65rem 0.85rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+        }
+
+        .pipeline-filter-chips {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .pipeline-filter-chips::-webkit-scrollbar {
+            display: none;
+        }
+
+        .cat-chip-btn {
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.4rem 0.85rem;
+            border-radius: var(--radius-pill);
             cursor: pointer;
-            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .cat-chip-btn:hover {
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+        }
+
+        .cat-chip-btn.active {
+            background: var(--brand-primary);
+            color: #ffffff;
+            border-color: var(--brand-primary);
+            box-shadow: var(--shadow-xs);
+        }
+
+        .module-search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+            min-width: 200px;
+        }
+
+        .module-search-input {
+            width: 100%;
+            padding: 0.45rem 0.75rem 0.45rem 2rem;
+            font-size: 0.78rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            outline: none;
+            font-family: inherit;
+        }
+
+        .module-search-input:focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 3px var(--brand-subtle);
+        }
+
+        .module-search-icon {
+            position: absolute;
+            left: 8px;
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+            pointer-events: none;
+        }
+
+        /* Operations Cards Grid */
+        .action-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 0.85rem;
+        }
+
+        .action-card {
+            background: var(--bg-page);
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1rem;
             text-decoration: none;
-            color: inherit;
+            color: var(--text-primary);
             display: flex;
             flex-direction: column;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            justify-content: space-between;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-        }
-
-        [data-theme="dark"] .action-card {
-            background: rgba(30, 41, 59, 0.55);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        /* Futuristic border line overlay */
-        .action-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-            opacity: 0.3;
-            transition: opacity 0.3s, height 0.3s;
+            min-height: 145px;
         }
 
         .action-card:hover {
-            transform: translateY(-6px) scale(1.02);
-            border-color: var(--color-primary);
-            box-shadow: 0 12px 24px -10px rgba(102, 126, 234, 0.25), 0 8px 16px -8px rgba(118, 75, 162, 0.2);
-        }
-
-        .action-card:hover::before {
-            opacity: 1;
-            height: 5px;
-        }
-
-        .action-card:active {
-            transform: scale(0.98);
+            border-color: var(--brand-primary);
+            background: var(--bg-surface);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
         }
 
         .action-header {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.25rem;
+            margin-bottom: 0.65rem;
         }
 
-        .action-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
+        .action-icon-wrap {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.85rem;
-            transition: transform 0.3s ease;
+            font-size: 1.2rem;
+            flex-shrink: 0;
         }
 
-        .action-card:hover .action-icon {
-            transform: rotate(-5deg) scale(1.1);
-        }
-
-        /* Larger, glowing status badges */
         .action-badge {
-            font-size: 1.125rem;
+            font-size: 0.6875rem;
             font-weight: 800;
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            display: flex;
+            padding: 2px 8px;
+            border-radius: var(--radius-pill);
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 2px solid transparent;
-            font-family: 'Inter', sans-serif;
-            box-shadow: var(--shadow-sm);
+            min-width: 22px;
+            height: 22px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
-        /* Green badge for 0 (All clear) */
         .badge-zero {
-            background: rgba(16, 185, 129, 0.15) !important;
-            color: #10b981 !important;
-            border-color: rgba(16, 185, 129, 0.4) !important;
-            box-shadow: 0 0 12px rgba(16, 185, 129, 0.15) !important;
+            background: var(--success-subtle);
+            color: var(--color-success);
+            border: 1px solid var(--success-border);
         }
 
-        /* Red badge for >0 (Pending Actions) */
         .badge-active {
-            background: rgba(239, 68, 68, 0.15) !important;
-            color: #ef4444 !important;
-            border-color: rgba(239, 68, 68, 0.4) !important;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3) !important;
-            animation: badge-pulse 2s infinite;
+            background: var(--error-subtle);
+            color: var(--color-error);
+            border: 1px solid var(--error-border);
+            animation: badgePulse 2s infinite;
         }
 
-        @keyframes badge-pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45), 0 0 10px rgba(239, 68, 68, 0.2);
-            }
-            70% {
-                box-shadow: 0 0 0 8px rgba(239, 68, 68, 0), 0 0 14px rgba(239, 68, 68, 0.25);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0), 0 0 10px rgba(239, 68, 68, 0.2);
-            }
+        @keyframes badgePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
         }
 
         .action-title {
-            font-size: 1.15rem;
-            font-weight: 750;
-            margin-bottom: 0.625rem;
-            letter-spacing: -0.3px;
+            font-size: 0.9rem;
+            font-weight: 800;
             color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            line-height: 1.2;
         }
 
         .action-description {
-            font-size: 0.875rem;
+            font-size: 0.725rem;
             color: var(--text-secondary);
-            line-height: 1.5;
-            margin-bottom: 1.25rem;
-            flex: 1;
+            line-height: 1.4;
+            margin-bottom: 0.75rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .action-footer {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding-top: 1.125rem;
+            justify-content: space-between;
+            padding-top: 0.45rem;
             border-top: 1px solid var(--border-color);
+            margin-top: auto;
         }
 
         .action-count {
-            font-size: 0.8125rem;
+            font-size: 0.725rem;
+            font-weight: 700;
             color: var(--text-tertiary);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .action-arrow {
-            color: var(--color-primary);
-            font-size: 1.35rem;
-            transition: transform 0.25s ease;
+            font-size: 0.85rem;
+            color: var(--brand-primary);
+            font-weight: 800;
+            transition: transform 0.2s;
         }
 
         .action-card:hover .action-arrow {
-            transform: translateX(6px);
+            transform: translateX(4px);
         }
 
-        /* Activity Feed - Improved */
-        .activity-feed {
-            background: var(--bg-card);
-            padding: 1.5rem;
-            border-radius: 14px;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border-color);
+        /* Analytics Cockpit & Dual Column Layout */
+        .cockpit-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 1.25rem;
+            align-items: start;
         }
 
-        .activity-list {
-            max-height: 500px;
-            overflow-y: auto;
-            padding-right: 0.5rem;
+        @media (max-width: 1200px) {
+            .cockpit-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
-        .activity-item {
+        .cockpit-left {
             display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .cockpit-right {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        /* Chart Cards */
+        .chart-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 1.35rem 1.5rem;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .chart-title-wrap h3 {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .chart-title-wrap p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .chart-container-box {
+            position: relative;
+            width: 100%;
+        }
+
+        .sub-charts-2x2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 1rem;
-            padding: 1.25rem;
-            border-radius: 12px;
-            transition: background 0.2s;
-            margin-bottom: 0.75rem;
-            border: 1px solid transparent;
         }
 
-        .activity-item:hover {
-            background: var(--bg-tertiary);
-            border-color: var(--border-color);
+        @media (max-width: 768px) {
+            .sub-charts-2x2 {
+                grid-template-columns: 1fr;
+            }
         }
 
-        .activity-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+        /* Sidebar Cards (Health, Users, Performers, Activity) */
+        .sidebar-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 1.25rem 1.4rem;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .card-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header-bar h3 {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .card-header-link {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--brand-primary);
+            text-decoration: none;
+        }
+
+        .card-header-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Health Metric Rows */
+        .health-rows-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+        }
+
+        .health-row-item {
+            background: var(--bg-page);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .health-metric-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .health-metric-val {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1.1;
+        }
+
+        .metric-item-status {
+            font-size: 0.6875rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: var(--radius-pill);
+            text-transform: uppercase;
+        }
+
+        .status-good { background: var(--success-subtle); color: var(--color-success); border: 1px solid var(--success-border); }
+        .status-excellent { background: var(--info-subtle); color: var(--color-info); border: 1px solid var(--info-border); }
+        .status-fair { background: var(--warning-subtle); color: var(--color-warning); border: 1px solid var(--warning-border); }
+        .status-poor { background: var(--error-subtle); color: var(--color-error); border: 1px solid var(--error-border); }
+
+        /* Performers & Users Lists */
+        .performer-item, .user-card-item {
+            background: var(--bg-page);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.65rem 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .performer-item:hover, .user-card-item:hover {
+            border-color: var(--brand-primary);
+            background: var(--bg-surface);
+            transform: translateX(2px);
+        }
+
+        .user-card-avatar, .performer-rank {
+            width: 34px;
+            height: 34px;
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 0.78rem;
+            font-weight: 800;
             flex-shrink: 0;
-            font-size: 1.25rem;
+            background: var(--brand-subtle);
+            color: var(--brand-primary);
+        }
+
+        .user-card-info, .performer-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-card-name-row, .performer-name {
+            font-size: 0.825rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .user-card-contact, .performer-metric {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-card-time {
+            font-size: 0.6875rem;
+            color: var(--text-tertiary);
+            white-space: nowrap;
+        }
+
+        .performer-badge {
+            font-size: 0.6875rem;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: var(--radius-pill);
+            text-transform: uppercase;
+        }
+
+        /* Activity Feed */
+        .activity-feed-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 340px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            background: var(--bg-page);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.65rem 0.85rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .activity-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            flex-shrink: 0;
         }
 
         .activity-content {
@@ -861,665 +1071,296 @@
         }
 
         .activity-text {
-            margin-bottom: 0.375rem;
-            font-size: 0.875rem;
-            line-height: 1.5;
+            font-size: 0.78rem;
+            color: var(--text-primary);
+            line-height: 1.35;
         }
 
         .activity-time {
-            font-size: 0.75rem;
-            color: var(--text-tertiary);
-            font-weight: 500;
-        }
-
-        /* Top Performers - Enhanced */
-        .performers-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .performer-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1.25rem;
-            background: var(--bg-tertiary);
-            border-radius: 12px;
-            transition: all 0.2s;
-            border: 1px solid transparent;
-        }
-
-        .performer-item:hover {
-            background: var(--bg-card);
-            border-color: var(--border-color);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .performer-rank {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 1.25rem;
-            flex-shrink: 0;
-        }
-
-        .performer-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .performer-name {
-            font-weight: 700;
-            margin-bottom: 0.25rem;
-            font-size: 0.9375rem;
-        }
-
-        .performer-metric {
-            font-size: 0.8125rem;
-            color: var(--text-secondary);
-        }
-
-        .performer-badge {
-            padding: 0.375rem 0.875rem;
-            border-radius: 12px;
-            font-size: 0.8125rem;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        /* New Users Card Styles */
-        .users-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .user-card-item {
-            display: flex;
-            align-items: center;
-            gap: 0.875rem;
-            padding: 0.875rem 1rem;
-            background: var(--bg-tertiary);
-            border-radius: 12px;
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .user-card-item:hover {
-            background: var(--bg-card);
-            border-color: var(--border-color);
-            box-shadow: var(--shadow-sm);
-            transform: translateX(4px);
-        }
-
-        .user-card-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #a044ff, #6a3093);
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.9rem;
-            flex-shrink: 0;
-            text-transform: uppercase;
-            box-shadow: 0 2px 6px rgba(160, 68, 255, 0.25);
-        }
-
-        .user-card-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .user-card-name-row {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.2rem;
-            flex-wrap: wrap;
-        }
-
-        .user-card-name {
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: var(--text-primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 160px;
-        }
-
-        .user-card-status {
             font-size: 0.6875rem;
-            padding: 0.15rem 0.5rem;
-            border-radius: 10px;
-            font-weight: 600;
-            text-transform: capitalize;
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--color-success);
-        }
-
-        .user-card-contact {
-            font-size: 0.775rem;
-            color: var(--text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .user-card-time {
-            font-size: 0.75rem;
             color: var(--text-tertiary);
-            flex-shrink: 0;
-            font-weight: 500;
-            margin-left: auto;
+            margin-top: 2px;
         }
 
-        /* Loading & Empty States */
+        /* Loading & Empty states */
         .loading {
+            padding: 2rem;
             text-align: center;
-            padding: 3rem;
-            color: var(--text-secondary);
+            color: var(--text-tertiary);
+            font-size: 0.8125rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
         .loading-spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid var(--border-color);
-            border-top-color: var(--color-primary);
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--brand-primary);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
+            animation: spin 0.6s linear infinite;
         }
 
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
 
         .empty-state {
+            padding: 2rem 1rem;
             text-align: center;
-            padding: 3rem;
             color: var(--text-tertiary);
         }
 
         .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            opacity: 0.4;
+            font-size: 2rem;
+            margin-bottom: 0.25rem;
         }
 
         .empty-state-text {
-            font-size: 1rem;
+            font-size: 0.8125rem;
             font-weight: 600;
-        }
-
-        /* Scrollbar */
-        .activity-list::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .activity-list::-webkit-scrollbar-track {
-            background: var(--bg-tertiary);
-            border-radius: 3px;
-        }
-
-        .activity-list::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 3px;
-        }
-
-        .activity-list::-webkit-scrollbar-thumb:hover {
-            background: var(--text-tertiary);
-        }
-
-        /* Responsive Breakpoints */
-        @media (min-width: 480px) {
-            .user-email {
-                display: block;
-            }
-
-            .hero-section {
-                padding: 2.5rem;
-            }
-        }
-
-        @media (min-width: 768px) {
-            .container {
-                padding: 2rem;
-            }
-
-            .hero-section {
-                padding: 3rem;
-            }
-
-            .page-title {
-                font-size: 2.5rem;
-            }
-
-            .section-title {
-                font-size: 1.5rem;
-            }
-
-            .dashboard-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .chart-container {
-                height: 300px;
-            }
-
-            .metric-card:hover {
-                transform: translateY(-4px);
-                box-shadow: var(--shadow-lg);
-            }
-
-            .action-card:hover {
-                transform: translateY(-4px);
-                box-shadow: var(--shadow-md);
-            }
-        }
-
-        @media (min-width: 1024px) {
-            .priority-metrics {
-                grid-template-columns: repeat(4, 1fr);
-            }
-
-            .analytics-layout {
-                grid-template-columns: 2fr 1fr;
-            }
-
-            .quick-actions {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-
-        @media (min-width: 1280px) {
-            .dashboard-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        /* Accessibility */
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation-duration: 0.01ms !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
-
-        button:focus-visible,
-        .action-card:focus-visible,
-        .theme-toggle:focus-visible {
-            outline: 3px solid var(--color-primary);
-            outline-offset: 2px;
         }
     </style>
 </head>
 
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="logo">
-                <span class="logo-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                        viewBox="0 0 24 24" fill="#fff">
-                        <g clip-path="url(#clip0_4418_8526)">
-                            <path
-                                d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM8.53 13.47C8.82 13.76 8.82 14.24 8.53 14.53C8.38 14.68 8.19 14.75 8 14.75C7.81 14.75 7.62 14.68 7.47 14.53L5.47 12.53C5.18 12.24 5.18 11.76 5.47 11.47L7.47 9.47C7.76 9.18 8.24 9.18 8.53 9.47C8.82 9.76 8.82 10.24 8.53 10.53L7.06 12L8.53 13.47ZM13.69 9.96L11.69 14.63C11.57 14.91 11.29 15.08 11 15.08C10.9 15.08 10.8 15.06 10.71 15.02C10.33 14.86 10.15 14.42 10.32 14.03L12.32 9.36C12.48 8.98 12.92 8.8 13.3 8.97C13.68 9.14 13.85 9.58 13.69 9.96ZM18.53 12.53L16.53 14.53C16.38 14.68 16.19 14.75 16 14.75C15.81 14.75 15.62 14.68 15.47 14.53C15.18 14.24 15.18 13.76 15.47 13.47L16.94 12L15.47 10.53C15.18 10.24 15.18 9.76 15.47 9.47C15.76 9.18 16.24 9.18 16.53 9.47L18.53 11.47C18.82 11.76 18.82 12.24 18.53 12.53Z"
-                                fill="white" style="fill: var(--fillg);" />
-                        </g>
-                        <defs>
-                            <clipPath id="clip0_4418_8526">
-                                <rect width="24" height="24" fill="white" />
-                            </clipPath>
-                        </defs>
-                    </svg></span>
-                <span>Pro X Admin</span>
-            </div>
-            <div class="header-actions">
-                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle theme">
+
+    <!-- Top Navigation Header -->
+    <header class="dash-header">
+        <div class="dash-header-inner">
+            <a href="dashboard.html" class="brand-cluster">
+                <div class="brand-badge-icon">📊</div>
+                <div class="brand-name-group">
+                    <h1>Pro X &bull; Operations <span class="pill-pro">Command</span></h1>
+                    <div class="brand-subline">
+                        <span class="pulse-live"></span>
+                        <span>Real-Time Sync Active</span>
+                        <span>&bull;</span>
+                        <span id="last-updated">Updating...</span>
+                    </div>
+                </div>
+            </a>
+
+            <div class="header-controls">
+                <a href="email-hub.html" class="hdr-chip-btn" title="Open Email Dispatch Hub">
+                    <span>✉️</span> Email Hub
+                </a>
+                <a href="push-notifications.html" class="hdr-chip-btn" title="Open Push Notifications">
+                    <span>🔔</span> Push
+                </a>
+                <button class="hdr-chip-btn theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle Theme">
                     <span id="theme-icon">🌙</span>
                 </button>
-                <div class="user-info">
-                    <span class="user-email" id="admin-email">Loading...</span>
-                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
+                <div class="admin-profile-pill">
+                    <span class="admin-email-text" id="admin-email">Loading...</span>
+                    <button class="btn-logout-mini" onclick="handleLogout()" title="Sign out of admin session">Logout</button>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <div class="container">
-        <!-- Flagged Providers Alert Banner -->
-        <div id="flaggedAlertBanner" style="display: none; margin-bottom: 24px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(220, 38, 38, 0.22) 100%); border: 1.5px solid #ef4444; border-radius: 16px; padding: 18px 24px; color: var(--text-primary); align-items: center; justify-content: space-between; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.2);">
-            <div style="display: flex; align-items: center; gap: 14px;">
-                <div style="font-size: 28px;">⚠️</div>
-                <div>
-                    <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #ef4444;">Flagged Re-Login Attempt Detected!</h4>
-                    <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-secondary);" id="flaggedAlertText">One or more deleted providers recently attempted to log in.</p>
+    <!-- Main Dashboard Workspace -->
+    <main class="dashboard-container">
+
+        <!-- 1. Flagged Deleted Providers Alert Banner -->
+        <div id="flaggedAlertBanner" class="alert-banner banner-danger" style="display: none;">
+            <div class="alert-banner-left">
+                <div class="alert-banner-icon">⚠️</div>
+                <div class="alert-banner-text">
+                    <h4>Flagged Re-Login Attempt Detected!</h4>
+                    <p id="flaggedAlertText">One or more deleted providers recently attempted to log in.</p>
                 </div>
             </div>
-            <a href="deleted-providers.html?filter=flagged" style="background: #ef4444; color: white; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">Review Providers →</a>
+            <a href="deleted-providers.html?filter=flagged" class="hdr-chip-btn" style="background: #ef4444; color: #fff; border: none; font-weight: 800;">
+                Investigate Providers →
+            </a>
         </div>
 
-        <!-- Phone Notifications Live Alert Bar -->
-        <div id="phoneAlertDashboardCard" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(160, 68, 255, 0.12) 0%, rgba(106, 48, 147, 0.22) 100%); border: 1.5px solid rgba(160, 68, 255, 0.4); border-radius: 16px; padding: 18px 24px; color: var(--text-primary); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; box-shadow: 0 4px 14px rgba(106, 48, 147, 0.2);">
-            <div style="display: flex; align-items: center; gap: 14px;">
-                <div style="font-size: 28px; line-height: 1;">🔔</div>
-                <div>
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: var(--text-primary);">Real-Time Phone Alerts Active</h4>
-                        <span style="font-size: 11px; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 2px 8px; border-radius: 12px;">● Live Listening</span>
-                    </div>
-                    <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-secondary);">
-                        Instant alerts whenever a new provider (with location &amp; review status) or customer joins.
-                    </p>
+        <!-- 2. Real-Time Phone Notification Engine Banner -->
+        <div id="phoneAlertDashboardCard" class="alert-banner banner-phone">
+            <div class="alert-banner-left">
+                <div class="alert-banner-icon">🔔</div>
+                <div class="alert-banner-text">
+                    <h4>
+                        Real-Time Phone Alerts Active
+                        <span style="font-size: 0.6875rem; background: var(--success-subtle); color: var(--color-success); border: 1px solid var(--success-border); padding: 1px 7px; border-radius: var(--radius-pill); font-weight: 800;">● LIVE DISPATCH</span>
+                    </h4>
+                    <p>Instant phone chime &amp; lock-screen alerts whenever new providers (with location &amp; review criteria) or customers join.</p>
                 </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <button type="button" onclick="if(window.ProXAdminAlerts) window.ProXAdminAlerts.sendTestAlert()" style="background: linear-gradient(135deg, #a044ff, #6a3093); color: white; border: none; padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(106, 48, 147, 0.3);">
-                    <span>🧪</span>
-                    <span>Test Phone Alert</span>
+            <div class="alert-actions-group">
+                <button type="button" class="hdr-chip-btn" onclick="if(window.ProXAdminAlerts) window.ProXAdminAlerts.sendTestAlert()" style="background: var(--brand-gradient); border: none;">
+                    <span>🧪</span> Test Phone Alert
                 </button>
-                <button type="button" onclick="if(window.ProXAdminAlerts) window.ProXAdminAlerts.toggleDrawer()" style="background: rgba(255, 255, 255, 0.12); color: var(--text-primary); border: 1px solid rgba(255, 255, 255, 0.2); padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                    <span>📋</span>
-                    <span>Alert History</span>
+                <button type="button" class="hdr-chip-btn" onclick="if(window.ProXAdminAlerts) window.ProXAdminAlerts.toggleDrawer()" style="background: var(--bg-surface); color: var(--text-primary); border-color: var(--border-color);">
+                    <span>📋</span> Alert History
                 </button>
             </div>
         </div>
 
-        <!-- Hero Section -->
-        <div class="hero-section">
-            <div class="hero-content">
-                <h1 class="page-title">Welcome Back! 👋</h1>
-                <p class="page-subtitle">Here's what's happening with Pro X today</p>
-
-                <div class="hero-stats">
-                    <div class="hero-stat">
-                        <div class="hero-stat-value" id="hero-providers">-</div>
-                        <div class="hero-stat-label">Total Providers</div>
-                    </div>
-                    <div class="hero-stat">
-                        <div class="hero-stat-value" id="hero-bookings">-</div>
-                        <div class="hero-stat-label">Total Bookings</div>
-                    </div>
-                    <div class="hero-stat">
-                        <div class="hero-stat-value" id="hero-pending">-</div>
-                        <div class="hero-stat-label">Pending Actions</div>
-                    </div>
-                </div>
-
-                <span class="last-updated" id="last-updated">
-                    <span>🕐</span>
-                    <span>Last updated: Loading...</span>
+        <!-- 3. Executive Hero Card & Quick Stats -->
+        <section class="executive-hero-card">
+            <div class="hero-welcome-group">
+                <span class="hero-date-badge" id="heroTodayDate">
+                    <span>📅</span> Operations Overview
                 </span>
+                <h1 class="hero-welcome-title">Welcome Back, Admin 👋</h1>
+                <p class="hero-welcome-sub">
+                    <span>Live status across Pro X marketplace network.</span>
+                    <span style="color: var(--brand-primary); font-weight: 700;">All services operational.</span>
+                </p>
             </div>
-        </div>
 
-        <!-- Priority Metrics (F-Pattern: Top) -->
-        <div class="section-header">
-            <div>
-                <h2 class="section-title">Priority Metrics</h2>
-                <p class="section-subtitle">Key metrics requiring attention</p>
-            </div>
-        </div>
-
-        <div class="priority-metrics">
-            <div class="metric-card priority-high">
-                <div class="metric-header">
-                    <div class="metric-label">Pending Approvals</div>
-                    <div class="metric-icon icon-red">⏳</div>
+            <div class="hero-kpi-strip">
+                <div class="hero-kpi-chip">
+                    <span class="hero-kpi-val" id="hero-providers">-</span>
+                    <span class="hero-kpi-lbl">Total Providers</span>
                 </div>
-                <div class="metric-value" id="pending-approvals">-</div>
-                <div class="metric-footer">
-                    <div class="metric-change neutral">
-                        <span>●</span>
-                        <span>Requires review</span>
+                <div class="hero-kpi-chip">
+                    <span class="hero-kpi-val" id="active-providers">-</span>
+                    <span class="hero-kpi-lbl">Active (<span id="active-change">-%</span>)</span>
+                </div>
+                <div class="hero-kpi-chip">
+                    <span class="hero-kpi-val" id="hero-bookings">-</span>
+                    <span class="hero-kpi-lbl">Total Bookings</span>
+                </div>
+                <div class="hero-kpi-chip">
+                    <span class="hero-kpi-val" id="hero-users-total">-</span>
+                    <span class="hero-kpi-lbl">Clients (<span id="hero-new-users">-</span> new)</span>
+                </div>
+                <div class="hero-kpi-chip" style="border-color: var(--brand-border); background: var(--brand-subtle);">
+                    <span class="hero-kpi-val" id="hero-pending" style="color: var(--brand-primary);">-</span>
+                    <span class="hero-kpi-lbl" style="color: var(--brand-primary);">Pending Tasks</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Priority Metrics Ribbon (F-Pattern High Value) -->
+        <section class="priority-kpi-grid">
+            
+            <!-- 1. Pending Approvals (Review Required Status Only) -->
+            <div class="kpi-card" style="border-top: 3px solid var(--color-error);">
+                <div class="kpi-top-row">
+                    <div>
+                        <span class="kpi-title">Pending Approvals</span>
+                        <div style="font-size: 0.6875rem; color: var(--text-tertiary); margin-top: 2px;">Review Required (Excl. in-progress)</div>
                     </div>
-                    <a href="Provider-Management.html" class="metric-action">
-                        <span>Review</span>
-                        <span>→</span>
-                    </a>
+                    <div class="kpi-icon-badge" style="background: var(--error-subtle); color: var(--color-error);">⏳</div>
                 </div>
-            </div>
-
-            <div class="metric-card priority-medium">
-                <div class="metric-header">
-                    <div class="metric-label">Pending Cancellations</div>
-                    <div class="metric-icon icon-orange">❌</div>
+                <div class="kpi-main-val" id="pending-approvals">-</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                    <span id="in-progress-count">0</span> drafts in progress (not submitted)
                 </div>
-                <div class="metric-value" id="pending-cancellations">-</div>
-                <div class="metric-footer">
-                    <div class="metric-change neutral">
-                        <span>●</span>
-                        <span id="cancellation-text">Loading...</span>
-                    </div>
-                    <a href="cancellation-requests.html" class="metric-action">
-                        <span>Process</span>
-                        <span>→</span>
-                    </a>
-                </div>
-            </div>
-
-            <div class="metric-card priority-normal">
-                <div class="metric-header">
-                    <div class="metric-label">Active Providers</div>
-                    <div class="metric-icon icon-green">✓</div>
-                </div>
-                <div class="metric-value" id="active-providers">-</div>
-                <div class="metric-footer">
-                    <div class="metric-change positive">
-                        <span>↑</span>
-                        <span id="active-change">Loading...</span>
-                    </div>
+                <div class="kpi-footer-row">
+                    <span class="kpi-tag" id="review-required-tag" style="background: var(--error-subtle); color: var(--color-error);">
+                        ⚠️ <b id="review-required-count">0</b> Review Required
+                    </span>
+                    <a href="Provider-Management.html?filter=pending" class="kpi-action-link">Review →</a>
                 </div>
             </div>
 
-            <div class="metric-card priority-normal">
-                <div class="metric-header">
-                    <div class="metric-label">Completion Rate</div>
-                    <div class="metric-icon icon-blue">📊</div>
+            <!-- 2. Support Tickets Card -->
+            <div class="kpi-card" style="border-top: 3px solid var(--color-warning);">
+                <div class="kpi-top-row">
+                    <span class="kpi-title">Support Tickets</span>
+                    <div class="kpi-icon-badge" style="background: var(--warning-subtle); color: var(--color-warning);">🎫</div>
                 </div>
-                <div class="metric-value" id="completion-rate">-</div>
-                <div class="metric-footer">
-                    <div class="metric-change positive">
-                        <span>●</span>
-                        <span>Performance</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="metric-card priority-normal">
-                <div class="metric-header">
-                    <div class="metric-label">New Users</div>
-                    <div class="metric-icon icon-purple">👥</div>
-                </div>
-                <div class="metric-value" id="hero-new-users">-</div>
-                <div class="metric-footer">
-                    <div class="metric-change positive">
-                        <span>●</span>
-                        <span id="hero-users-total">Loading...</span>
-                    </div>
-                    <a href="master-user.html" class="metric-action">
-                        <span>Directory</span>
-                        <span>→</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Analytics Layout (F-Pattern: Left & Sidebar) -->
-        <div class="section-header">
-            <div>
-                <h2 class="section-title">Analytics Overview</h2>
-                <p class="section-subtitle">Data insights and trends</p>
-            </div>
-        </div>
-
-        <div class="analytics-layout">
-            <div class="main-analytics">
-                <!-- Trend Chart -->
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <div>
-                            <h3 class="chart-title">30-Day Activity Trend</h3>
-                            <p class="chart-subtitle">Bookings and enquiries over time</p>
-                        </div>
-                    </div>
-                    <div class="chart-container" style="height: 320px;">
-                        <canvas id="trendChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Charts Grid -->
-                <div class="dashboard-grid">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div>
-                                <h3 class="chart-title">Provider Status</h3>
-                                <p class="chart-subtitle">Distribution by approval status</p>
-                            </div>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="providerChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div>
-                                <h3 class="chart-title">Booking Status</h3>
-                                <p class="chart-subtitle">Current booking states</p>
-                            </div>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="bookingChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div>
-                                <h3 class="chart-title">Tier Distribution</h3>
-                                <p class="chart-subtitle">Provider tier breakdown</p>
-                            </div>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="tierChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div>
-                                <h3 class="chart-title">Specializations</h3>
-                                <p class="chart-subtitle">Media type distribution</p>
-                            </div>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="specializationChart"></canvas>
-                        </div>
-                    </div>
+                <div class="kpi-main-val" id="open-support-tickets">-</div>
+                <div class="kpi-footer-row">
+                    <span class="kpi-tag" id="support-status-tag" style="background: var(--warning-subtle); color: var(--color-warning);">
+                        ● <span id="support-status-text">0 open tickets</span>
+                    </span>
+                    <a href="support-tickets.html" class="kpi-action-link">Resolve →</a>
                 </div>
             </div>
 
-            <!-- Sidebar Analytics -->
-            <div class="sidebar-analytics">
-                <!-- Performance Metrics -->
-                <div class="metrics-card">
-                    <h3 class="chart-title" style="margin-bottom: 1.5rem;">Performance Metrics</h3>
-                    <div class="metrics-list">
-                        <div class="metric-item">
-                            <div>
-                                <div class="metric-item-label">Approval Rate</div>
-                                <div class="metric-item-value" id="approval-rate">-%</div>
-                            </div>
-                            <span class="metric-item-status status-good" id="approval-status">Good</span>
-                        </div>
-                        <div class="metric-item">
-                            <div>
-                                <div class="metric-item-label">Avg Rating</div>
-                                <div class="metric-item-value" id="avg-rating">-</div>
-                            </div>
-                            <span class="metric-item-status status-excellent" id="rating-status">High</span>
-                        </div>
-                        <div class="metric-item">
-                            <div>
-                                <div class="metric-item-label">Cancel Rate</div>
-                                <div class="metric-item-value" id="cancel-rate">-%</div>
-                            </div>
-                            <span class="metric-item-status status-good" id="cancel-status">Low</span>
-                        </div>
-                    </div>
+            <!-- 3. Cancellation Card -->
+            <div class="kpi-card" style="border-top: 3px solid var(--color-error);">
+                <div class="kpi-top-row">
+                    <span class="kpi-title">Cancellations</span>
+                    <div class="kpi-icon-badge" style="background: var(--error-subtle); color: var(--color-error);">❌</div>
                 </div>
-
-                <!-- Top Performers -->
-                <div class="metrics-card">
-                    <h3 class="chart-title" style="margin-bottom: 1.5rem;">Top Providers</h3>
-                    <div class="performers-list" id="top-performers">
-                        <div class="loading">
-                            <div class="loading-spinner"></div>
-                            Loading...
-                        </div>
-                    </div>
-                </div>
-
-                <!-- New Users Card -->
-                <div class="metrics-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-                        <div>
-                            <h3 class="chart-title" style="margin-bottom: 0.25rem;">New Users</h3>
-                            <p class="chart-subtitle" style="font-size: 0.8125rem; color: var(--text-secondary);">Recently joined clients</p>
-                        </div>
-                        <a href="master-user.html" style="font-size: 0.8125rem; font-weight: 600; color: var(--color-primary); text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
-                            View all →
-                        </a>
-                    </div>
-                    <div class="users-list" id="new-users-list">
-                        <div class="loading">
-                            <div class="loading-spinner"></div>
-                            Loading users...
-                        </div>
-                    </div>
+                <div class="kpi-main-val" id="pending-cancellations">-</div>
+                <div class="kpi-footer-row">
+                    <span class="kpi-tag" style="background: var(--error-subtle); color: var(--color-error);" id="cancellation-text">
+                        Loading...
+                    </span>
+                    <a href="cancellation-requests.html" class="kpi-action-link">Process →</a>
                 </div>
             </div>
-        </div>
 
-        <!-- Operations Workflow Pipeline -->
-        <div class="section-header">
-            <div>
-                <h2 class="section-title">Operations Workflow Pipeline</h2>
-                <p class="section-subtitle">Manage the complete Pro X lifecycle step-by-step</p>
+            <!-- 4. Pending Payouts Card -->
+            <div class="kpi-card" style="border-top: 3px solid var(--color-success);">
+                <div class="kpi-top-row">
+                    <span class="kpi-title">Pending Payouts</span>
+                    <div class="kpi-icon-badge" style="background: var(--success-subtle); color: var(--color-success);">💵</div>
+                </div>
+                <div class="kpi-main-val" id="pending-payouts-kpi">-</div>
+                <div class="kpi-footer-row">
+                    <span class="kpi-tag" id="payouts-status-tag" style="background: var(--success-subtle); color: var(--color-success);">
+                        ✓ <span id="payouts-status-text">Ready for settlement</span>
+                    </span>
+                    <a href="payout.html" class="kpi-action-link">Settle →</a>
+                </div>
             </div>
-        </div>
 
-        <!-- Operations Workflow Pipeline Sectioned Groups -->
-        <!-- Group 1: Onboarding & Configuration -->
-        <div class="pipeline-section">
-            <div class="pipeline-section-header">
-                <span class="pipeline-section-icon">🚀</span>
-                <h3 class="pipeline-section-title">Onboarding & Configuration</h3>
+            <!-- 5. Active Orders & SLAs Card -->
+            <div class="kpi-card" style="border-top: 3px solid var(--color-info);">
+                <div class="kpi-top-row">
+                    <span class="kpi-title">Active Orders</span>
+                    <div class="kpi-icon-badge" style="background: var(--info-subtle); color: var(--color-info);">⏱️</div>
+                </div>
+                <div class="kpi-main-val" id="active-orders-kpi">-</div>
+                <div class="kpi-footer-row">
+                    <span class="kpi-tag" id="orders-status-tag" style="background: var(--info-subtle); color: var(--color-info);">
+                        ● <span id="orders-status-text">In progress &amp; revisions</span>
+                    </span>
+                    <a href="progress-monitor.html" class="kpi-action-link">Monitor →</a>
+                </div>
             </div>
-            <div class="quick-actions">
+
+        </section>
+
+        <!-- 5. Operations Workflow Pipeline Matrix -->
+        <section class="pipeline-master-card">
+            
+            <div class="pipeline-header-bar">
+                <div class="pipeline-title-group">
+                    <h2><span>🚀</span> Operations Workflow Pipeline</h2>
+                    <p>Direct navigation across the 18 Pro X administrative lifecycle modules</p>
+                </div>
+            </div>
+
+            <!-- Filter Chips & Search -->
+            <div class="pipeline-controls-strip">
+                <div class="pipeline-filter-chips" id="moduleCategoryFilters">
+                    <button class="cat-chip-btn active" data-cat="all" onclick="filterModules('all')">All Modules (18)</button>
+                    <button class="cat-chip-btn" data-cat="attention" onclick="filterModules('attention')">⚠️ Attention Needed</button>
+                    <button class="cat-chip-btn" data-cat="onboarding" onclick="filterModules('onboarding')">Onboarding &amp; Config</button>
+                    <button class="cat-chip-btn" data-cat="marketplace" onclick="filterModules('marketplace')">Marketplace &amp; Bookings</button>
+                    <button class="cat-chip-btn" data-cat="finance" onclick="filterModules('finance')">Financials &amp; Safety</button>
+                    <button class="cat-chip-btn" data-cat="directories" onclick="filterModules('directories')">Directories &amp; Comms</button>
+                </div>
+
+                <div class="module-search-box">
+                    <span class="module-search-icon">🔍</span>
+                    <input type="text" id="moduleSearchInput" class="module-search-input" placeholder="Search modules..." oninput="handleModuleSearch()">
+                </div>
+            </div>
+
+            <!-- 18 Operation Cards Grid -->
+            <div class="action-cards-grid" id="actionCardsGrid">
+
                 <!-- 1. Providers -->
-                <a href="Provider-Management.html" class="action-card">
+                <a href="Provider-Management.html" class="action-card" data-category="onboarding" data-name="Providers Approvals KYC">
                     <div class="action-header">
-                        <div class="action-icon icon-blue">👥</div>
+                        <div class="action-icon-wrap" style="background: rgba(59, 130, 246, 0.12); color: #3b82f6;">👥</div>
                         <div class="action-badge" id="badge-providers">0</div>
                     </div>
                     <h3 class="action-title">Providers</h3>
-                    <p class="action-description">Manage provider profiles and approvals</p>
+                    <p class="action-description">Review onboarding applications, KYC verification, &amp; approvals</p>
                     <div class="action-footer">
                         <span class="action-count" id="count-providers">- total</span>
                         <span class="action-arrow">→</span>
@@ -1527,13 +1368,13 @@
                 </a>
 
                 <!-- 2. Subscription Management -->
-                <a href="subscription-management.html" class="action-card">
+                <a href="subscription-management.html" class="action-card" data-category="onboarding" data-name="Subscription Management Gold Platinum Tiers">
                     <div class="action-header">
-                        <div class="action-icon icon-yellow">🏅</div>
+                        <div class="action-icon-wrap" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">🏅</div>
                         <div class="action-badge" id="badge-subscriptions">0</div>
                     </div>
-                    <h3 class="action-title">Subscription Management</h3>
-                    <p class="action-description">Review providers eligible for Gold & Platinum tier upgrades</p>
+                    <h3 class="action-title">Subscriptions</h3>
+                    <p class="action-description">Review providers eligible for Gold &amp; Platinum tier upgrades</p>
                     <div class="action-footer">
                         <span class="action-count" id="count-subscriptions">- eligible</span>
                         <span class="action-arrow">→</span>
@@ -1541,36 +1382,27 @@
                 </a>
 
                 <!-- 3. Promo Codes -->
-                <a href="promo-codes.html" class="action-card">
+                <a href="promo-codes.html" class="action-card" data-category="onboarding" data-name="Promo Codes Coupons Discounts">
                     <div class="action-header">
-                        <div class="action-icon icon-pink">🎟</div>
+                        <div class="action-icon-wrap" style="background: rgba(236, 72, 153, 0.12); color: #ec4899;">🎟</div>
                         <div class="action-badge" id="badge-promo">0</div>
                     </div>
                     <h3 class="action-title">Promo Codes</h3>
-                    <p class="action-description">Create and manage promo &amp; referral codes</p>
+                    <p class="action-description">Create and manage discounts &amp; referral rewards</p>
                     <div class="action-footer">
                         <span class="action-count" id="count-promo">- active</span>
                         <span class="action-arrow">→</span>
                     </div>
                 </a>
-            </div>
-        </div>
 
-        <!-- Group 2: Marketplace Operations -->
-        <div class="pipeline-section">
-            <div class="pipeline-section-header">
-                <span class="pipeline-section-icon">⚙️</span>
-                <h3 class="pipeline-section-title">Marketplace Operations</h3>
-            </div>
-            <div class="quick-actions">
                 <!-- 4. Service Requests -->
-                <a href="Service-request.html" class="action-card">
+                <a href="Service-request.html" class="action-card" data-category="marketplace" data-name="Service Requests Review Audits">
                     <div class="action-header">
-                        <div class="action-icon icon-orange">☑️</div>
+                        <div class="action-icon-wrap" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">☑️</div>
                         <div class="action-badge" id="badge-reviews">0</div>
                     </div>
                     <h3 class="action-title">Service Requests</h3>
-                    <p class="action-description">Process service review requests</p>
+                    <p class="action-description">Process custom service review requests &amp; packages</p>
                     <div class="action-footer">
                         <span class="action-count" id="count-reviews">- pending</span>
                         <span class="action-arrow">→</span>
@@ -1578,13 +1410,13 @@
                 </a>
 
                 <!-- 5. Bookings -->
-                <a href="bookings-collection.html" class="action-card">
+                <a href="bookings-collection.html" class="action-card" data-category="marketplace" data-name="Bookings Collection Calendar Orders">
                     <div class="action-header">
-                        <div class="action-icon icon-green">📅</div>
+                        <div class="action-icon-wrap" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">📅</div>
                         <div class="action-badge" id="badge-bookings">0</div>
                     </div>
                     <h3 class="action-title">Bookings</h3>
-                    <p class="action-description">Track and manage all bookings</p>
+                    <p class="action-description">Track customer bookings, escrow payments, &amp; dates</p>
                     <div class="action-footer">
                         <span class="action-count" id="count-bookings">- total</span>
                         <span class="action-arrow">→</span>
@@ -1592,13 +1424,13 @@
                 </a>
 
                 <!-- 6. Progress Monitoring -->
-                <a href="progress-monitor.html" class="action-card">
+                <a href="progress-monitor.html" class="action-card" data-category="marketplace" data-name="Progress Monitoring SLA Milestones Delivery">
                     <div class="action-header">
-                        <div class="action-icon icon-purple">📈</div>
+                        <div class="action-icon-wrap" style="background: rgba(139, 92, 246, 0.12); color: #8b5cf6;">📈</div>
                         <div class="action-badge" id="badge-progress">0</div>
                     </div>
-                    <h3 class="action-title">Progress Monitoring</h3>
-                    <p class="action-description">Track active booking SLAs & risks</p>
+                    <h3 class="action-title">Progress Monitor</h3>
+                    <p class="action-description">Monitor active order SLAs, sample reviews, &amp; revisions</p>
                     <div class="action-footer">
                         <span class="action-count" id="count-progress">active</span>
                         <span class="action-arrow">→</span>
@@ -1606,13 +1438,13 @@
                 </a>
 
                 <!-- 7. Cancellations -->
-                <a href="cancellation-requests.html" class="action-card">
+                <a href="cancellation-requests.html" class="action-card" data-category="marketplace" data-name="Cancellations Refunds Disputes">
                     <div class="action-header">
-                        <div class="action-icon icon-red">❌</div>
+                        <div class="action-icon-wrap" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">❌</div>
                         <div class="action-badge" id="badge-cancellations">0</div>
                     </div>
                     <h3 class="action-title">Cancellations</h3>
-                    <p class="action-description">Handle cancellation requests</p>
+                    <p class="action-description">Review client &amp; provider cancellation requests and refunds</p>
                     <div class="action-footer">
                         <span class="action-count" id="count-cancellations">- pending</span>
                         <span class="action-arrow">→</span>
@@ -1620,70 +1452,41 @@
                 </a>
 
                 <!-- 8. Reassignments -->
-                <a href="provider-replacement.html" class="action-card">
+                <a href="provider-replacement.html" class="action-card" data-category="marketplace" data-name="Reassignments Provider Replacement">
                     <div class="action-header">
-                        <div class="action-icon icon-cyan">🔄</div>
+                        <div class="action-icon-wrap" style="background: rgba(6, 182, 212, 0.12); color: #06b6d4;">🔄</div>
                         <div class="action-badge" id="badge-reassignments">0</div>
                     </div>
                     <h3 class="action-title">Reassignments</h3>
-                    <p class="action-description">Manage provider replacements</p>
+                    <p class="action-description">Manage provider emergency replacements for orders</p>
                     <div class="action-footer">
                         <span class="action-count" id="count-reassignments">- pending</span>
                         <span class="action-arrow">→</span>
                     </div>
                 </a>
-            </div>
-        </div>
 
-        <!-- Group 3: Financials & Admin Controls -->
-        <div class="pipeline-section">
-            <div class="pipeline-section-header">
-                <span class="pipeline-section-icon">💳</span>
-                <h3 class="pipeline-section-title">Financials & Admin Controls</h3>
-            </div>
-            <div class="quick-actions">
                 <!-- 9. Payouts & Commissions -->
-                <a href="payout.html" class="action-card">
+                <a href="payout.html" class="action-card" data-category="finance" data-name="Payouts Commissions Bank Transfers Settlement">
                     <div class="action-header">
-                        <div class="action-icon icon-green">💵</div>
+                        <div class="action-icon-wrap" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">💵</div>
                         <div class="action-badge" id="badge-payouts-pending">0</div>
                     </div>
-                    <h3 class="action-title">Payouts & Commissions</h3>
-                    <p class="action-description">Manage commissions, manual bank transfers, & subscriptions</p>
+                    <h3 class="action-title">Payouts &amp; Commissions</h3>
+                    <p class="action-description">Approve bank settlements &amp; provider payouts</p>
                     <div class="action-footer">
                         <span class="action-count" id="count-payouts-pending">- pending</span>
                         <span class="action-arrow">→</span>
                     </div>
                 </a>
 
-                <!-- 10. Financials -->
-                <a href="financial-overview.html" class="action-card">
+                <!-- 10. Financial Overview -->
+                <a href="financial-overview.html" class="action-card" data-category="finance" data-name="Financial Overview Revenue Margins Statements">
                     <div class="action-header">
-                        <div class="action-icon icon-cyan"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                viewBox="0 0 24 24" fill="none">
-                                <g clip-path="url(#clip0_4418_6407)">
-                                    <path
-                                        d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
-                                        stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                                    <path d="M12 7V17" stroke="#fff" stroke-width="1.5" stroke-linecap="round"
-                                        stroke-linejoin="round" />
-                                    <path
-                                        d="M9 10.5H13.5C14.3284 10.5 15 9.82843 15 9C15 8.17157 14.3284 7.5 13.5 7.5H10.5C9.67157 7.5 9 8.17157 9 9"
-                                        stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                                    <path
-                                        d="M15 13.5H10.5C9.67157 13.5 9 14.1716 9 15C9 15.8284 9.67157 16.5 10.5 16.5H13.5C14.3284 16.5 15 15.8284 15 15"
-                                        stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                                </g>
-                                <defs>
-                                    <clipPath id="clip0_4418_6407">
-                                        <rect width="24" height="24" fill="white" />
-                                    </clipPath>
-                                </defs>
-                            </svg></div>
+                        <div class="action-icon-wrap" style="background: rgba(59, 130, 246, 0.12); color: #3b82f6;">💳</div>
                         <div class="action-badge" id="badge-financials">0</div>
                     </div>
-                    <h3 class="action-title">Financials</h3>
-                    <p class="action-description">Collections, Payouts & Subscriptions</p>
+                    <h3 class="action-title">Financial Overview</h3>
+                    <p class="action-description">Platform collections, subscriptions, &amp; revenue analytics</p>
                     <div class="action-footer">
                         <span class="action-count">Manage</span>
                         <span class="action-arrow">→</span>
@@ -1691,175 +1494,293 @@
                 </a>
 
                 <!-- 11. Deletion Requests -->
-                <a href="admin-deletion-requests.html" class="action-card">
+                <a href="admin-deletion-requests.html" class="action-card" data-category="finance" data-name="Account Deletion Requests GDPR Compliance">
                     <div class="action-header">
-                        <div class="action-icon icon-red">⚠️</div>
+                        <div class="action-icon-wrap" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">⚠️</div>
                         <div class="action-badge" id="badge-deletions">0</div>
                     </div>
                     <h3 class="action-title">Deletion Requests</h3>
-                    <p class="action-description">Review and approve account deletion requests</p>
+                    <p class="action-description">Review user data deletion &amp; compliance requests</p>
                     <div class="action-footer">
                         <span class="action-count" id="count-deletions">- pending</span>
                         <span class="action-arrow">→</span>
                     </div>
                 </a>
 
-                <!-- 11b. Deleted & Flagged Providers -->
-                <a href="deleted-providers.html" class="action-card" id="card-deleted-providers">
+                <!-- 12. Deleted & Flagged Providers -->
+                <a href="deleted-providers.html" class="action-card" id="card-deleted-providers" data-category="finance" data-name="Deleted Flagged Providers Security Audit">
                     <div class="action-header">
-                        <div class="action-icon icon-red">🚫</div>
+                        <div class="action-icon-wrap" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">🚫</div>
                         <div class="action-badge" id="badge-flagged-providers" style="display:none; background:#ef4444; color:white;">0</div>
                     </div>
-                    <h3 class="action-title">Deleted &amp; Flagged Providers</h3>
-                    <p class="action-description">Audit deleted providers &amp; review flagged re-login attempts</p>
+                    <h3 class="action-title">Deleted &amp; Flagged</h3>
+                    <p class="action-description">Audit deleted accounts &amp; investigate flagged login attempts</p>
                     <div class="action-footer">
                         <span class="action-count" id="count-deleted-providers">- total</span>
                         <span class="action-arrow">→</span>
                     </div>
                 </a>
-            </div>
-        </div>
 
-        <!-- Group 4: Directories & Enquiries -->
-        <div class="pipeline-section">
-            <div class="pipeline-section-header">
-                <span class="pipeline-section-icon">📁</span>
-                <h3 class="pipeline-section-title">Directories & Enquiries</h3>
-            </div>
-            <div class="quick-actions">
-                <!-- 12. Master Provider -->
-                <a href="master-provider.html" class="action-card">
+                <!-- 13. Master Provider Directory -->
+                <a href="master-provider.html" class="action-card" data-category="directories" data-name="Master Provider Directory Search Database">
                     <div class="action-header">
-                        <div class="action-icon icon-purple">👑</div>
+                        <div class="action-icon-wrap" style="background: rgba(147, 51, 234, 0.12); color: #9333ea;">👑</div>
                         <div class="action-badge" id="badge-master">0</div>
                     </div>
                     <h3 class="action-title">Master Provider</h3>
-                    <p class="action-description">Comprehensive provider details and management</p>
+                    <p class="action-description">Comprehensive searchable database of all providers</p>
                     <div class="action-footer">
-                        <span class="action-count">Manage</span>
+                        <span class="action-count">Directory</span>
                         <span class="action-arrow">→</span>
                     </div>
                 </a>
 
-                <!-- 13. Master User -->
-                <a href="master-user.html" class="action-card">
+                <!-- 14. Master User Directory -->
+                <a href="master-user.html" class="action-card" data-category="directories" data-name="Master User Directory Clients Customers Database">
                     <div class="action-header">
-                        <div class="action-icon icon-blue">👤</div>
+                        <div class="action-icon-wrap" style="background: rgba(59, 130, 246, 0.12); color: #3b82f6;">👤</div>
                         <div class="action-badge" id="badge-users">0</div>
                     </div>
                     <h3 class="action-title">Master User</h3>
-                    <p class="action-description">Comprehensive user profiles and client directory</p>
+                    <p class="action-description">Comprehensive client profiles, orders, and contact details</p>
                     <div class="action-footer">
                         <span class="action-count" id="count-users">- total</span>
                         <span class="action-arrow">→</span>
                     </div>
                 </a>
 
-                <!-- 14. Weekly Featured Providers -->
-                <a href="featured-providers.html" class="action-card">
+                <!-- 15. Weekly Featured Providers -->
+                <a href="featured-providers.html" class="action-card" data-category="directories" data-name="Featured Providers Showcase Homepage Top Rated">
                     <div class="action-header">
-                        <div class="action-icon icon-cyan"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                viewBox="0 0 24 24" fill="#fff">
-                                <g clip-path="url(#clip0_3111_32671)">
-                                    <path opacity="0.4"
-                                        d="M9 2C6.38 2 4.25 4.13 4.25 6.75C4.25 9.32 6.26 11.4 8.88 11.49C8.96 11.48 9.04 11.48 9.1 11.49C9.12 11.49 9.13 11.49 9.15 11.49C9.16 11.49 9.16 11.49 9.17 11.49C11.73 11.4 13.74 9.32 13.75 6.75C13.75 4.13 11.62 2 9 2Z"
-                                        fill="white" style="fill: var(--fillg);" />
-                                    <path
-                                        d="M14.08 14.1499C11.29 12.2899 6.74002 12.2899 3.93002 14.1499C2.66002 14.9999 1.96002 16.1499 1.96002 17.3799C1.96002 18.6099 2.66002 19.7499 3.92002 20.5899C5.32002 21.5299 7.16002 21.9999 9.00002 21.9999C10.84 21.9999 12.68 21.5299 14.08 20.5899C15.34 19.7399 16.04 18.5999 16.04 17.3599C16.03 16.1299 15.34 14.9899 14.08 14.1499Z"
-                                        fill="white" style="fill: var(--fillg);" />
-                                    <path opacity="0.4"
-                                        d="M19.99 7.3401C20.15 9.2801 18.77 10.9801 16.86 11.2101C16.85 11.2101 16.85 11.2101 16.84 11.2101H16.81C16.75 11.2101 16.69 11.2101 16.64 11.2301C15.67 11.2801 14.78 10.9701 14.11 10.4001C15.14 9.4801 15.73 8.1001 15.61 6.6001C15.54 5.7901 15.26 5.0501 14.84 4.4201C15.22 4.2301 15.66 4.1101 16.11 4.0701C18.07 3.9001 19.82 5.3601 19.99 7.3401Z"
-                                        fill="white" style="fill: var(--fillg);" />
-                                    <path
-                                        d="M21.99 16.5904C21.91 17.5604 21.29 18.4004 20.25 18.9704C19.25 19.5204 17.99 19.7804 16.74 19.7504C17.46 19.1004 17.88 18.2904 17.96 17.4304C18.06 16.1904 17.47 15.0004 16.29 14.0504C15.62 13.5204 14.84 13.1004 13.99 12.7904C16.2 12.1504 18.98 12.5804 20.69 13.9604C21.61 14.7004 22.08 15.6304 21.99 16.5904Z"
-                                        fill="white" style="fill: var(--fillg);" />
-                                </g>
-                                <defs>
-                                    <clipPath id="clip0_3111_32671">
-                                        <rect width="24" height="24" fill="white" />
-                                    </clipPath>
-                                </defs>
-                            </svg></div>
+                        <div class="action-icon-wrap" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">⭐</div>
                         <div class="action-badge" id="badge-featured">0</div>
                     </div>
-                    <h3 class="action-title">Weekly Featured Providers</h3>
-                    <p class="action-description">Manage Top performing providers for home page</p>
+                    <h3 class="action-title">Featured Providers</h3>
+                    <p class="action-description">Curate top-rated verified partners for the home page showcase</p>
                     <div class="action-footer">
                         <span class="action-count" id="count-featured">- total</span>
                         <span class="action-arrow">→</span>
                     </div>
                 </a>
 
-                <!-- 15. Enquiries -->
-                <a href="Enquires.html" class="action-card">
+                <!-- 16. Enquiries -->
+                <a href="Enquires.html" class="action-card" data-category="directories" data-name="Enquiries Customer Messages Leads Contact">
                     <div class="action-header">
-                        <div class="action-icon icon-purple">📧</div>
+                        <div class="action-icon-wrap" style="background: rgba(147, 51, 234, 0.12); color: #9333ea;">📧</div>
                         <div class="action-badge" id="badge-enquiries">0</div>
                     </div>
                     <h3 class="action-title">Enquiries</h3>
-                    <p class="action-description">Respond to customer enquiries</p>
+                    <p class="action-description">View customer inbound inquiries &amp; service consultation leads</p>
                     <div class="action-footer">
                         <span class="action-count" id="count-enquiries">- total</span>
                         <span class="action-arrow">→</span>
                     </div>
                 </a>
 
-                <!-- 16. Support Tickets -->
-                <a href="support-tickets.html" class="action-card">
+                <!-- 17. Support Tickets -->
+                <a href="support-tickets.html" class="action-card" data-category="directories" data-name="Support Tickets Helpdesk Client Disputes">
                     <div class="action-header">
-                        <div class="action-icon icon-red">🎫</div>
+                        <div class="action-icon-wrap" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">🎫</div>
                         <div class="action-badge" id="badge-support-tickets">0</div>
                     </div>
                     <h3 class="action-title">Support Tickets</h3>
-                    <p class="action-description">Resolve user support tickets</p>
+                    <p class="action-description">Resolve open customer and provider support requests</p>
                     <div class="action-footer">
                         <span class="action-count" id="count-support-tickets">- total</span>
                         <span class="action-arrow">→</span>
                     </div>
                 </a>
 
-                <!-- 17. Email Hub -->
-                <a href="email-hub.html" class="action-card" id="card-email-hub" style="border: 2px solid rgba(160, 68, 255, 0.35);">
+                <!-- 18. Email Hub -->
+                <a href="email-hub.html" class="action-card" id="card-email-hub" data-category="directories" data-name="Email Hub Templates Dispatcher Google Workspace" style="border: 2px solid rgba(160, 68, 255, 0.4); background: var(--brand-subtle);">
                     <div class="action-header">
-                        <div class="action-icon icon-purple" style="background: linear-gradient(135deg, #a044ff 0%, #6a3093 100%); color: #fff;">✉️</div>
+                        <div class="action-icon-wrap" style="background: var(--brand-gradient); color: #fff;">✉️</div>
                         <div class="action-badge" id="badge-email-hub" style="background: #10b981; color: white;">Active</div>
                     </div>
-                    <h3 class="action-title">Email Hub & Templates</h3>
-                    <p class="action-description">Live preview & send onboarding, decision & promo emails with sent counter</p>
+                    <h3 class="action-title">Email Hub &amp; Dispatcher</h3>
+                    <p class="action-description">Live email preview, custom templates, &amp; Google Workspace SMTP dispatch</p>
                     <div class="action-footer">
-                        <span class="action-count">Open Hub</span>
+                        <span class="action-count" style="color: var(--brand-primary); font-weight: 700;">Open Hub</span>
                         <span class="action-arrow">→</span>
                     </div>
                 </a>
-            </div>
-        </div>
 
-        <!-- Recent Activity -->
-        <div class="section-header">
-            <div>
-                <h2 class="section-title">Recent Activity</h2>
-                <p class="section-subtitle">Latest platform events</p>
             </div>
-        </div>
 
-        <div class="activity-feed">
-            <div class="activity-list" id="recent-activity">
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    Loading activity...
+        </section>
+
+        <!-- 6. Analytics Cockpit & Intelligence Stream -->
+        <div class="cockpit-grid">
+
+            <!-- Left: Charts & Deep Analytics -->
+            <div class="cockpit-left">
+
+                <!-- 30-Day Activity Trend Chart -->
+                <div class="chart-card">
+                    <div class="chart-header-row">
+                        <div class="chart-title-wrap">
+                            <h3>30-Day Activity Trend</h3>
+                            <p>Real-time volume comparison: Verified Bookings vs Inbound Inquiries</p>
+                        </div>
+                    </div>
+                    <div class="chart-container-box" style="height: 320px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Firebase & Chart.js Scripts -->
+                <!-- 2x2 Breakdown Charts Grid -->
+                <div class="sub-charts-2x2">
+                    
+                    <!-- Provider Status -->
+                    <div class="chart-card">
+                        <div class="chart-header-row">
+                            <div class="chart-title-wrap">
+                                <h3>Provider Network Status</h3>
+                                <p>Approved vs In Review vs Rejected</p>
+                            </div>
+                        </div>
+                        <div class="chart-container-box" style="height: 240px;">
+                            <canvas id="providerChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Booking Status -->
+                    <div class="chart-card">
+                        <div class="chart-header-row">
+                            <div class="chart-title-wrap">
+                                <h3>Booking Lifecycle Pipeline</h3>
+                                <p>Confirmed, ongoing, &amp; completed orders</p>
+                            </div>
+                        </div>
+                        <div class="chart-container-box" style="height: 240px;">
+                            <canvas id="bookingChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Tier Breakdown -->
+                    <div class="chart-card">
+                        <div class="chart-header-row">
+                            <div class="chart-title-wrap">
+                                <h3>Provider Tier Distribution</h3>
+                                <p>Silver, Gold, &amp; Platinum memberships</p>
+                            </div>
+                        </div>
+                        <div class="chart-container-box" style="height: 240px;">
+                            <canvas id="tierChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Specializations -->
+                    <div class="chart-card">
+                        <div class="chart-header-row">
+                            <div class="chart-title-wrap">
+                                <h3>Creative Domains</h3>
+                                <p>Photography, Videography &amp; Design</p>
+                            </div>
+                        </div>
+                        <div class="chart-container-box" style="height: 240px;">
+                            <canvas id="specializationChart"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Right: Health Center, Registrations, Performers, Activity Stream -->
+            <div class="cockpit-right">
+
+                <!-- Platform SLA Health Card -->
+                <div class="sidebar-card">
+                    <div class="card-header-bar">
+                        <h3><span>⚡</span> Platform Health SLAs</h3>
+                    </div>
+                    <div class="health-rows-list">
+                        <div class="health-row-item">
+                            <div>
+                                <div class="health-metric-title">Approval Rate</div>
+                                <div class="health-metric-val" id="approval-rate">-%</div>
+                            </div>
+                            <span class="metric-item-status status-good" id="approval-status">Good</span>
+                        </div>
+                        <div class="health-row-item">
+                            <div>
+                                <div class="health-metric-title">Completion Rate</div>
+                                <div class="health-metric-val" id="completion-rate">-%</div>
+                            </div>
+                            <span class="metric-item-status status-good" id="completion-status">On Track</span>
+                        </div>
+                        <div class="health-row-item">
+                            <div>
+                                <div class="health-metric-title">Customer Rating</div>
+                                <div class="health-metric-val" id="avg-rating">-</div>
+                            </div>
+                            <span class="metric-item-status status-excellent" id="rating-status">High</span>
+                        </div>
+                        <div class="health-row-item">
+                            <div>
+                                <div class="health-metric-title">Cancellation Rate</div>
+                                <div class="health-metric-val" id="cancel-rate">-%</div>
+                            </div>
+                            <span class="metric-item-status status-good" id="cancel-status">Low</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- New Registered Clients Card -->
+                <div class="sidebar-card">
+                    <div class="card-header-bar">
+                        <h3><span>👥</span> Recent Client Signups</h3>
+                        <a href="master-user.html" class="card-header-link">View All →</a>
+                    </div>
+                    <div id="new-users-list" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            Loading clients...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Performers Card -->
+                <div class="sidebar-card">
+                    <div class="card-header-bar">
+                        <h3><span>👑</span> Top Verified Partners</h3>
+                        <a href="featured-providers.html" class="card-header-link">Manage →</a>
+                    </div>
+                    <div id="top-performers" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            Loading partners...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Platform Event Stream -->
+                <div class="sidebar-card">
+                    <div class="card-header-bar">
+                        <h3><span>📜</span> Live Event Stream</h3>
+                    </div>
+                    <div class="activity-feed-list" id="recent-activity">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            Loading platform activity...
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Firebase & Real-Time Sync Scripts -->
     <script type="module">
-        // Import Firebase
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
         import { getFirestore, collection, getDocs, onSnapshot, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
 
-        // Firebase config
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyC5MLrT34n4wsJaPPmAYNCT8h_qQDPQ5jU",
             authDomain: "phototester555.firebaseapp.com",
@@ -1870,12 +1791,11 @@
             measurementId: "G-6VS0G0NQ7K"
         };
 
-        // Initialize
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Global data
+        // Global Platform Data Repositories
         let allProviders = [];
         let allEnquiries = [];
         let allBookings = [];
@@ -1892,6 +1812,13 @@
 
         let chartInstances = {};
 
+        // Display current date in Indian format
+        const todayDateEl = document.getElementById('heroTodayDate');
+        if (todayDateEl) {
+            const now = new Date();
+            todayDateEl.innerHTML = `<span>📅</span> ${now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}`;
+        }
+
         // Theme Management
         window.toggleTheme = () => {
             const html = document.documentElement;
@@ -1901,17 +1828,18 @@
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
 
-            document.getElementById('theme-icon').textContent = newTheme === 'light' ? '🌙' : '☀️';
+            const iconEl = document.getElementById('theme-icon');
+            if (iconEl) iconEl.textContent = newTheme === 'light' ? '🌙' : '☀️';
 
             updateChartsTheme();
         };
 
-        // Load saved theme
         const savedTheme = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
-        document.getElementById('theme-icon').textContent = savedTheme === 'light' ? '🌙' : '☀️';
+        const initialThemeIcon = document.getElementById('theme-icon');
+        if (initialThemeIcon) initialThemeIcon.textContent = savedTheme === 'light' ? '🌙' : '☀️';
 
-        // Auth check
+        // Auth Session Check
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 window.location.href = 'index.html';
@@ -1922,19 +1850,20 @@
                 const adminDocRef = doc(db, 'admin_users', user.uid);
                 const adminSnap = await getDoc(adminDocRef);
                 if (!adminSnap.exists() || !adminSnap.data().isActive) {
-                    console.log('User is not an active admin, signing out');
+                    console.warn('Unauthorized admin login attempt');
                     await signOut(auth);
                     window.location.href = 'index.html';
                     return;
                 }
             } catch (error) {
-                console.error('Error verifying admin status:', error);
+                console.error('Error verifying admin authorization:', error);
                 await signOut(auth);
                 window.location.href = 'index.html';
                 return;
             }
 
-            document.getElementById('admin-email').textContent = user.email;
+            const emailEl = document.getElementById('admin-email');
+            if (emailEl) emailEl.textContent = user.email || 'Admin';
             updateLastUpdated();
             loadAllData();
         });
@@ -1950,117 +1879,70 @@
             }
         };
 
-        // Update last updated time
         function updateLastUpdated() {
+            const el = document.getElementById('last-updated');
+            if (!el) return;
             const now = new Date();
-            const timeStr = now.toLocaleTimeString('en-IN', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-            });
-            document.getElementById('last-updated').innerHTML = `<span>🕐</span><span>Last updated: ${timeStr}</span>`;
+            el.textContent = `Synced: ${now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
         }
 
-        // Escape HTML helper
         function escapeHtml(str) {
             if (!str) return '';
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
         }
 
-        // Provider approval status mapping consistent with Provider-Management.html
         function getProviderApprovalStatus(p) {
-            if (!p) return 'pending';
-            // 1. Direct explicit approvalStatus
-            const explicit = String(p.approvalStatus || '').toLowerCase().trim();
-            if (explicit === 'approved') return 'approved';
-            if (explicit === 'rejected') return 'rejected';
-            if (explicit === 'needs_changes') return 'needs_changes';
-            if (explicit === 'in_progress') return 'in_progress';
-            if (explicit === 'pending') return 'pending';
-
-            // 2. Original status or raw status
-            const raw = String(p.status || p.originalStatus || p.onboarding?.status || 'waiting').toLowerCase().trim();
+            if (!p) return 'in_progress';
+            const rawStatus = String(p.approvalStatus || p.status || p.onboarding?.status || '').toLowerCase();
             const onboarding = p.onboarding || {};
 
             if (
-                raw === 'in_progress' ||
-                raw === 'onboarding_required' ||
-                raw === 'draft' ||
-                raw === 'incomplete' ||
-                raw === 'unsubmitted'
+                rawStatus === 'in_progress' ||
+                rawStatus === 'onboarding_required' ||
+                rawStatus === 'draft' ||
+                rawStatus === 'incomplete' ||
+                rawStatus === 'unsubmitted'
             ) {
                 return 'in_progress';
             }
 
             if (onboarding.completed === false || p.onboardingCompleted === false) {
-                if (raw !== 'approved' && raw !== 'rejected' && raw !== 'needs_changes') {
+                if (rawStatus !== 'approved' && rawStatus !== 'rejected' && rawStatus !== 'needs_changes') {
                     return 'in_progress';
                 }
             }
 
-            switch (raw) {
-                case 'approved':
-                    return 'approved';
-                case 'rejected':
-                    return 'rejected';
-                case 'needs_changes':
-                case 'retry':
-                    return 'needs_changes';
-                case 'waiting':
-                case 'processing':
-                case 'pending':
-                case 'pending_approval':
-                case 'waiting_for_approval':
-                case 'submitted':
-                default:
-                    return 'pending';
-            }
+            if (p.isApproved === true || rawStatus === 'approved') return 'approved';
+            if (rawStatus === 'rejected') return 'rejected';
+            if (rawStatus === 'needs_changes' || rawStatus === 'retry') return 'needs_changes';
+            if (rawStatus === 'waiting' || rawStatus === 'processing' || rawStatus === 'pending') return 'pending';
+            return 'pending';
         }
 
-        // Helper: Get status (general fallback for bookings, cancellations, etc.)
         function getStatus(item) {
-            if (!item) return '';
-            const statusVal = item.approvalStatus || item.status || item.state;
-            if (typeof statusVal === 'string') {
-                const s = statusVal.toLowerCase().trim();
-                if (s === 'waiting' || s === 'pending_approval' || s === 'waiting_for_approval' || s === 'submitted') {
-                    return 'pending';
-                }
-                return s;
-            }
-            if (item.status?.state) return item.status.state.toLowerCase();
-            if (item.state) return item.state.toLowerCase();
-            return '';
+            if (!item) return 'unknown';
+            return (item.status || item.orderStatus || item.bookingStatus || 'unknown').toLowerCase();
         }
 
-        // Helper: Parse timestamp safely across formats
         function parseTimestamp(ts) {
             if (!ts) return new Date(0);
-            if (typeof ts.toDate === 'function') return ts.toDate();
-            if (ts instanceof Date) return isNaN(ts.getTime()) ? new Date(0) : ts;
-            if (typeof ts === 'number') return new Date(ts);
-            if (typeof ts === 'object') {
-                if (ts.seconds != null) return new Date(ts.seconds * 1000 + (ts.nanoseconds || 0) / 1e6);
-                if (ts._seconds != null) return new Date(ts._seconds * 1000 + (ts._nanoseconds || 0) / 1e6);
-            }
-            if (typeof ts === 'string') {
-                const cleaned = ts.replace(/\s+at\s+/i, ' ');
-                const d = new Date(cleaned);
+            if (ts.toDate && typeof ts.toDate === 'function') return ts.toDate();
+            if (ts.seconds) return new Date(ts.seconds * 1000);
+            if (typeof ts === 'string' || typeof ts === 'number') {
+                const d = new Date(ts);
                 if (!isNaN(d.getTime())) return d;
-                const d2 = new Date(ts);
-                if (!isNaN(d2.getTime())) return d2;
             }
             return new Date(0);
         }
 
-        // Load all data with real-time updates
+        // Real-Time Firestore Loading
         async function loadAllData() {
             try {
-                console.log('Loading Firestore data...');
-
-                // Use onSnapshot for real-time updates on critical collections
+                // Real-time snapshot listeners for reactive platform updates
                 onSnapshot(collection(db, 'providers'), (snapshot) => {
                     allProviders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     updateUI();
@@ -2086,7 +1968,7 @@
                     updateUI();
                 });
 
-                // Fetch other collections once
+                // Fetch other operational collections once
                 const [enquiriesSnap, reviewsSnap, cancellationsSnap, reassignmentsSnap, featuredSnap, serviceReviewsSnap, promoCodesSnap, deletionRequestsSnap] =
                     await Promise.all([
                         getDocs(collection(db, 'enquiries')),
@@ -2109,14 +1991,11 @@
                 allPromoCodes = promoCodesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
                 updateUI();
-
             } catch (error) {
-                console.error('Error loading data:', error);
-                alert('Error loading dashboard. Please refresh.');
+                console.error('Error loading Firestore dashboard data:', error);
             }
         }
 
-        // Update all UI elements
         function updateUI() {
             calculateStats();
             initializeAllCharts();
@@ -2124,15 +2003,15 @@
             loadTopPerformers();
             loadNewUsers();
             loadRecentActivity();
+            updateLastUpdated();
         }
 
-        // Calculate stats
-        // Helper to update a badge and style it green for 0 and red for >0
+        // Helper to update action card badges with green/0 vs red/active states
         function updateBadge(badgeId, count) {
             const el = document.getElementById(badgeId);
             if (!el) return;
             el.textContent = count;
-            el.style.display = 'flex'; // Ensure it is visible
+            el.style.display = 'inline-flex';
             if (count === 0) {
                 el.className = 'action-badge badge-zero';
             } else {
@@ -2140,11 +2019,13 @@
             }
         }
 
-        // Calculate stats
         function calculateStats() {
             const totalProviders = allProviders.length;
-            const pendingProviders = allProviders.filter(p => getProviderApprovalStatus(p) === 'pending').length;
+            const reviewRequiredProviders = allProviders.filter(p => getProviderApprovalStatus(p) === 'pending').length;
+            const inProgressProviders = allProviders.filter(p => getProviderApprovalStatus(p) === 'in_progress').length;
             const approvedProviders = allProviders.filter(p => getProviderApprovalStatus(p) === 'approved').length;
+            const needsChangesProviders = allProviders.filter(p => getProviderApprovalStatus(p) === 'needs_changes').length;
+            const rejectedProviders = allProviders.filter(p => getProviderApprovalStatus(p) === 'rejected').length;
 
             const totalBookings = allBookings.length;
             const confirmedBookings = allBookings.filter(b => getStatus(b) === 'confirmed').length;
@@ -2156,9 +2037,10 @@
             const pendingCancellations = allCancellations.filter(c => getStatus(c) === 'pending').length;
             const totalReassignments = allReassignments.length;
             const pendingReassignments = allReassignments.filter(r => getStatus(r) === 'pending').length;
+            const openTicketsCount = allSupportTickets.filter(t => t.status === 'open' || t.status === 'in progress').length;
 
             const completionRate = totalBookings > 0 ? ((completedBookings / totalBookings) * 100).toFixed(0) : 0;
-            const pendingActions = pendingProviders + pendingCancellations + pendingReassignments + pendingReviews;
+            const pendingActions = reviewRequiredProviders + pendingCancellations + pendingReassignments + pendingReviews + openTicketsCount;
 
             // Calculate new users (registered in last 30 days) and total registered
             const thirtyDaysAgo = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000));
@@ -2170,22 +2052,54 @@
             const totalUsersCount = allUsers.length;
 
             // Hero stats
-            document.getElementById('hero-providers').textContent = totalProviders;
-            document.getElementById('hero-bookings').textContent = totalBookings;
-            document.getElementById('hero-pending').textContent = pendingActions;
+            const heroProv = document.getElementById('hero-providers');
+            if (heroProv) heroProv.textContent = totalProviders;
+            const heroBook = document.getElementById('hero-bookings');
+            if (heroBook) heroBook.textContent = totalBookings;
+            const heroPend = document.getElementById('hero-pending');
+            if (heroPend) heroPend.textContent = pendingActions;
 
-            // Priority metrics
-            document.getElementById('pending-approvals').textContent = pendingProviders;
-            document.getElementById('pending-cancellations').textContent = pendingCancellations;
-            document.getElementById('cancellation-text').textContent = `${totalCancellations} total`;
-            document.getElementById('active-providers').textContent = approvedProviders;
-            document.getElementById('active-change').textContent = `${((approvedProviders / totalProviders) * 100).toFixed(0)}%`;
-            document.getElementById('completion-rate').textContent = `${completionRate}%`;
+            // Priority metrics: 1. Pending Approvals & Review Required (Strictly excluding in-progress drafts)
+            const pendAppr = document.getElementById('pending-approvals');
+            if (pendAppr) pendAppr.textContent = reviewRequiredProviders;
+            const inProgEl = document.getElementById('in-progress-count');
+            if (inProgEl) inProgEl.textContent = inProgressProviders;
+            const revReqEl = document.getElementById('review-required-count');
+            if (revReqEl) revReqEl.textContent = reviewRequiredProviders;
+            const revReqTag = document.getElementById('review-required-tag');
+            if (revReqTag) {
+                if (reviewRequiredProviders > 0) {
+                    revReqTag.style.background = 'var(--error-subtle)';
+                    revReqTag.style.color = 'var(--color-error)';
+                    revReqTag.innerHTML = `⚠️ <b>${reviewRequiredProviders}</b> Review Required`;
+                } else {
+                    revReqTag.style.background = 'var(--success-subtle)';
+                    revReqTag.style.color = 'var(--color-success)';
+                    revReqTag.innerHTML = `✓ All Reviewed`;
+                }
+            }
 
-            const heroNewUsersEl = document.getElementById('hero-new-users');
-            if (heroNewUsersEl) heroNewUsersEl.textContent = newUsersCount;
-            const heroUsersTotalEl = document.getElementById('hero-users-total');
-            if (heroUsersTotalEl) heroUsersTotalEl.textContent = `${totalUsersCount} total registered`;
+            // Priority metrics: 2. Support Tickets
+            const openTicketsEl = document.getElementById('open-support-tickets');
+            if (openTicketsEl) openTicketsEl.textContent = openTicketsCount;
+            const supportTag = document.getElementById('support-status-tag');
+            const supportText = document.getElementById('support-status-text');
+            if (supportText) supportText.textContent = `${openTicketsCount} open • ${allSupportTickets.length} total`;
+            if (supportTag) {
+                if (openTicketsCount > 0) {
+                    supportTag.style.background = 'var(--warning-subtle)';
+                    supportTag.style.color = 'var(--color-warning)';
+                } else {
+                    supportTag.style.background = 'var(--success-subtle)';
+                    supportTag.style.color = 'var(--color-success)';
+                }
+            }
+
+            // Priority metrics: 3. Cancellations
+            const pendCanc = document.getElementById('pending-cancellations');
+            if (pendCanc) pendCanc.textContent = pendingCancellations;
+            const cancText = document.getElementById('cancellation-text');
+            if (cancText) cancText.textContent = `${pendingCancellations} pending • ${totalCancellations} total`;
 
             // Subscription eligibility count
             const eligibleCount = allProviders.filter(p => {
@@ -2212,13 +2126,42 @@
                 return isFinalPaid && Number(b.amount || b.totalAmount || 0) > 0 && b.payoutStatus !== 'paid';
             }).length;
 
+            // Priority metrics: 4. Pending Payouts
+            const pendPayEl = document.getElementById('pending-payouts-kpi');
+            if (pendPayEl) pendPayEl.textContent = pendingPayoutsCount;
+            const payText = document.getElementById('payouts-status-text');
+            if (payText) payText.textContent = pendingPayoutsCount > 0 ? `${pendingPayoutsCount} ready for transfer` : `All settled`;
+            const payTag = document.getElementById('payouts-status-tag');
+            if (payTag) {
+                payTag.style.background = pendingPayoutsCount > 0 ? 'var(--warning-subtle)' : 'var(--success-subtle)';
+                payTag.style.color = pendingPayoutsCount > 0 ? 'var(--color-warning)' : 'var(--color-success)';
+            }
+
+            // Priority metrics: 5. Active Orders & SLAs
+            const actOrdersEl = document.getElementById('active-orders-kpi');
+            if (actOrdersEl) actOrdersEl.textContent = activeProgressCount;
+            const ordersText = document.getElementById('orders-status-text');
+            if (ordersText) ordersText.textContent = activeProgressCount > 0 ? `${activeProgressCount} in progress & SLA` : `0 active in delivery`;
+
+            // Active partners & completion rates (also displayed in Hero & SLA health)
+            const actProv = document.getElementById('active-providers');
+            if (actProv) actProv.textContent = approvedProviders;
+            const actChange = document.getElementById('active-change');
+            if (actChange) actChange.textContent = `${totalProviders > 0 ? ((approvedProviders / totalProviders) * 100).toFixed(0) : 0}%`;
+
+            const compRate = document.getElementById('completion-rate');
+            if (compRate) compRate.textContent = `${completionRate}%`;
+
+            const heroNewUsersEl = document.getElementById('hero-new-users');
+            if (heroNewUsersEl) heroNewUsersEl.textContent = newUsersCount;
+            const heroUsersTotalEl = document.getElementById('hero-users-total');
+            if (heroUsersTotalEl) heroUsersTotalEl.textContent = `${totalUsersCount}`;
+
             // Promo codes active count
             const activePromoCodes = allPromoCodes.filter(d => d.isActive).length;
 
-            const openTicketsCount = allSupportTickets.filter(t => t.status === 'open' || t.status === 'in progress').length;
-
-            // Update all action card badges dynamically with green/red states
-            updateBadge('badge-providers', pendingProviders);
+            // Update all action card badges
+            updateBadge('badge-providers', reviewRequiredProviders);
             updateBadge('badge-reviews', pendingReviews);
             updateBadge('badge-master', 0);
             updateBadge('badge-users', newUsersCount);
@@ -2235,20 +2178,32 @@
             updateBadge('badge-promo', 0);
             updateBadge('badge-deletions', pendingDeletions);
 
-            // Update all action card descriptions/footers
-            document.getElementById('count-providers').textContent = `${totalProviders} total`;
-            document.getElementById('count-reviews').textContent = `${pendingReviews} pending`;
-            document.getElementById('count-bookings').textContent = `${totalBookings} total`;
-            document.getElementById('count-progress').textContent = `${activeProgressCount} active`;
-            document.getElementById('count-enquiries').textContent = `${totalEnquiries} total`;
-            document.getElementById('count-support-tickets').textContent = `${allSupportTickets.length} total`;
-            document.getElementById('count-cancellations').textContent = `${pendingCancellations} pending`;
-            document.getElementById('count-reassignments').textContent = `${pendingReassignments} pending`;
-            document.getElementById('count-subscriptions').textContent = `${eligibleCount} eligible`;
-            document.getElementById('count-payouts-pending').textContent = `${pendingPayoutsCount} pending`;
-            document.getElementById('count-promo').textContent = `${activePromoCodes} active`;
-            document.getElementById('count-deletions').textContent = `${pendingDeletions} pending`;
-            
+            // Update all action card sub-counters
+            const cp = document.getElementById('count-providers');
+            if (cp) cp.textContent = `${reviewRequiredProviders} review req • ${inProgressProviders} draft • ${totalProviders} total`;
+            const cr = document.getElementById('count-reviews');
+            if (cr) cr.textContent = `${pendingReviews} pending`;
+            const cb = document.getElementById('count-bookings');
+            if (cb) cb.textContent = `${totalBookings} total`;
+            const cprog = document.getElementById('count-progress');
+            if (cprog) cprog.textContent = `${activeProgressCount} active`;
+            const ce = document.getElementById('count-enquiries');
+            if (ce) ce.textContent = `${totalEnquiries} total`;
+            const cst = document.getElementById('count-support-tickets');
+            if (cst) cst.textContent = `${allSupportTickets.length} total`;
+            const cc = document.getElementById('count-cancellations');
+            if (cc) cc.textContent = `${pendingCancellations} pending`;
+            const cre = document.getElementById('count-reassignments');
+            if (cre) cre.textContent = `${pendingReassignments} pending`;
+            const cs = document.getElementById('count-subscriptions');
+            if (cs) cs.textContent = `${eligibleCount} eligible`;
+            const cpay = document.getElementById('count-payouts-pending');
+            if (cpay) cpay.textContent = `${pendingPayoutsCount} pending`;
+            const cpro = document.getElementById('count-promo');
+            if (cpro) cpro.textContent = `${activePromoCodes} active`;
+            const cdel = document.getElementById('count-deletions');
+            if (cdel) cdel.textContent = `${pendingDeletions} pending`;
+
             const countUsers = document.getElementById('count-users');
             if (countUsers) countUsers.textContent = `${allUsers.length} total`;
 
@@ -2270,7 +2225,7 @@
             if (badgeEl) {
                 if (flaggedCount > 0) {
                     badgeEl.textContent = `${flaggedCount} FLAGGED`;
-                    badgeEl.style.display = 'block';
+                    badgeEl.style.display = 'inline-flex';
                 } else {
                     badgeEl.style.display = 'none';
                 }
@@ -2288,17 +2243,53 @@
             }
         }
 
-        // Get chart colors based on theme
+        // Module Category Filtering & Live Search
+        let currentModuleCat = 'all';
+
+        window.filterModules = (cat) => {
+            currentModuleCat = cat;
+            const chips = document.querySelectorAll('.cat-chip-btn');
+            chips.forEach(c => c.classList.toggle('active', c.getAttribute('data-cat') === cat));
+            applyModuleVisibility();
+        };
+
+        window.handleModuleSearch = () => {
+            applyModuleVisibility();
+        };
+
+        function applyModuleVisibility() {
+            const query = (document.getElementById('moduleSearchInput')?.value || '').trim().toLowerCase();
+            const cards = document.querySelectorAll('.action-cards-grid .action-card');
+
+            cards.forEach(card => {
+                const cat = card.getAttribute('data-category') || '';
+                const nameText = (card.getAttribute('data-name') || '' + ' ' + card.innerText).toLowerCase();
+
+                let matchesCat = true;
+                if (currentModuleCat === 'attention') {
+                    const badge = card.querySelector('.action-badge');
+                    const badgeText = badge ? badge.textContent.trim() : '0';
+                    matchesCat = badgeText !== '0' && badgeText !== 'Active';
+                } else if (currentModuleCat !== 'all') {
+                    matchesCat = cat === currentModuleCat;
+                }
+
+                const matchesQuery = !query || nameText.includes(query);
+
+                card.style.display = (matchesCat && matchesQuery) ? 'flex' : 'none';
+            });
+        }
+
+        // Chart Styling & Theme Colors
         function getChartColors() {
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             return {
-                text: isDark ? '#cbd5e1' : '#475569',
-                grid: isDark ? '#334155' : '#e2e8f0',
-                primary: ['#667eea', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+                text: isDark ? '#94a3b8' : '#475569',
+                grid: isDark ? '#1e293b' : '#f1f5f9',
+                primary: ['#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899']
             };
         }
 
-        // Initialize all charts
         function initializeAllCharts() {
             initializeProviderChart();
             initializeTierChart();
@@ -2307,13 +2298,17 @@
             initializeTrendChart();
         }
 
-        // Provider Chart
+        // Provider Status Doughnut
         function initializeProviderChart() {
             const approved = allProviders.filter(p => getProviderApprovalStatus(p) === 'approved').length;
-            const pending = allProviders.filter(p => getProviderApprovalStatus(p) === 'pending').length;
+            const reviewRequired = allProviders.filter(p => getProviderApprovalStatus(p) === 'pending').length;
+            const inProgress = allProviders.filter(p => getProviderApprovalStatus(p) === 'in_progress').length;
+            const needsChanges = allProviders.filter(p => getProviderApprovalStatus(p) === 'needs_changes').length;
             const rejected = allProviders.filter(p => getProviderApprovalStatus(p) === 'rejected').length;
 
-            const ctx = document.getElementById('providerChart').getContext('2d');
+            const canvas = document.getElementById('providerChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
             if (chartInstances.provider) chartInstances.provider.destroy();
 
             const colors = getChartColors();
@@ -2321,23 +2316,25 @@
             chartInstances.provider = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Approved', 'Pending', 'Rejected'],
+                    labels: ['Approved', 'Review Required', 'In Progress', 'Needs Changes', 'Declined'],
                     datasets: [{
-                        data: [approved, pending, rejected],
-                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-                        borderWidth: 0
+                        data: [approved, reviewRequired, inProgress, needsChanges, rejected],
+                        backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#f97316', '#ef4444'],
+                        borderWidth: 0,
+                        hoverOffset: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    cutout: '72%',
                     plugins: {
                         legend: {
                             position: 'bottom',
                             labels: {
-                                padding: 15,
+                                padding: 14,
                                 color: colors.text,
-                                font: { size: 12, family: 'Inter' }
+                                font: { size: 11, family: 'Plus Jakarta Sans', weight: '700' }
                             }
                         }
                     }
@@ -2345,7 +2342,7 @@
             });
         }
 
-        // Tier Chart
+        // Tier Breakdown Chart
         function initializeTierChart() {
             const tiers = {};
             allProviders.forEach(p => {
@@ -2353,7 +2350,9 @@
                 tiers[tier] = (tiers[tier] || 0) + 1;
             });
 
-            const ctx = document.getElementById('tierChart').getContext('2d');
+            const canvas = document.getElementById('tierChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
             if (chartInstances.tier) chartInstances.tier.destroy();
 
             const colors = getChartColors();
@@ -2375,9 +2374,9 @@
                         legend: {
                             position: 'bottom',
                             labels: {
-                                padding: 15,
+                                padding: 14,
                                 color: colors.text,
-                                font: { size: 12, family: 'Inter' }
+                                font: { size: 11, family: 'Plus Jakarta Sans', weight: '700' }
                             }
                         }
                     }
@@ -2385,7 +2384,7 @@
             });
         }
 
-        // Booking Chart
+        // Booking Lifecycle Chart
         function initializeBookingChart() {
             const statuses = {};
             allBookings.forEach(b => {
@@ -2393,7 +2392,9 @@
                 statuses[status] = (statuses[status] || 0) + 1;
             });
 
-            const ctx = document.getElementById('bookingChart').getContext('2d');
+            const canvas = document.getElementById('bookingChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
             if (chartInstances.booking) chartInstances.booking.destroy();
 
             const colors = getChartColors();
@@ -2405,8 +2406,8 @@
                     datasets: [{
                         label: 'Bookings',
                         data: Object.values(statuses),
-                        backgroundColor: '#667eea',
-                        borderRadius: 8
+                        backgroundColor: '#7c3aed',
+                        borderRadius: 6
                     }]
                 },
                 options: {
@@ -2418,11 +2419,11 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            ticks: { color: colors.text },
+                            ticks: { color: colors.text, font: { family: 'Plus Jakarta Sans', size: 10 } },
                             grid: { color: colors.grid }
                         },
                         x: {
-                            ticks: { color: colors.text },
+                            ticks: { color: colors.text, font: { family: 'Plus Jakarta Sans', size: 10 } },
                             grid: { display: false }
                         }
                     }
@@ -2430,15 +2431,17 @@
             });
         }
 
-        // Specialization Chart
+        // Specializations Chart
         function initializeSpecializationChart() {
             const specs = {};
             allProviders.forEach(p => {
-                const spec = p.profile?.mediaSpecialization || 'Not Specified';
+                const spec = p.profile?.mediaSpecialization || 'General Media';
                 specs[spec] = (specs[spec] || 0) + 1;
             });
 
-            const ctx = document.getElementById('specializationChart').getContext('2d');
+            const canvas = document.getElementById('specializationChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
             if (chartInstances.specialization) chartInstances.specialization.destroy();
 
             const colors = getChartColors();
@@ -2450,10 +2453,10 @@
                     datasets: [{
                         data: Object.values(specs),
                         backgroundColor: [
-                            'rgba(102, 126, 234, 0.7)',
-                            'rgba(16, 185, 129, 0.7)',
-                            'rgba(245, 158, 11, 0.7)',
-                            'rgba(139, 92, 246, 0.7)'
+                            'rgba(124, 58, 237, 0.75)',
+                            'rgba(16, 185, 129, 0.75)',
+                            'rgba(245, 158, 11, 0.75)',
+                            'rgba(59, 130, 246, 0.75)'
                         ]
                     }]
                 },
@@ -2466,13 +2469,13 @@
                             labels: {
                                 padding: 12,
                                 color: colors.text,
-                                font: { size: 12, family: 'Inter' }
+                                font: { size: 11, family: 'Plus Jakarta Sans', weight: '700' }
                             }
                         }
                     },
                     scales: {
                         r: {
-                            ticks: { color: colors.text },
+                            ticks: { display: false },
                             grid: { color: colors.grid }
                         }
                     }
@@ -2480,7 +2483,7 @@
             });
         }
 
-        // Trend Chart
+        // 30-Day Activity Trend Chart
         function initializeTrendChart() {
             const last30Days = Array.from({ length: 30 }, (_, i) => {
                 const date = new Date();
@@ -2502,7 +2505,9 @@
                 }).length;
             });
 
-            const ctx = document.getElementById('trendChart').getContext('2d');
+            const canvas = document.getElementById('trendChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
             if (chartInstances.trend) chartInstances.trend.destroy();
 
             const colors = getChartColors();
@@ -2515,24 +2520,24 @@
                         {
                             label: 'Bookings',
                             data: bookingCounts,
-                            borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            borderWidth: 3,
+                            borderColor: '#7c3aed',
+                            backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                            borderWidth: 2.5,
                             fill: true,
-                            tension: 0.4,
+                            tension: 0.35,
                             pointRadius: 0,
-                            pointHoverRadius: 6
+                            pointHoverRadius: 5
                         },
                         {
-                            label: 'Enquiries',
+                            label: 'Inquiries',
                             data: enquiryCounts,
                             borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            borderWidth: 3,
+                            backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                            borderWidth: 2.5,
                             fill: true,
-                            tension: 0.4,
+                            tension: 0.35,
                             pointRadius: 0,
-                            pointHoverRadius: 6
+                            pointHoverRadius: 5
                         }
                     ]
                 },
@@ -2543,23 +2548,25 @@
                     plugins: {
                         legend: {
                             position: 'top',
+                            align: 'end',
                             labels: {
                                 usePointStyle: true,
-                                padding: 20,
+                                padding: 16,
                                 color: colors.text,
-                                font: { size: 13, family: 'Inter', weight: '600' }
+                                font: { size: 12, family: 'Plus Jakarta Sans', weight: '700' }
                             }
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            ticks: { color: colors.text },
+                            ticks: { color: colors.text, font: { family: 'Plus Jakarta Sans', size: 10 } },
                             grid: { color: colors.grid }
                         },
                         x: {
                             ticks: {
                                 color: colors.text,
+                                font: { family: 'Plus Jakarta Sans', size: 10 },
                                 maxRotation: 45,
                                 minRotation: 45
                             },
@@ -2570,12 +2577,11 @@
             });
         }
 
-        // Update charts theme
         function updateChartsTheme() {
             initializeAllCharts();
         }
 
-        // Performance Metrics
+        // Performance Metrics SLAs
         function loadPerformanceMetrics() {
             const totalProviders = allProviders.length;
             const approvedProviders = allProviders.filter(p => getProviderApprovalStatus(p) === 'approved').length;
@@ -2583,72 +2589,88 @@
 
             const avgRating = allReviews.length > 0
                 ? (allReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / allReviews.length).toFixed(1)
-                : 0;
+                : '5.0';
 
             const totalBookings = allBookings.length;
             const totalCancellations = allCancellations.length;
             const cancellationRate = totalBookings > 0 ? ((totalCancellations / totalBookings) * 100).toFixed(0) : 0;
 
-            document.getElementById('approval-rate').textContent = `${approvalRate}%`;
-            document.getElementById('approval-status').textContent = approvalRate > 70 ? 'Good' : 'Fair';
-            document.getElementById('approval-status').className = `metric-item-status ${approvalRate > 70 ? 'status-good' : 'status-fair'}`;
+            const apprEl = document.getElementById('approval-rate');
+            if (apprEl) apprEl.textContent = `${approvalRate}%`;
+            const apprStatusEl = document.getElementById('approval-status');
+            if (apprStatusEl) {
+                apprStatusEl.textContent = approvalRate > 70 ? 'Good' : 'Fair';
+                apprStatusEl.className = `metric-item-status ${approvalRate > 70 ? 'status-good' : 'status-fair'}`;
+            }
 
-            document.getElementById('avg-rating').textContent = `${avgRating}/5`;
-            document.getElementById('rating-status').textContent = avgRating >= 4 ? 'High' : 'Fair';
-            document.getElementById('rating-status').className = `metric-item-status ${avgRating >= 4 ? 'status-excellent' : 'status-fair'}`;
+            const ratingEl = document.getElementById('avg-rating');
+            if (ratingEl) ratingEl.textContent = `${avgRating} ★`;
+            const ratingStatusEl = document.getElementById('rating-status');
+            if (ratingStatusEl) {
+                ratingStatusEl.textContent = Number(avgRating) >= 4 ? 'High' : 'Fair';
+                ratingStatusEl.className = `metric-item-status ${Number(avgRating) >= 4 ? 'status-excellent' : 'status-fair'}`;
+            }
 
-            document.getElementById('cancel-rate').textContent = `${cancellationRate}%`;
-            document.getElementById('cancel-status').textContent = cancellationRate < 10 ? 'Low' : 'High';
-            document.getElementById('cancel-status').className = `metric-item-status ${cancellationRate < 10 ? 'status-good' : 'status-poor'}`;
+            const cancelRateEl = document.getElementById('cancel-rate');
+            if (cancelRateEl) cancelRateEl.textContent = `${cancellationRate}%`;
+            const cancelStatusEl = document.getElementById('cancel-status');
+            if (cancelStatusEl) {
+                cancelStatusEl.textContent = cancellationRate < 10 ? 'Low' : 'High';
+                cancelStatusEl.className = `metric-item-status ${cancellationRate < 10 ? 'status-good' : 'status-poor'}`;
+            }
         }
 
-        // Top Performers
+        // Top Performers List
         function loadTopPerformers() {
             const approvedProviders = allProviders.filter(p => getProviderApprovalStatus(p) === 'approved');
-
             const tierOrder = { 'Platinum': 4, 'Gold': 3, 'Silver': 2, 'Bronze': 1 };
             const sorted = approvedProviders.sort((a, b) => {
                 return (tierOrder[b.tier] || 0) - (tierOrder[a.tier] || 0);
             }).slice(0, 5);
 
             const container = document.getElementById('top-performers');
+            if (!container) return;
 
             if (sorted.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">📭</div>
-                        <div class="empty-state-text">No providers yet</div>
+                        <div class="empty-state-text">No partners found</div>
                     </div>
                 `;
                 return;
             }
 
-            const colors = ['rgba(59, 130, 246, 0.1)', 'rgba(16, 185, 129, 0.1)', 'rgba(245, 158, 11, 0.1)', 'rgba(139, 92, 246, 0.1)', 'rgba(236, 72, 153, 0.1)'];
-            const textColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
-            const tierColors = { 'Platinum': '#9333ea', 'Gold': '#f59e0b', 'Silver': '#6b7280', 'Bronze': '#ea580c' };
+            const tierBadgeStyles = {
+                'Platinum': 'background: rgba(147, 51, 234, 0.15); color: #9333ea; border: 1px solid rgba(147, 51, 234, 0.3);',
+                'Gold': 'background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3);',
+                'Silver': 'background: rgba(100, 116, 139, 0.15); color: #475569; border: 1px solid rgba(100, 116, 139, 0.3);'
+            };
 
-            container.innerHTML = sorted.map((p, i) => `
-                <div class="performer-item">
-                    <div class="performer-rank" style="background: ${colors[i]}; color: ${textColors[i]};">
-                        ${i + 1}
-                    </div>
-                    <div class="performer-info">
-                        <div class="performer-name">${p.identity?.fullName || 'Provider ' + (i + 1)}</div>
-                        <div class="performer-metric">${p.identity?.city || 'Location not set'}</div>
-                    </div>
-                    <div class="performer-badge" style="background: ${tierColors[p.tier] || '#e5e7eb'}20; color: ${tierColors[p.tier] || '#6b7280'};">
-                        ${p.tier || 'No Tier'}
-                    </div>
-                </div>
-            `).join('');
+            container.innerHTML = sorted.map((p, i) => {
+                const name = p.identity?.fullName || p.name || `Partner ${i + 1}`;
+                const city = p.identity?.city || p.location || 'India';
+                const tier = p.tier || 'Silver';
+                const style = tierBadgeStyles[tier] || tierBadgeStyles['Silver'];
+
+                return `
+                    <a href="master-provider.html?id=${p.id}" class="performer-item" title="View details of ${escapeHtml(name)}">
+                        <div class="performer-rank">#${i + 1}</div>
+                        <div class="performer-info">
+                            <div class="performer-name">${escapeHtml(name)}</div>
+                            <div class="performer-metric">📍 ${escapeHtml(city)}</div>
+                        </div>
+                        <span class="performer-badge" style="${style}">${escapeHtml(tier)}</span>
+                    </a>
+                `;
+            }).join('');
         }
 
-        // New Users
+        // New Users List
         function loadNewUsers() {
             const container = document.getElementById('new-users-list');
             if (!container) return;
 
-            // Sort users by registration timestamp descending
             const sortedUsers = [...allUsers].sort((a, b) => {
                 const timeA = parseTimestamp(a.createdAt || a.termsAcceptedAt || a.updatedAt).getTime();
                 const timeB = parseTimestamp(b.createdAt || b.termsAcceptedAt || b.updatedAt).getTime();
@@ -2657,23 +2679,21 @@
 
             if (sortedUsers.length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state" style="padding: 1.5rem 0;">
+                    <div class="empty-state">
                         <div class="empty-state-icon">👥</div>
-                        <div class="empty-state-text">No registered users yet</div>
+                        <div class="empty-state-text">No registered clients yet</div>
                     </div>
                 `;
                 return;
             }
 
             container.innerHTML = sortedUsers.map(u => {
-                const fullName = u.fullName || (u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : '') || u.identity?.fullName || 'User';
-                const email = u.email || u.identity?.email || 'No email';
+                const fullName = u.fullName || (u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : '') || u.identity?.fullName || 'Client';
+                const email = u.email || u.identity?.email || 'No email registered';
                 const phone = u.phone || u.identity?.phone || '';
-                const status = (u.status || 'active').toLowerCase();
                 const date = parseTimestamp(u.createdAt || u.termsAcceptedAt || u.updatedAt);
                 const timeStr = formatTime(date);
 
-                // Initials
                 const parts = fullName.trim().split(/\s+/).filter(Boolean);
                 let initials = 'U';
                 if (parts.length >= 2) {
@@ -2685,32 +2705,31 @@
                 const contactSub = phone ? `${escapeHtml(email)} • ${escapeHtml(phone)}` : escapeHtml(email);
 
                 return `
-                    <a href="master-user.html" class="user-card-item" title="View ${escapeHtml(fullName)} in User Directory">
+                    <a href="master-user.html?id=${u.id}" class="user-card-item" title="View client profile for ${escapeHtml(fullName)}">
                         <div class="user-card-avatar">${initials}</div>
                         <div class="user-card-info">
                             <div class="user-card-name-row">
                                 <span class="user-card-name">${escapeHtml(fullName)}</span>
-                                <span class="user-card-status">${escapeHtml(status)}</span>
+                                <span class="user-card-time">${timeStr}</span>
                             </div>
                             <div class="user-card-contact">${contactSub}</div>
                         </div>
-                        <div class="user-card-time">${timeStr}</div>
                     </a>
                 `;
             }).join('');
         }
 
-        // Recent Activity
+        // Live Recent Activity Feed
         function loadRecentActivity() {
             const activityContainer = document.getElementById('recent-activity');
+            if (!activityContainer) return;
             const activities = [];
 
-            // Collect activities
             allProviders.slice(0, 5).forEach(p => {
                 activities.push({
                     icon: '👤',
-                    color: 'rgba(59, 130, 246, 0.1)',
-                    text: `New provider: <strong>${escapeHtml(p.identity?.fullName || 'Unknown')}</strong>`,
+                    color: 'rgba(59, 130, 246, 0.14)',
+                    text: `Provider joined: <strong>${escapeHtml(p.identity?.fullName || p.name || 'New Provider')}</strong>`,
                     time: parseTimestamp(p.updatedAt || p.createdAt)
                 });
             });
@@ -2719,8 +2738,8 @@
                 const uName = u.fullName || (u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : '') || u.identity?.fullName || 'Client';
                 activities.push({
                     icon: '👥',
-                    color: 'rgba(118, 75, 162, 0.1)',
-                    text: `New user: <strong>${escapeHtml(uName)}</strong> registered`,
+                    color: 'rgba(124, 58, 237, 0.14)',
+                    text: `New customer: <strong>${escapeHtml(uName)}</strong> registered`,
                     time: parseTimestamp(u.createdAt || u.termsAcceptedAt || u.updatedAt)
                 });
             });
@@ -2728,8 +2747,8 @@
             allBookings.slice(0, 5).forEach(b => {
                 activities.push({
                     icon: '📅',
-                    color: 'rgba(16, 185, 129, 0.1)',
-                    text: `Booking: <strong>${escapeHtml(b.packageName || 'Package')}</strong>`,
+                    color: 'rgba(16, 185, 129, 0.14)',
+                    text: `Booking placed: <strong>${escapeHtml(b.packageName || 'Service Package')}</strong>`,
                     time: parseTimestamp(b.createdAt || b.bookingTimestamp)
                 });
             });
@@ -2737,8 +2756,8 @@
             allEnquiries.slice(0, 5).forEach(e => {
                 activities.push({
                     icon: '📧',
-                    color: 'rgba(245, 158, 11, 0.1)',
-                    text: `Enquiry from <strong>${escapeHtml(e.customerName || 'Customer')}</strong>`,
+                    color: 'rgba(245, 158, 11, 0.14)',
+                    text: `Inquiry from <strong>${escapeHtml(e.customerName || 'Inquirer')}</strong>`,
                     time: parseTimestamp(e.createdAt)
                 });
             });
@@ -2749,13 +2768,13 @@
                 activityContainer.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">📭</div>
-                        <div class="empty-state-text">No recent activity</div>
+                        <div class="empty-state-text">No recent platform activity</div>
                     </div>
                 `;
                 return;
             }
 
-            activityContainer.innerHTML = activities.slice(0, 15).map(item => `
+            activityContainer.innerHTML = activities.slice(0, 12).map(item => `
                 <div class="activity-item">
                     <div class="activity-icon" style="background: ${item.color};">${item.icon}</div>
                     <div class="activity-content">
@@ -2766,9 +2785,8 @@
             `).join('');
         }
 
-        // Format time
         function formatTime(date) {
-            if (!date || !(date instanceof Date)) return 'Recently';
+            if (!date || !(date instanceof Date) || isNaN(date.getTime())) return 'Recently';
 
             const now = new Date();
             const diff = now - date;
@@ -2786,11 +2804,13 @@
             return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
         }
 
-        // Auto-refresh every 5 minutes
+        // Periodic sync indicator
         setInterval(() => {
             updateLastUpdated();
-        }, 300000);
+        }, 120000);
     </script>
+
+    <!-- Administrative Phone Push Alert Engine & Native Mobile App Shell -->
     <script src="admin-alerts.js"></script>
     <script src="mobile-app.js"></script>
 </body>

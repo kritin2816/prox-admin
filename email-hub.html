@@ -597,6 +597,7 @@
         .status-needs_changes { background: var(--danger-subtle); color: var(--danger-text); border: 1px solid var(--danger-border); }
         .status-rejected { background: var(--bg-subtle); color: var(--text-muted); border: 1px solid var(--border-subtle); }
         .status-client { background: var(--info-subtle); color: var(--info-text); border: 1px solid var(--info-border); }
+        .status-incomplete, .status-in_progress, .status-draft { background: rgba(245, 158, 11, 0.12); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.25); }
 
         .rcp-sub-line {
             display: flex;
@@ -1539,6 +1540,7 @@
                     <button class="pill-filter" data-filter="waiting" onclick="applyStatusFilter('waiting')">Review</button>
                     <button class="pill-filter" data-filter="approved" onclick="applyStatusFilter('approved')">Approved</button>
                     <button class="pill-filter" data-filter="needs_changes" onclick="applyStatusFilter('needs_changes')">Action Req.</button>
+                    <button class="pill-filter" data-filter="incomplete" onclick="applyStatusFilter('incomplete')">Incomplete</button>
                     <button class="pill-filter" data-filter="rejected" onclick="applyStatusFilter('rejected')">Declined</button>
                     <button class="pill-filter" data-filter="sent_positive" onclick="applyStatusFilter('sent_positive')">Sent &gt; 0</button>
                 </div>
@@ -1878,6 +1880,35 @@
                     `
                 },
                 {
+                    key: 'finish_onboarding',
+                    name: 'Finish Onboarding',
+                    desc: 'Push providers to complete pending setup',
+                    icon: '⏳',
+                    badge: 'FINISH YOUR REGISTRATION',
+                    promo: 'PROX100',
+                    subject: "You're almost there! Complete your Pro X onboarding ⏳",
+                    ctaText: 'Resume & Complete Onboarding →',
+                    ctaLink: `${BASE_URL}/provider/onboarding.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${esc(name)}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">We noticed you started setting up your Pro X provider profile, but haven't completed all the onboarding steps yet.</p>
+                        <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; border-radius: 10px; padding: 18px 20px; margin: 20px 0;">
+                            <p style="margin: 0 0 8px 0; font-weight: 700; color: #92400e; font-size: 15px;">💾 Your progress is safely saved!</p>
+                            <p style="margin: 0 0 10px 0; color: #78350f; font-size: 14px; line-height: 1.6;">You are only a couple of quick minutes away from submitting your profile for fast-track verification so you can begin receiving direct client bookings.</p>
+                            <p style="margin: 0; color: #b45309; font-size: 13px; font-weight: 600;">Pending items may include: KYC ID verification, portfolio links, or payout bank details.</p>
+                        </div>
+                        <div style="background-color: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 18px 20px; margin: 20px 0;">
+                            <p style="margin: 0 0 10px 0; font-weight: 700; color: #0f172a; font-size: 14px;">Why complete your profile now?</p>
+                            <ul style="margin: 0; padding-left: 20px; color: #334155; font-size: 14px; line-height: 1.8;">
+                                <li><b>Client Orders:</b> Get discovered by verified clients looking for creative specialists.</li>
+                                <li><b>Claim 3 Months Free:</b> Use launch coupon code <b>PROX100</b> upon approval.</li>
+                                <li><b>Escrow Protection:</b> Guaranteed, timely bank payouts on every completed project.</li>
+                            </ul>
+                        </div>
+                        <p style="margin: 0; color: #475569; font-size: 14px;">Click the button below to resume right where you left off — it takes less than 2 minutes to finish!</p>
+                    `
+                },
+                {
                     key: 'waiting',
                     name: 'Review Confirmation',
                     desc: 'Application received & in progress',
@@ -2192,6 +2223,11 @@
                 let matchStatus = true;
                 if (currentStatusFilter === 'sent_positive') {
                     matchStatus = sentCount > 0;
+                } else if (currentStatusFilter === 'incomplete') {
+                    matchStatus = ['in_progress', 'draft', 'incomplete', 'onboarding_required', 'unsubmitted'].includes(status) || 
+                                  item.onboardingCompleted === false || 
+                                  (item.onboarding && item.onboarding.completed === false) ||
+                                  (!['approved', 'waiting', 'needs_changes', 'rejected', 'active', 'client'].includes(status));
                 } else if (currentStatusFilter !== 'all') {
                     matchStatus = status === currentStatusFilter;
                 }
@@ -2232,6 +2268,9 @@
                 } else if (status === 'rejected') {
                     statusClass = 'status-rejected';
                     dotColor = '#94a3b8';
+                } else if (['in_progress', 'draft', 'incomplete', 'onboarding_required', 'unsubmitted'].includes(status) || item.onboardingCompleted === false || (item.onboarding && item.onboarding.completed === false)) {
+                    statusClass = 'status-incomplete';
+                    dotColor = '#f59e0b';
                 }
 
                 const sentPillClass = sentCount > 0 ? 'rcp-sent-pill sent-positive' : 'rcp-sent-pill';
@@ -2320,6 +2359,9 @@
             if (currentMode === 'providers') {
                 if (['approved', 'waiting', 'needs_changes', 'rejected'].includes(status)) {
                     selectedTemplateKey = status;
+                    renderTemplateCards();
+                } else if (['in_progress', 'draft', 'incomplete', 'onboarding_required', 'unsubmitted'].includes(status) || selectedRecipient.onboardingCompleted === false || (selectedRecipient.onboarding && selectedRecipient.onboarding.completed === false)) {
+                    selectedTemplateKey = 'finish_onboarding';
                     renderTemplateCards();
                 }
             }

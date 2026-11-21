@@ -2195,8 +2195,8 @@
                             <label class="input-label" for="inputBadge">Header Announcement Badge</label>
                             <input type="text" id="inputBadge" class="hub-input" placeholder="e.g. APPLICATION APPROVED" oninput="syncPreviewFromEditor()">
                         </div>
-                        <div class="input-group">
-                            <label class="input-label" for="inputPromo">Coupon / Promo Code Box</label>
+                        <div class="input-group" id="promoCodeInputGroup">
+                            <label class="input-label" for="inputPromo">Coupon / Promo Code Box (Providers Only)</label>
                             <input type="text" id="inputPromo" class="hub-input" placeholder="e.g. PROX100 (leave empty to hide)" oninput="syncPreviewFromEditor()">
                         </div>
                     </div>
@@ -2285,7 +2285,7 @@
                 <button class="pill-filter" id="libFilterNudges" onclick="filterTemplatesLibrary('nudges')">⏰ Signup Nudges (3)</button>
                 <button class="pill-filter" id="libFilterOnboarding" onclick="filterTemplatesLibrary('onboarding')">🚀 Provider Lifecycle (5)</button>
                 <button class="pill-filter" id="libFilterBookings" onclick="filterTemplatesLibrary('bookings')">📋 Booking Automations (10)</button>
-                <button class="pill-filter" id="libFilterMarketing" onclick="filterTemplatesLibrary('marketing')">🎁 Client &amp; Promo (2)</button>
+                <button class="pill-filter" id="libFilterMarketing" onclick="filterTemplatesLibrary('marketing')">👥 Client Welcome</button>
             </div>
 
             <!-- Templates Library Grid -->
@@ -2703,7 +2703,7 @@
                     desc: 'Platform intro & talent exploration',
                     icon: '👋',
                     badge: 'WELCOME TO PRO X',
-                    promo: 'CLIENTFIRST',
+                    promo: '',
                     subject: 'Welcome to Pro X! Discover Top Creative Talent 🚀',
                     ctaText: 'Explore Verified Services',
                     ctaLink: `${BASE_URL}/user/search.html`,
@@ -2714,19 +2714,109 @@
                     `
                 },
                 {
-                    key: 'user_promo',
-                    name: 'Client Discount',
-                    desc: 'Exclusive ₹500 booking coupon',
-                    icon: '🎁',
-                    badge: 'SPECIAL REWARD',
-                    promo: 'PROXDISCOUNT',
-                    subject: 'Enjoy ₹500 OFF Your Next Booking on Pro X! 🎁',
-                    ctaText: 'Book a Verified Service',
-                    ctaLink: `${BASE_URL}/user/search.html`,
+                    key: 'booking_accepted',
+                    name: 'Booking Confirmed',
+                    desc: 'Provider accepted order & confirmed booking',
+                    icon: '🎉',
+                    badge: 'BOOKING CONFIRMED',
+                    promo: '',
+                    subject: 'Booking Confirmed! - Pro X',
+                    ctaText: 'View Booking Details',
+                    ctaLink: `${BASE_URL}/user/booking.html`,
                     getMessage: (name) => `
                         <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${esc(name)}</b>,</p>
-                        <p style="margin: 0 0 16px 0;">Ready to kickstart your next creative project? We're gifting you an exclusive coupon code to save on any verified service listing.</p>
-                        <p style="margin: 0 0 16px 0; color: #475569; font-size: 14px;">Apply this coupon at checkout to redeem your reward instantly.</p>
+                        <p style="margin: 0 0 16px 0;">Great news! Your booking has been accepted by the provider.</p>
+                        <p style="margin: 0 0 16px 0; color: #475569; font-size: 14px;">You can view project milestones, communicate with your provider, and track progress anytime on your customer dashboard.</p>
+                    `
+                },
+                {
+                    key: 'booking_ongoing',
+                    name: 'Service Started',
+                    desc: 'Provider has begun work on booking',
+                    icon: '🚀',
+                    badge: 'SERVICE IN PROGRESS',
+                    promo: '',
+                    subject: 'Service Started! - Pro X',
+                    ctaText: 'View Booking',
+                    ctaLink: `${BASE_URL}/user/booking.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${esc(name)}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">The provider has started working on your booking. You will be notified the moment preview deliverables are ready for your review.</p>
+                    `
+                },
+                {
+                    key: 'booking_samples',
+                    name: 'Files / Samples Ready',
+                    desc: 'Preview deliverables uploaded for review',
+                    icon: '🔎',
+                    badge: 'SAMPLES READY',
+                    promo: '',
+                    subject: 'Samples Ready for Review - Pro X',
+                    ctaText: 'Review Deliverables',
+                    ctaLink: `${BASE_URL}/user/booking.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${esc(name)}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">The provider has uploaded files/samples for your booking. Please review them and complete the final payment to download your high-resolution deliverables.</p>
+                    `
+                },
+                {
+                    key: 'booking_completed',
+                    name: 'Job Completed',
+                    desc: 'Provider completed work, review files',
+                    icon: '🏁',
+                    badge: 'JOB COMPLETED',
+                    promo: '',
+                    subject: 'Job Completed! - Pro X',
+                    ctaText: 'Review Deliverables',
+                    ctaLink: `${BASE_URL}/user/booking.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${esc(name)}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">The provider has completed your service booking. Please review the delivered files and confirm receipt to finalize the project.</p>
+                    `
+                },
+                {
+                    key: 'booking_placed',
+                    name: 'Booking Placed',
+                    desc: 'Order confirmation for placed booking',
+                    icon: '📋',
+                    badge: 'BOOKING PLACED',
+                    promo: '',
+                    subject: 'Booking Confirmation - Pro X',
+                    ctaText: 'View Booking Details',
+                    ctaLink: `${BASE_URL}/user/booking.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${esc(name)}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">Your booking has been placed successfully. The provider will review your request and respond shortly.</p>
+                    `
+                },
+                {
+                    key: 'booking_cancellation',
+                    name: 'Cancellation Notice',
+                    desc: 'Cancellation request under support review',
+                    icon: '⚠️',
+                    badge: 'CANCELLATION IN REVIEW',
+                    promo: '',
+                    subject: 'Cancellation Requested - Pro X',
+                    ctaText: 'View Booking',
+                    ctaLink: `${BASE_URL}/user/booking.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${esc(name)}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">A cancellation request has been filed for your booking. Our support team is reviewing the request and will follow up shortly.</p>
+                    `
+                },
+                {
+                    key: 'booking_refund',
+                    name: 'Refund Processed',
+                    desc: 'Payment refunded to client account',
+                    icon: '💳',
+                    badge: 'REFUND APPROVED',
+                    promo: '',
+                    subject: 'Refund Processed - Pro X',
+                    ctaText: 'View Booking',
+                    ctaLink: `${BASE_URL}/user/booking.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${esc(name)}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">Your refund has been approved and processed. The funds will reflect in your original payment method in accordance with bank processing times.</p>
                     `
                 },
                 {
@@ -3026,7 +3116,7 @@
                 ctaLink: `${BASE_URL}/user/booking.html`
             },
 
-            // Customer Marketing & Discount Engagement
+            // Customer / Client Lifecycle
             {
                 key: 'user_welcome',
                 name: 'Welcome Client to Pro X',
@@ -3037,24 +3127,9 @@
                 triggerRule: 'Dispatched via Admin Hub / welcome sequence',
                 triggerDesc: 'Welcomes client to Pro X, introduces top categories and verified talent search.',
                 badge: 'WELCOME TO PRO X',
-                promo: 'CLIENTFIRST',
+                promo: '',
                 defaultSubject: 'Welcome to Pro X! Discover Top Creative Talent 🚀',
                 ctaText: 'Explore Verified Services',
-                ctaLink: `${BASE_URL}/user/search.html`
-            },
-            {
-                key: 'user_promo',
-                name: 'Client ₹500 Discount Reward',
-                category: 'marketing',
-                icon: '🎁',
-                targetAudience: 'Customer',
-                timing: 'Manual / On Call',
-                triggerRule: 'Dispatched via Admin Hub / marketing campaign',
-                triggerDesc: 'Delivers an exclusive ₹500 discount voucher to drive booking conversions.',
-                badge: 'SPECIAL REWARD',
-                promo: 'PROXDISCOUNT',
-                defaultSubject: 'Enjoy ₹500 OFF Your Next Booking on Pro X! 🎁',
-                ctaText: 'Book a Verified Service',
                 ctaLink: `${BASE_URL}/user/search.html`
             }
         ];
@@ -3575,6 +3650,16 @@
             document.getElementById('tabBtnProviders').classList.toggle('active', mode === 'providers');
             document.getElementById('tabBtnUsers').classList.toggle('active', mode === 'users');
 
+            // Hide promo code input for users (clients have no promo codes)
+            const promoGroup = document.getElementById('promoCodeInputGroup');
+            if (promoGroup) {
+                promoGroup.style.display = mode === 'users' ? 'none' : '';
+            }
+            const promoInput = document.getElementById('inputPromo');
+            if (promoInput && mode === 'users') {
+                promoInput.value = '';
+            }
+
             selectedTemplateKey = mode === 'providers' ? 'approved' : 'user_welcome';
             renderTemplateCards();
 
@@ -3843,7 +3928,7 @@
 
             document.getElementById('inputSubject').value = tpl.subject;
             document.getElementById('inputBadge').value = tpl.badge || '';
-            document.getElementById('inputPromo').value = tpl.promo || '';
+            document.getElementById('inputPromo').value = currentMode === 'users' ? '' : (tpl.promo || '');
             document.getElementById('inputMessage').value = tpl.getMessage(name).trim();
             document.getElementById('inputCtaText').value = tpl.ctaText || '';
             document.getElementById('inputCtaLink').value = tpl.ctaLink || '';
@@ -3900,7 +3985,7 @@
                 </div>
             ` : '';
 
-            const promoHtml = promoCode ? `
+            const promoHtml = (promoCode && currentMode !== 'users') ? `
                 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border: 2px dashed #9333ea; border-radius: 16px; margin: 28px 0; text-align: center; overflow: hidden; box-shadow: 0 4px 16px rgba(147, 51, 234, 0.08);">
                   <tr>
                     <td style="padding: 26px 20px;">

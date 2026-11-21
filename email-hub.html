@@ -1452,6 +1452,461 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* --- Hub Subnavigation Bar --- */
+        .hub-subnav-bar {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.6rem 1.5rem;
+            position: sticky;
+            top: 57px;
+            z-index: 90;
+            box-shadow: var(--shadow-xs);
+        }
+
+        .hub-subnav-inner {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .hub-main-tabs {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .hub-view-tab {
+            background: transparent;
+            border: 1px solid transparent;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.825rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .hub-view-tab:hover {
+            color: var(--text-main);
+            background: var(--bg-subtle);
+        }
+
+        .hub-view-tab.active {
+            background: var(--brand-subtle);
+            color: var(--brand-primary);
+            border-color: var(--brand-border);
+        }
+
+        .tab-badge {
+            font-size: 0.675rem;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: var(--radius-pill);
+            background: var(--bg-subtle);
+            color: var(--text-muted);
+        }
+
+        .hub-view-tab.active .tab-badge {
+            background: var(--brand-primary);
+            color: #ffffff;
+        }
+
+        .tab-badge.pulse {
+            animation: badgePulse 2s infinite;
+        }
+
+        @keyframes badgePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .btn-nudge-scan {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #ffffff;
+            border: none;
+            padding: 0.45rem 1rem;
+            border-radius: var(--radius-pill);
+            font-size: 0.775rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .btn-nudge-scan:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.45);
+        }
+
+        .btn-nudge-scan:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* --- Stats Ribbon --- */
+        .hub-stats-ribbon {
+            max-width: 1600px;
+            width: 100%;
+            margin: 1rem auto 0 auto;
+            padding: 0 1.25rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.85rem;
+        }
+
+        .stat-pill {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            box-shadow: var(--shadow-xs);
+            transition: all 0.2s ease;
+        }
+
+        .stat-pill:hover {
+            border-color: var(--border-strong);
+            transform: translateY(-1px);
+        }
+
+        .stat-icon {
+            font-size: 1.4rem;
+            line-height: 1;
+        }
+
+        .stat-data {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-num {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.2;
+            font-family: var(--font-mono);
+        }
+
+        .stat-label {
+            font-size: 0.675rem;
+            font-weight: 700;
+            color: var(--text-faint);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .stat-pill.stat-relay {
+            background: var(--success-subtle);
+            border-color: var(--success-border);
+        }
+
+        .relay-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+            animation: relayPulse 1.8s infinite;
+        }
+
+        @keyframes relayPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
+        }
+
+        /* --- Full-width Views --- */
+        .hub-view-fullwidth {
+            grid-column: 1 / -1;
+            width: 100%;
+            padding: 1.5rem;
+        }
+
+        .view-header-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .view-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 0.25rem;
+        }
+
+        .view-desc {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        /* --- Templates Library Grid --- */
+        .templates-lib-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 1.15rem;
+            margin-top: 1rem;
+        }
+
+        .lib-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lib-card:hover {
+            border-color: var(--brand-primary);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .lib-card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .lib-icon-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .lib-icon {
+            font-size: 1.6rem;
+            background: var(--bg-subtle);
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md);
+        }
+
+        .lib-name {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .lib-target-pill {
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 3px 8px;
+            border-radius: var(--radius-pill);
+        }
+
+        .pill-provider {
+            background: #f3e8ff;
+            color: #7c3aed;
+            border: 1px solid #ddd6fe;
+        }
+
+        .pill-customer {
+            background: #e0f2fe;
+            color: #0284c7;
+            border: 1px solid #bae6fd;
+        }
+
+        .pill-both {
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+        }
+
+        .lib-trigger-banner {
+            background: var(--bg-subtle);
+            border-radius: var(--radius-sm);
+            padding: 0.55rem 0.75rem;
+            font-size: 0.725rem;
+            color: var(--text-muted);
+            margin-bottom: 0.85rem;
+            line-height: 1.45;
+            border-left: 3px solid var(--brand-primary);
+        }
+
+        .lib-trigger-banner b {
+            color: var(--text-main);
+        }
+
+        .lib-subject-row {
+            font-size: 0.775rem;
+            margin-bottom: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .lib-subject-row b {
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            background: var(--bg-subtle);
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 3px;
+        }
+
+        .lib-actions-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn-lib-preview {
+            flex: 1;
+            background: var(--brand-subtle);
+            color: var(--brand-primary);
+            border: 1px solid var(--brand-border);
+            padding: 0.45rem 0.75rem;
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-lib-preview:hover {
+            background: var(--brand-primary);
+            color: #ffffff;
+        }
+
+        .btn-lib-test {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-subtle);
+            padding: 0.45rem 0.75rem;
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-lib-test:hover {
+            border-color: var(--border-strong);
+            color: var(--text-main);
+        }
+
+        /* --- Audit Feed Live Table --- */
+        .audit-controls-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .audit-feed-table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            background: var(--bg-surface);
+        }
+
+        .audit-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8125rem;
+            text-align: left;
+        }
+
+        .audit-table th {
+            background: var(--bg-subtle);
+            color: var(--text-muted);
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            font-size: 0.725rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-subtle);
+            white-space: nowrap;
+        }
+
+        .audit-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-main);
+            vertical-align: middle;
+        }
+
+        .audit-table tbody tr:hover {
+            background: var(--bg-subtle);
+        }
+
+        .badge-source {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: var(--radius-pill);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .badge-source-auto {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.12) 0%, rgba(168, 85, 247, 0.15) 100%);
+            color: #7c3aed;
+            border: 1px solid rgba(124, 58, 237, 0.3);
+        }
+
+        .badge-source-manual {
+            background: rgba(59, 130, 246, 0.12);
+            color: #2563eb;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge-template-key {
+            font-family: var(--font-mono);
+            font-size: 0.725rem;
+            font-weight: 700;
+            color: var(--brand-primary);
+            background: var(--brand-subtle);
+            padding: 2px 7px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
     </style>
 </head>
 <body>
@@ -1492,11 +1947,73 @@
         </div>
     </header>
 
+
+    <!-- Top Hub Subnav & Global View Switcher -->
+    <div class="hub-subnav-bar">
+        <div class="hub-subnav-inner">
+            <div class="hub-main-tabs">
+                <button class="hub-view-tab active" id="viewTabComposer" onclick="switchHubView('composer')">
+                    <span>✍️</span> Composer &amp; Dispatcher
+                </button>
+                <button class="hub-view-tab" id="viewTabTemplates" onclick="switchHubView('templates')">
+                    <span>📚</span> Automated Templates Library <span class="tab-badge" id="libraryTemplatesCountBadge">18</span>
+                </button>
+                <button class="hub-view-tab" id="viewTabAudit" onclick="switchHubView('audit')">
+                    <span>📊</span> Live Platform Audit Feed <span class="tab-badge pulse" id="auditFeedTotalBadge">0</span>
+                </button>
+            </div>
+            <div class="hub-actions-bar">
+                <button class="btn-nudge-scan" id="btnNudgeScan" onclick="triggerNudgesNow()" title="Scan for providers pending onboarding and dispatch automated nudges">
+                    <span>⚡</span> Scan &amp; Run Nudges Now
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metrics & Delivery Relay Status Ribbon -->
+    <div class="hub-stats-ribbon">
+        <div class="stat-pill">
+            <span class="stat-icon">📬</span>
+            <div class="stat-data">
+                <span class="stat-num" id="statTotalSent">--</span>
+                <span class="stat-label">Total Dispatched</span>
+            </div>
+        </div>
+        <div class="stat-pill">
+            <span class="stat-icon">⚙️</span>
+            <div class="stat-data">
+                <span class="stat-num" id="statAutomatedSent">--</span>
+                <span class="stat-label">Automated System</span>
+            </div>
+        </div>
+        <div class="stat-pill">
+            <span class="stat-icon">⏰</span>
+            <div class="stat-data">
+                <span class="stat-num" id="statNudgesSent">--</span>
+                <span class="stat-label">Signup Nudges</span>
+            </div>
+        </div>
+        <div class="stat-pill">
+            <span class="stat-icon">👤</span>
+            <div class="stat-data">
+                <span class="stat-num" id="statManualSent">--</span>
+                <span class="stat-label">Manual Admin</span>
+            </div>
+        </div>
+        <div class="stat-pill stat-relay">
+            <span class="relay-dot"></span>
+            <div class="stat-data">
+                <span class="stat-num" style="font-size:0.75rem; font-weight:800; color:var(--success);">LIVE RELAY</span>
+                <span class="stat-label">Google Workspace SMTP</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Workspace -->
-    <main class="hub-workspace">
+    <main class="hub-workspace" id="mainWorkspaceContainer">
 
         <!-- Left Column: Recipient Directory -->
-        <aside class="glass-card directory-card">
+        <aside class="glass-card directory-card hub-view-composer">
             
             <!-- Directory Header -->
             <div class="directory-header">
@@ -1556,7 +2073,7 @@
         </aside>
 
         <!-- Right Column: Workspace & Live Customer Preview -->
-        <section class="workspace-right">
+        <section class="workspace-right hub-view-composer">
 
             <!-- Selected Recipient Banner -->
             <div class="target-card" id="targetRecipientBanner">
@@ -1750,7 +2267,112 @@
 
         </section>
 
+        <!-- View 2: Automated Templates Library -->
+        <section class="glass-card hub-view-fullwidth" id="hubViewTemplates" style="display: none;">
+            <div class="view-header-row">
+                <div>
+                    <h2 class="view-title">📚 Pro X Automated Email Templates &amp; Triggers</h2>
+                    <p class="view-desc">Inspect every transactional email, onboarding nudge, and booking lifecycle notification used across the platform.</p>
+                </div>
+                <div class="view-header-stats">
+                    <span class="dir-count-pill" id="libFilterCount">Showing All Templates</span>
+                </div>
+            </div>
+
+            <!-- Category Filter Pills -->
+            <div class="filter-pills-row" style="margin-bottom: 1.25rem;">
+                <button class="pill-filter active" id="libFilterAll" onclick="filterTemplatesLibrary('all')">All Templates</button>
+                <button class="pill-filter" id="libFilterNudges" onclick="filterTemplatesLibrary('nudges')">⏰ Signup Nudges (3)</button>
+                <button class="pill-filter" id="libFilterOnboarding" onclick="filterTemplatesLibrary('onboarding')">🚀 Provider Lifecycle (5)</button>
+                <button class="pill-filter" id="libFilterBookings" onclick="filterTemplatesLibrary('bookings')">📋 Booking Automations (10)</button>
+                <button class="pill-filter" id="libFilterMarketing" onclick="filterTemplatesLibrary('marketing')">🎁 Client &amp; Promo (2)</button>
+            </div>
+
+            <!-- Templates Library Grid -->
+            <div class="templates-lib-grid" id="templatesLibraryGrid">
+                <!-- Populated dynamically by renderTemplatesLibrary() -->
+            </div>
+        </section>
+
+        <!-- View 3: Platform Live Audit Feed -->
+        <section class="glass-card hub-view-fullwidth" id="hubViewAudit" style="display: none;">
+            <div class="view-header-row">
+                <div>
+                    <h2 class="view-title">📊 Platform-Wide Email Audit Feed</h2>
+                    <p class="view-desc">Real-time stream of all automated system triggers, onboarding nudges, and manual admin dispatches.</p>
+                </div>
+                <div class="view-actions-wrap">
+                    <button class="btn-outline-subtle" onclick="refreshGlobalAuditFeed()" title="Refresh Feed">
+                        🔄 Refresh Feed
+                    </button>
+                </div>
+            </div>
+
+            <!-- Audit Controls: Search & Category Filters -->
+            <div class="audit-controls-bar">
+                <div class="search-box-wrap" style="flex: 1; max-width: 480px;">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="auditSearchInput" class="dir-search-input" placeholder="Search by recipient email, subject, template key, sender..." oninput="handleAuditSearch(this.value)">
+                </div>
+
+                <div class="filter-pills-row" style="margin-bottom: 0;">
+                    <button class="pill-filter active" id="auditFilterAll" onclick="filterAuditFeed('all')">All Dispatches</button>
+                    <button class="pill-filter" id="auditFilterAuto" onclick="filterAuditFeed('automated')">⚙️ Automated (System)</button>
+                    <button class="pill-filter" id="auditFilterNudges" onclick="filterAuditFeed('nudges')">⏰ Signup Nudges</button>
+                    <button class="pill-filter" id="auditFilterBookings" onclick="filterAuditFeed('bookings')">📋 Bookings</button>
+                    <button class="pill-filter" id="auditFilterOnboarding" onclick="filterAuditFeed('onboarding')">🚀 Onboarding</button>
+                    <button class="pill-filter" id="auditFilterManual" onclick="filterAuditFeed('manual')">👤 Manual (Admin)</button>
+                </div>
+            </div>
+
+            <!-- Live Audit Table Container -->
+            <div class="audit-feed-table-wrap">
+                <table class="audit-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 140px;">Trigger Source</th>
+                            <th style="width: 190px;">Template Preset</th>
+                            <th>Recipient</th>
+                            <th>Subject Line</th>
+                            <th style="width: 180px;">Dispatched By</th>
+                            <th style="width: 160px;">Date &amp; Time</th>
+                            <th style="width: 90px; text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditTableBody">
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 48px 16px; color: var(--text-faint);">
+                                Loading platform email history...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
     </main>
+
+
+    <!-- Audit Log Entry Details Modal -->
+    <div class="modal-overlay" id="auditDetailsModal">
+        <div class="confirm-dialog" style="max-width: 600px;">
+            <div class="dialog-header">
+                <h3>Email Dispatch Details</h3>
+                <button class="dialog-close-btn" onclick="closeAuditDetailsModal()">&times;</button>
+            </div>
+            <div class="dialog-body">
+                <div class="confirm-summary-box" id="auditModalContent">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+            <div class="dialog-footer" style="padding: 1rem 1.4rem; display: flex; justify-content: flex-end;">
+                <button class="btn-outline-subtle" onclick="closeAuditDetailsModal()">Close</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Confirmation Modal Dialog -->
     <div class="modal-overlay" id="confirmModal">
@@ -1968,6 +2590,96 @@
                     `
                 },
                 {
+                    key: 'nudge_1',
+                    name: 'Nudge 1 (24h Reminder)',
+                    desc: 'Friendly push to complete saved draft profile',
+                    icon: '⏳',
+                    badge: 'DRAFT SAVED',
+                    promo: 'PROX100',
+                    subject: 'Quick reminder: Complete your Pro X profile and start taking bookings ⏳',
+                    ctaText: 'Resume Profile Setup →',
+                    ctaLink: `${BASE_URL}/provider/onboarding.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${esc(name)}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">We noticed you started setting up your provider profile on <b>Pro X</b> but haven't completed it yet. Verified providers in your category are receiving client bookings every day.</p>
+                        <div style="background-color: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 20px; margin: 20px 0;">
+                            <p style="margin: 0 0 10px 0; font-weight: 700; color: #0f172a; font-size: 14px;">Your progress has been saved:</p>
+                            <ul style="margin: 0; padding-left: 20px; color: #334155; font-size: 14px; line-height: 1.8;">
+                                <li>Step 1: Identity &amp; Contact</li>
+                                <li>Step 2: Professional Profile &amp; KYC</li>
+                                <li>Step 3: Work Evidence &amp; Portfolio</li>
+                                <li>Step 4: Payout Details</li>
+                            </ul>
+                        </div>
+                        <p style="margin: 0 0 16px 0; color: #475569; font-size: 14px; line-height: 1.6;">It only takes 2 to 3 minutes to finish your application and start accepting orders.</p>
+                    `
+                },
+                {
+                    key: 'nudge_2',
+                    name: 'Nudge 2 (48h Promo)',
+                    desc: 'Urgency push with 3 months free PROX100 coupon',
+                    icon: '🎁',
+                    badge: 'EXCLUSIVE PROMO RESERVED',
+                    promo: 'PROX100',
+                    subject: "Don't miss out: Your 3 months free Pro X subscription is waiting 🎁",
+                    ctaText: 'Claim 3 Months Free & Finish Setup →',
+                    ctaLink: `${BASE_URL}/provider/onboarding.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${esc(name)}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">You're just a few steps away from publishing your services on <b>Pro X</b>. As a new partner, your exclusive early-bird bonus is reserved for you:</p>
+                        <p style="margin: 0 0 16px 0; color: #475569; font-size: 14px; line-height: 1.6;">Finish your profile today to lock in your 90 days of zero-commission earnings and reach top clients looking for your skills.</p>
+                    `
+                },
+                {
+                    key: 'nudge_3',
+                    name: 'Nudge 3 (5d Help)',
+                    desc: 'Assistance offer & customer support reachout',
+                    icon: '🤝',
+                    badge: 'SUPPORT AVAILABLE',
+                    promo: 'PROX100',
+                    subject: 'Need any help setting up your Pro X profile? 🤝',
+                    ctaText: 'Complete Profile Setup →',
+                    ctaLink: `${BASE_URL}/provider/onboarding.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${esc(name)}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">We noticed you haven't completed your Pro X provider profile yet. Did you run into any questions regarding document uploads, KYC verification, or portfolio requirements?</p>
+                        <div style="background-color: #f8fafc; border-left: 4px solid #7c3aed; padding: 16px 20px; margin: 20px 0; border-radius: 4px;">
+                            <p style="margin: 0 0 6px 0; font-weight: 700; color: #0f172a;">Our Team is Here to Assist:</p>
+                            <p style="margin: 0; color: #475569; font-size: 14px; line-height: 1.6;">Feel free to reply directly to this email or reach us anytime at <a href="mailto:info@prox.co.in" style="color: #7c3aed; font-weight: 600; text-decoration: underline;">info@prox.co.in</a>. We are happy to help you get set up.</p>
+                        </div>
+                    `
+                },
+                {
+                    key: 'booking_created',
+                    name: 'New Booking Alert',
+                    desc: 'Provider alert for new incoming booking',
+                    icon: '🔔',
+                    badge: 'NEW BOOKING REQUEST',
+                    promo: '',
+                    subject: 'New Booking Request Received - Pro X',
+                    ctaText: 'Review Booking Request',
+                    ctaLink: `${BASE_URL}/provider/booking.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${esc(name)}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">You have received a new booking request for your service on Pro X. Please review the customer requirements and accept the booking to begin.</p>
+                    `
+                },
+                {
+                    key: 'booking_accepted_files',
+                    name: 'Files Accepted',
+                    desc: 'Customer approved delivered files & closed job',
+                    icon: '✅',
+                    badge: 'JOB COMPLETED',
+                    promo: '',
+                    subject: 'Customer Received Files - Pro X',
+                    ctaText: 'View Booking Details',
+                    ctaLink: `${BASE_URL}/provider/booking.html`,
+                    getMessage: (name) => `
+                        <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>${esc(name)}</b>,</p>
+                        <p style="margin: 0 0 16px 0;">Great work! The customer has accepted and confirmed all files for your booking. The job is marked complete and your payout has been unlocked.</p>
+                    `
+                },
+                {
                     key: 'custom',
                     name: 'Custom Email',
                     desc: 'Freeform announcement / message',
@@ -2035,10 +2747,708 @@
             ]
         };
 
+
+        // --- 3.1 Comprehensive Automated Templates Catalog ---
+        const ALL_AUTOMATED_TEMPLATES_CATALOG = [
+            // Provider Onboarding & Status Lifecycle
+            {
+                key: 'welcome',
+                name: 'Registration Welcome & Checklist',
+                category: 'onboarding',
+                icon: '🚀',
+                targetAudience: 'Provider',
+                timing: 'Immediate Event',
+                triggerRule: 'Firestore Trigger: providers/{id} onCreate',
+                triggerDesc: 'Dispatched the moment a new provider completes initial signup on signup.html.',
+                badge: 'GET STARTED',
+                promo: 'PROX100',
+                defaultSubject: "Welcome to Pro X! Let's get your profile set up 🚀",
+                ctaText: 'Complete Your Profile Now',
+                ctaLink: `${BASE_URL}/provider/onboarding.html`
+            },
+            {
+                key: 'waiting',
+                name: 'Application Under Review',
+                category: 'onboarding',
+                icon: '📋',
+                targetAudience: 'Provider',
+                timing: 'Immediate Event',
+                triggerRule: 'Firestore Trigger: status transitions to "waiting"',
+                triggerDesc: 'Dispatched when provider finishes the 4-step onboarding form and submits KYC/portfolio.',
+                badge: 'APPLICATION SUBMITTED',
+                promo: '',
+                defaultSubject: 'Application Submitted: Your Profile is Under Review 📋',
+                ctaText: 'Track Application Status',
+                ctaLink: `${BASE_URL}/provider/waiting.html`
+            },
+            {
+                key: 'approved',
+                name: 'Application Approved + Free 3 Months',
+                category: 'onboarding',
+                icon: '🎉',
+                targetAudience: 'Provider',
+                timing: 'Immediate Event',
+                triggerRule: 'Firestore Trigger: status transitions to "approved"',
+                triggerDesc: 'Dispatched when admin approves the provider profile. Unlocks membership tier selection and promo voucher.',
+                badge: 'APPLICATION APPROVED',
+                promo: 'PROX100',
+                defaultSubject: "You're Approved! Welcome to Pro X 🎉",
+                ctaText: 'Claim 3 Months Free & Activate Plan →',
+                ctaLink: `${BASE_URL}/provider/subscription.html`
+            },
+            {
+                key: 'needs_changes',
+                name: 'Action Required: Revisions Requested',
+                category: 'onboarding',
+                icon: '⚠️',
+                targetAudience: 'Provider',
+                timing: 'Immediate Event',
+                triggerRule: 'Firestore Trigger: status transitions to "needs_changes" / "retry"',
+                triggerDesc: 'Dispatched when admin requests clearer KYC document scans or portfolio updates.',
+                badge: 'ACTION REQUIRED',
+                promo: '',
+                defaultSubject: 'Action Required: Updates Needed on Your Application ⚠️',
+                ctaText: 'Update Application',
+                ctaLink: `${BASE_URL}/provider/onboarding.html`
+            },
+            {
+                key: 'rejected',
+                name: 'Application Declined Notice',
+                category: 'onboarding',
+                icon: '❌',
+                targetAudience: 'Provider',
+                timing: 'Immediate Event',
+                triggerRule: 'Firestore Trigger: status transitions to "rejected"',
+                triggerDesc: 'Dispatched when provider does not meet platform verification standards, with support help link.',
+                badge: 'APPLICATION UPDATE',
+                promo: '',
+                defaultSubject: 'Update on Your Pro X Provider Application',
+                ctaText: 'Contact Support',
+                ctaLink: `${BASE_URL}/provider/help.html`
+            },
+
+            // Scheduled Signup Nudges (Drip Sequences)
+            {
+                key: 'nudge_1',
+                name: 'Nudge 1: 24h Profile Setup Reminder',
+                category: 'nudges',
+                icon: '⏳',
+                targetAudience: 'Provider',
+                timing: 'Cron Scheduler (Every 6h)',
+                triggerRule: 'Cloud Scheduler: Age >= 24h & status == "onboarding_required"',
+                triggerDesc: 'Dispatched to remind providers that their draft profile is saved and takes under 3 minutes to finish.',
+                badge: 'DRAFT SAVED',
+                promo: 'PROX100',
+                defaultSubject: 'Quick reminder: Complete your Pro X profile and start taking bookings ⏳',
+                ctaText: 'Resume Profile Setup →',
+                ctaLink: `${BASE_URL}/provider/onboarding.html`
+            },
+            {
+                key: 'nudge_2',
+                name: 'Nudge 2: 48h Early-Bird Promo Urgency',
+                category: 'nudges',
+                icon: '🎁',
+                targetAudience: 'Provider',
+                timing: 'Cron Scheduler (Every 6h)',
+                triggerRule: 'Cloud Scheduler: Age >= 48h & Nudge 1 sent & Incomplete',
+                triggerDesc: 'Urgency notification highlighting that the 3-month free subscription bonus (PROX100) is waiting.',
+                badge: 'EXCLUSIVE PROMO RESERVED',
+                promo: 'PROX100',
+                defaultSubject: "Don't miss out: Your 3 months free Pro X subscription is waiting 🎁",
+                ctaText: 'Claim 3 Months Free & Finish Setup →',
+                ctaLink: `${BASE_URL}/provider/onboarding.html`
+            },
+            {
+                key: 'nudge_3',
+                name: 'Nudge 3: 5 Days Support & Assistance Check-in',
+                category: 'nudges',
+                icon: '🤝',
+                targetAudience: 'Provider',
+                timing: 'Cron Scheduler (Every 6h)',
+                triggerRule: 'Cloud Scheduler: Age >= 120h (5d) & Nudge 2 sent & Incomplete',
+                triggerDesc: 'Personal support reachout offering assistance with document verification or portfolio links.',
+                badge: 'SUPPORT AVAILABLE',
+                promo: 'PROX100',
+                defaultSubject: 'Need any help setting up your Pro X profile? 🤝',
+                ctaText: 'Complete Profile Setup →',
+                ctaLink: `${BASE_URL}/provider/onboarding.html`
+            },
+
+            // Booking Lifecycle Automations
+            {
+                key: 'booking_created_provider',
+                name: 'New Booking Request (Provider)',
+                category: 'bookings',
+                icon: '🔔',
+                targetAudience: 'Provider',
+                timing: 'Immediate Event',
+                triggerRule: 'Firestore Trigger: bookings/{id} onCreate',
+                triggerDesc: 'Notifies provider immediately when a client places an order or package booking.',
+                badge: 'NEW BOOKING',
+                promo: '',
+                defaultSubject: 'New Booking Request - Pro X',
+                ctaText: 'Review Booking Request',
+                ctaLink: `${BASE_URL}/provider/booking.html`
+            },
+            {
+                key: 'booking_created_customer',
+                name: 'Booking Confirmation (Customer)',
+                category: 'bookings',
+                icon: '📋',
+                targetAudience: 'Customer',
+                timing: 'Immediate Event',
+                triggerRule: 'Firestore Trigger: bookings/{id} onCreate',
+                triggerDesc: 'Instant confirmation sent to customer confirming booking was received.',
+                badge: 'BOOKING PLACED',
+                promo: '',
+                defaultSubject: 'Booking Confirmation - Pro X',
+                ctaText: 'View Booking Details',
+                ctaLink: `${BASE_URL}/user/booking.html`
+            },
+            {
+                key: 'booking_accepted',
+                name: 'Booking Accepted / Confirmed',
+                category: 'bookings',
+                icon: '🎉',
+                targetAudience: 'Customer',
+                timing: 'Immediate Event',
+                triggerRule: 'Firestore Trigger: status -> "Accepted"',
+                triggerDesc: 'Notifies customer that provider reviewed and officially confirmed their booking.',
+                badge: 'BOOKING CONFIRMED',
+                promo: '',
+                defaultSubject: 'Booking Confirmed! - Pro X',
+                ctaText: 'View Booking Details',
+                ctaLink: `${BASE_URL}/user/booking.html`
+            },
+            {
+                key: 'booking_ongoing',
+                name: 'Service Started',
+                category: 'bookings',
+                icon: '🚀',
+                targetAudience: 'Customer',
+                timing: 'Immediate Event',
+                triggerRule: 'Firestore Trigger: status -> "Ongoing"',
+                triggerDesc: 'Notifies customer that provider has actively started working on deliverables.',
+                badge: 'SERVICE IN PROGRESS',
+                promo: '',
+                defaultSubject: 'Service Started! - Pro X',
+                ctaText: 'View Booking',
+                ctaLink: `${BASE_URL}/user/booking.html`
+            },
+            {
+                key: 'booking_samples',
+                name: 'Deliverables / Samples Ready for Review',
+                category: 'bookings',
+                icon: '🔎',
+                targetAudience: 'Customer',
+                timing: 'Immediate Event',
+                triggerRule: 'Firestore Trigger: deliverables.all transitions from 0 to >0',
+                triggerDesc: 'Alerts customer when provider uploads preview samples for review and final payment.',
+                badge: 'SAMPLES READY',
+                promo: '',
+                defaultSubject: 'Samples Ready for Review - Pro X',
+                ctaText: 'Review Deliverables',
+                ctaLink: `${BASE_URL}/user/booking.html`
+            },
+            {
+                key: 'booking_completed',
+                name: 'Job Completed',
+                category: 'bookings',
+                icon: '🏁',
+                targetAudience: 'Customer',
+                timing: 'Immediate Event',
+                triggerRule: 'Firestore Trigger: status -> "Completed"',
+                triggerDesc: 'Notifies customer that all work is completed and awaits final acceptance.',
+                badge: 'JOB COMPLETED',
+                promo: '',
+                defaultSubject: 'Job Completed! - Pro X',
+                ctaText: 'Review Deliverables',
+                ctaLink: `${BASE_URL}/user/booking.html`
+            },
+            {
+                key: 'booking_accepted_files',
+                name: 'Customer Received Files',
+                category: 'bookings',
+                icon: '✅',
+                targetAudience: 'Provider',
+                timing: 'Immediate Event',
+                triggerRule: 'Firestore Trigger: status -> "Customer Received"',
+                triggerDesc: 'Informs provider that customer downloaded and accepted files; unlocks payout.',
+                badge: 'FILES ACCEPTED',
+                promo: '',
+                defaultSubject: 'Customer Received Files - Pro X',
+                ctaText: 'View Booking Details',
+                ctaLink: `${BASE_URL}/provider/booking.html`
+            },
+            {
+                key: 'booking_revision',
+                name: 'Revision Requested',
+                category: 'bookings',
+                icon: '🔄',
+                targetAudience: 'Provider',
+                timing: 'Immediate Event',
+                triggerRule: 'Firestore Trigger: status -> "Revision Requested"',
+                triggerDesc: 'Alerts provider that client requested adjustments on delivered preview samples.',
+                badge: 'REVISION REQUESTED',
+                promo: '',
+                defaultSubject: 'Revision Requested - Pro X',
+                ctaText: 'Review Request',
+                ctaLink: `${BASE_URL}/provider/booking.html`
+            },
+            {
+                key: 'booking_cancellation',
+                name: 'Cancellation Requested',
+                category: 'bookings',
+                icon: '⚠️',
+                targetAudience: 'Both',
+                timing: 'Immediate Event',
+                triggerRule: 'Firestore Trigger: status -> "Cancellation Requested"',
+                triggerDesc: 'Dispatched to both customer and provider when cancellation is filed.',
+                badge: 'CANCELLATION IN REVIEW',
+                promo: '',
+                defaultSubject: 'Cancellation Requested - Pro X',
+                ctaText: 'View Booking',
+                ctaLink: `${BASE_URL}/user/booking.html`
+            },
+            {
+                key: 'booking_refund',
+                name: 'Refund Approved & Processed',
+                category: 'bookings',
+                icon: '💳',
+                targetAudience: 'Both',
+                timing: 'Immediate Event',
+                triggerRule: 'Firestore Trigger: status -> "Refund Approved"',
+                triggerDesc: 'Confirms refund has been processed back to customer payment method.',
+                badge: 'REFUND PROCESSED',
+                promo: '',
+                defaultSubject: 'Refund Processed - Pro X',
+                ctaText: 'View Booking',
+                ctaLink: `${BASE_URL}/user/booking.html`
+            },
+
+            // Customer Marketing & Discount Engagement
+            {
+                key: 'user_welcome',
+                name: 'Welcome Client to Pro X',
+                category: 'marketing',
+                icon: '👋',
+                targetAudience: 'Customer',
+                timing: 'Manual / On Call',
+                triggerRule: 'Dispatched via Admin Hub / welcome sequence',
+                triggerDesc: 'Welcomes client to Pro X, introduces top categories and verified talent search.',
+                badge: 'WELCOME TO PRO X',
+                promo: 'CLIENTFIRST',
+                defaultSubject: 'Welcome to Pro X! Discover Top Creative Talent 🚀',
+                ctaText: 'Explore Verified Services',
+                ctaLink: `${BASE_URL}/user/search.html`
+            },
+            {
+                key: 'user_promo',
+                name: 'Client ₹500 Discount Reward',
+                category: 'marketing',
+                icon: '🎁',
+                targetAudience: 'Customer',
+                timing: 'Manual / On Call',
+                triggerRule: 'Dispatched via Admin Hub / marketing campaign',
+                triggerDesc: 'Delivers an exclusive ₹500 discount voucher to drive booking conversions.',
+                badge: 'SPECIAL REWARD',
+                promo: 'PROXDISCOUNT',
+                defaultSubject: 'Enjoy ₹500 OFF Your Next Booking on Pro X! 🎁',
+                ctaText: 'Book a Verified Service',
+                ctaLink: `${BASE_URL}/user/search.html`
+            }
+        ];
+
+        // --- Hub View Switcher ---
+        let currentHubView = 'composer'; // 'composer' | 'templates' | 'audit'
+        let globalAuditDocs = [];
+        let globalAuditFilter = 'all';
+        let globalAuditSearch = '';
+        let currentTemplatesLibCategory = 'all';
+
+        function switchHubView(view) {
+            currentHubView = view;
+            
+            // Update tabs active state
+            document.getElementById('viewTabComposer')?.classList.toggle('active', view === 'composer');
+            document.getElementById('viewTabTemplates')?.classList.toggle('active', view === 'templates');
+            document.getElementById('viewTabAudit')?.classList.toggle('active', view === 'audit');
+
+            const composerEls = document.querySelectorAll('.hub-view-composer');
+            const templatesSec = document.getElementById('hubViewTemplates');
+            const auditSec = document.getElementById('hubViewAudit');
+            const ws = document.getElementById('mainWorkspaceContainer');
+
+            if (view === 'composer') {
+                composerEls.forEach(el => el.style.display = '');
+                if (templatesSec) templatesSec.style.display = 'none';
+                if (auditSec) auditSec.style.display = 'none';
+                if (ws) ws.style.gridTemplateColumns = window.innerWidth > 1180 ? '440px 1fr' : '1fr';
+            } else if (view === 'templates') {
+                composerEls.forEach(el => el.style.display = 'none');
+                if (templatesSec) templatesSec.style.display = 'block';
+                if (auditSec) auditSec.style.display = 'none';
+                if (ws) ws.style.gridTemplateColumns = '1fr';
+                renderTemplatesLibrary();
+            } else if (view === 'audit') {
+                composerEls.forEach(el => el.style.display = 'none');
+                if (templatesSec) templatesSec.style.display = 'none';
+                if (auditSec) auditSec.style.display = 'block';
+                if (ws) ws.style.gridTemplateColumns = '1fr';
+                renderGlobalAuditFeed();
+            }
+        }
+
+        // --- Templates Library Rendering ---
+        function renderTemplatesLibrary() {
+            const grid = document.getElementById('templatesLibraryGrid');
+            if (!grid) return;
+
+            let list = ALL_AUTOMATED_TEMPLATES_CATALOG;
+            if (currentTemplatesLibCategory !== 'all') {
+                list = list.filter(t => t.category === currentTemplatesLibCategory);
+            }
+
+            document.getElementById('libFilterCount').textContent = `Showing ${list.length} Template(s)`;
+            document.getElementById('libraryTemplatesCountBadge').textContent = ALL_AUTOMATED_TEMPLATES_CATALOG.length;
+
+            grid.innerHTML = list.map(t => {
+                const targetPillClass = t.targetAudience === 'Provider' ? 'pill-provider' : (t.targetAudience === 'Customer' ? 'pill-customer' : 'pill-both');
+                return `
+                    <div class="lib-card">
+                        <div>
+                            <div class="lib-card-top">
+                                <div class="lib-icon-title">
+                                    <div class="lib-icon">${t.icon}</div>
+                                    <div>
+                                        <div class="lib-name">${esc(t.name)}</div>
+                                        <span class="badge-template-key">${t.key}</span>
+                                    </div>
+                                </div>
+                                <span class="lib-target-pill ${targetPillClass}">${t.targetAudience}</span>
+                            </div>
+
+                            <div class="lib-trigger-banner">
+                                <b>Trigger:</b> ${esc(t.triggerRule)}<br>
+                                <span style="font-size:0.685rem; color:var(--text-faint);">${esc(t.triggerDesc)}</span>
+                            </div>
+
+                            <div class="lib-subject-row">
+                                Subject: <b>${esc(t.defaultSubject)}</b>
+                            </div>
+                        </div>
+
+                        <div class="lib-actions-row">
+                            <button class="btn-lib-preview" onclick="previewCatalogTemplateInComposer('${t.key}', '${t.targetAudience.toLowerCase()}')">
+                                <span>👁️</span> Preview in Simulator
+                            </button>
+                            <button class="btn-lib-test" onclick="sendTestFromCatalog('${t.key}')" title="Send a test preview of this template to your admin email">
+                                <span>🧪</span> Test
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterTemplatesLibrary(cat) {
+            currentTemplatesLibCategory = cat;
+            ['All', 'Nudges', 'Onboarding', 'Bookings', 'Marketing'].forEach(c => {
+                const btn = document.getElementById('libFilter' + c);
+                if (btn) btn.classList.toggle('active', c.toLowerCase() === cat.toLowerCase());
+            });
+            renderTemplatesLibrary();
+        }
+
+        function previewCatalogTemplateInComposer(key, audience) {
+            const mode = audience.includes('cust') ? 'users' : 'providers';
+            switchDirectoryMode(mode);
+            pickTemplate(key);
+            switchHubView('composer');
+            showToast(`Loaded "${key}" template in composer!`, 'info');
+        }
+
+        async function sendTestFromCatalog(key) {
+            if (!currentAdminUser || !currentAdminUser.email) {
+                showToast('Unable to determine authenticated admin email.', 'error');
+                return;
+            }
+            const t = ALL_AUTOMATED_TEMPLATES_CATALOG.find(item => item.key === key);
+            if (!t) return;
+
+            showToast(`Dispatching test preview of "${t.name}" to ${currentAdminUser.email}...`, 'info');
+
+            const fullHtml = buildFullEmailHtml({
+                title: t.defaultSubject,
+                message: `<p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Hi <b>Admin Tester</b>,</p><p style="margin: 0 0 16px 0;">This is an automated test dispatch of the <b>${esc(t.name)}</b> template from the Pro X Email Hub.</p>`,
+                badgeText: t.badge,
+                promoCode: t.promo,
+                ctaLink: t.ctaLink,
+                ctaText: t.ctaText
+            });
+
+            try {
+                const sendFn = functions.httpsCallable('sendCustomAdminEmail');
+                await sendFn({
+                    recipientId: currentAdminUser.uid,
+                    recipientType: 'admin_test',
+                    targetEmail: currentAdminUser.email,
+                    targetName: 'Admin Tester',
+                    subject: '[TEST PREVIEW] ' + t.defaultSubject,
+                    htmlBody: fullHtml,
+                    templateKey: t.key,
+                    badgeText: t.badge || null,
+                    promoCode: t.promo || null,
+                    adminNotes: 'Triggered from Automated Templates Library'
+                });
+                showToast(`✅ Test email delivered to ${currentAdminUser.email}!`, 'success');
+            } catch (err) {
+                console.error('Test dispatch error:', err);
+                showToast(`Test failed: ${err.message}`, 'error');
+            }
+        }
+
+        // --- Platform-Wide Live Audit Feed ---
+        function initGlobalAuditFeed() {
+            try {
+                db.collection('email_history')
+                    .orderBy('sentAt', 'desc')
+                    .limit(100)
+                    .onSnapshot(snap => {
+                        globalAuditDocs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        updateLiveMetricsRibbon();
+                        if (currentHubView === 'audit') {
+                            renderGlobalAuditFeed();
+                        }
+                    }, err => {
+                        console.warn('Real-time audit feed listener error:', err);
+                    });
+            } catch (e) {
+                console.warn('Could not init audit feed listener:', e);
+            }
+        }
+
+        function refreshGlobalAuditFeed() {
+            db.collection('email_history')
+                .orderBy('sentAt', 'desc')
+                .limit(100)
+                .get()
+                .then(snap => {
+                    globalAuditDocs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    updateLiveMetricsRibbon();
+                    renderGlobalAuditFeed();
+                    showToast('Live audit feed refreshed!', 'info');
+                })
+                .catch(err => {
+                    console.error('Refresh audit error:', err);
+                    showToast('Failed to refresh feed: ' + err.message, 'error');
+                });
+        }
+
+        function updateLiveMetricsRibbon() {
+            const total = globalAuditDocs.length;
+            const automated = globalAuditDocs.filter(d => 
+                d.sentByUid === 'system' || 
+                d.sentByEmail === 'system@prox.co.in' ||
+                (d.templateKey && d.templateKey.startsWith('nudge_')) ||
+                (d.templateKey && d.templateKey.startsWith('booking_'))
+            ).length;
+            const nudges = globalAuditDocs.filter(d => d.templateKey && d.templateKey.startsWith('nudge_')).length;
+            const manual = total - automated;
+
+            document.getElementById('statTotalSent').textContent = total;
+            document.getElementById('statAutomatedSent').textContent = automated;
+            document.getElementById('statNudgesSent').textContent = nudges;
+            document.getElementById('statManualSent').textContent = manual;
+            document.getElementById('auditFeedTotalBadge').textContent = total;
+        }
+
+        function filterAuditFeed(filter) {
+            globalAuditFilter = filter;
+            ['All', 'Auto', 'Nudges', 'Bookings', 'Onboarding', 'Manual'].forEach(f => {
+                const btn = document.getElementById('auditFilter' + f);
+                if (btn) btn.classList.toggle('active', f.toLowerCase() === filter.toLowerCase() || (filter === 'automated' && f === 'Auto'));
+            });
+            renderGlobalAuditFeed();
+        }
+
+        function handleAuditSearch(val) {
+            globalAuditSearch = (val || '').toLowerCase().trim();
+            renderGlobalAuditFeed();
+        }
+
+        function renderGlobalAuditFeed() {
+            const tbody = document.getElementById('auditTableBody');
+            if (!tbody) return;
+
+            let docs = [...globalAuditDocs];
+
+            // Apply category filter
+            if (globalAuditFilter === 'automated') {
+                docs = docs.filter(d => d.sentByUid === 'system' || d.sentByEmail === 'system@prox.co.in' || (d.templateKey && (d.templateKey.startsWith('nudge_') || d.templateKey.startsWith('booking_'))));
+            } else if (globalAuditFilter === 'manual') {
+                docs = docs.filter(d => d.sentByUid !== 'system' && d.sentByEmail !== 'system@prox.co.in');
+            } else if (globalAuditFilter === 'nudges') {
+                docs = docs.filter(d => d.templateKey && d.templateKey.startsWith('nudge_'));
+            } else if (globalAuditFilter === 'bookings') {
+                docs = docs.filter(d => d.templateKey && d.templateKey.startsWith('booking_'));
+            } else if (globalAuditFilter === 'onboarding') {
+                docs = docs.filter(d => ['welcome', 'waiting', 'approved', 'needs_changes', 'rejected'].includes(d.templateKey));
+            }
+
+            // Apply search query
+            if (globalAuditSearch) {
+                docs = docs.filter(d => 
+                    (d.recipientEmail || '').toLowerCase().includes(globalAuditSearch) ||
+                    (d.recipientName || '').toLowerCase().includes(globalAuditSearch) ||
+                    (d.subject || '').toLowerCase().includes(globalAuditSearch) ||
+                    (d.templateKey || '').toLowerCase().includes(globalAuditSearch) ||
+                    (d.sentByEmail || '').toLowerCase().includes(globalAuditSearch)
+                );
+            }
+
+            if (docs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 48px 16px; color: var(--text-faint);">
+                            No email dispatches matched your filter criteria.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = docs.map(d => {
+                const isAuto = d.sentByUid === 'system' || d.sentByEmail === 'system@prox.co.in' || (d.templateKey && (d.templateKey.startsWith('nudge_') || d.templateKey.startsWith('booking_')));
+                const sourceBadge = isAuto 
+                    ? '<span class="badge-source badge-source-auto">⚙️ AUTOMATED</span>'
+                    : '<span class="badge-source badge-source-manual">👤 MANUAL</span>';
+
+                const dateObj = d.sentAt?.toDate ? d.sentAt.toDate() : (d.sentAt ? new Date(d.sentAt) : null);
+                const relativeTime = dateObj ? formatTimeAgo(dateObj) : 'Recently';
+                const fullDateTime = dateObj ? dateObj.toLocaleString('en-IN') : 'Just now';
+
+                return `
+                    <tr>
+                        <td>${sourceBadge}</td>
+                        <td><span class="badge-template-key">${esc(d.templateKey || 'custom')}</span></td>
+                        <td>
+                            <b>${esc(d.recipientName || 'Partner/Client')}</b><br>
+                            <span style="font-size:0.75rem; color:var(--text-faint); font-family:var(--font-mono);">${esc(d.recipientEmail)}</span>
+                        </td>
+                        <td>${esc(d.subject || 'No Subject')}</td>
+                        <td>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">${esc(d.sentByEmail || 'System')}</span>
+                        </td>
+                        <td title="${esc(fullDateTime)}">
+                            <span style="font-size:0.75rem; font-weight:600;">${esc(relativeTime)}</span><br>
+                            <span style="font-size:0.675rem; color:var(--text-faint);">${esc(fullDateTime)}</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <button class="btn-outline-subtle" style="padding: 2px 8px; font-size: 0.725rem;" onclick="openAuditDetailsModal('${d.id}')">
+                                Inspect
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Relative time helper
+        function formatTimeAgo(date) {
+            const sec = Math.floor((Date.now() - date.getTime()) / 1000);
+            if (sec < 60) return 'Just now';
+            const min = Math.floor(sec / 60);
+            if (min < 60) return `${min}m ago`;
+            const hrs = Math.floor(min / 60);
+            if (hrs < 24) return `${hrs}h ago`;
+            const days = Math.floor(hrs / 24);
+            return `${days}d ago`;
+        }
+
+        // Trigger Nudges Button Handler
+        async function triggerNudgesNow() {
+            const btn = document.getElementById('btnNudgeScan');
+            if (!btn) return;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-inline"></span> Scanning...`;
+
+            try {
+                const fn = functions.httpsCallable('triggerOnboardingNudgesManually');
+                const res = await fn();
+                const count = res.data?.nudgesSentCount ?? 0;
+                showToast(`⚡ Nudge scan complete! Dispatched ${count} automated reminder(s).`, 'success');
+                refreshGlobalAuditFeed();
+            } catch (err) {
+                console.error('Trigger nudges error:', err);
+                showToast('Could not trigger nudges: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span>⚡</span> Scan &amp; Run Nudges Now`;
+            }
+        }
+
+        // Audit Details Modal Handlers
+        function openAuditDetailsModal(id) {
+            const d = globalAuditDocs.find(item => item.id === id);
+            if (!d) return;
+
+            const isAuto = d.sentByUid === 'system' || d.sentByEmail === 'system@prox.co.in' || (d.templateKey && (d.templateKey.startsWith('nudge_') || d.templateKey.startsWith('booking_')));
+            const dateStr = d.sentAt?.toDate ? d.sentAt.toDate().toLocaleString('en-IN') : 'Recently';
+
+            const container = document.getElementById('auditModalContent');
+            container.innerHTML = `
+                <div class="summary-row">
+                    <span class="summary-label">Trigger Source:</span>
+                    <span class="summary-val">${isAuto ? '⚙️ Automated System Trigger' : '👤 Manual Admin Dispatch'}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Template Preset:</span>
+                    <span class="summary-val"><b style="color:var(--brand-primary); font-family:var(--font-mono);">${esc(d.templateKey || 'custom')}</b></span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Recipient:</span>
+                    <span class="summary-val">${esc(d.recipientName || 'Contact')} (${esc(d.recipientEmail)})</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Subject:</span>
+                    <span class="summary-val"><b>${esc(d.subject)}</b></span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Dispatched By:</span>
+                    <span class="summary-val">${esc(d.sentByEmail || 'system@prox.co.in')}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Timestamp:</span>
+                    <span class="summary-val">${esc(dateStr)}</span>
+                </div>
+                ${d.promoCode ? `
+                    <div class="summary-row">
+                        <span class="summary-label">Promo Attached:</span>
+                        <span class="summary-val" style="color:var(--success); font-weight:800;">${esc(d.promoCode)}</span>
+                    </div>
+                ` : ''}
+                ${d.adminNotes ? `
+                    <div class="summary-row">
+                        <span class="summary-label">Admin Notes:</span>
+                        <span class="summary-val"><i>"${esc(d.adminNotes)}"</i></span>
+                    </div>
+                ` : ''}
+            `;
+
+            document.getElementById('auditDetailsModal').classList.add('active');
+        }
+
+        function closeAuditDetailsModal() {
+            document.getElementById('auditDetailsModal').classList.remove('active');
+        }
+
         // 4. Initialization on DOM Load
         window.addEventListener('DOMContentLoaded', () => {
             setupTheme();
             renderTemplateCards();
+            renderTemplatesLibrary();
+            initGlobalAuditFeed();
             initAuth();
         });
 
@@ -2867,17 +4277,24 @@
                 countBadge.textContent = `${docs.length} logged`;
 
                 list.innerHTML = docs.map(d => {
+                    const isAuto = d.sentByUid === 'system' || d.sentByEmail === 'system@prox.co.in' || (d.templateKey && (d.templateKey.startsWith('nudge_') || d.templateKey.startsWith('booking_')));
+                    const sourceBadge = isAuto 
+                        ? '<span class="badge-source badge-source-auto" style="font-size:0.6rem; padding:1px 6px;">⚙️ AUTOMATED</span>'
+                        : '<span class="badge-source badge-source-manual" style="font-size:0.6rem; padding:1px 6px;">👤 MANUAL</span>';
                     const dateStr = d.sentAt?.toDate ? d.sentAt.toDate().toLocaleString('en-IN') : 'Recently';
                     return `
                         <div class="timeline-item">
                             <div class="tl-left">
-                                <h4>${esc(d.subject || 'No Subject')}</h4>
+                                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
+                                    ${sourceBadge}
+                                    <span class="badge-template-key" style="font-size:0.675rem;">${esc(d.templateKey || 'custom')}</span>
+                                    <h4 style="margin: 0; display: inline;">${esc(d.subject || 'No Subject')}</h4>
+                                </div>
                                 <div class="tl-meta-line">
-                                    <span>Template: <b style="color:var(--brand-primary);">${esc(d.templateKey || 'custom')}</b></span>
+                                    <span>To: <b>${esc(d.recipientEmail)}</b></span>
                                     <span>&bull;</span>
-                                    <span>To: ${esc(d.recipientEmail)}</span>
-                                    <span>&bull;</span>
-                                    <span>By: ${esc(d.sentByEmail || 'Admin')}</span>
+                                    <span>Sender: ${esc(d.sentByEmail || 'system@prox.co.in')}</span>
+                                    ${d.promoCode ? `<span>&bull;</span> <span style="color:var(--success); font-weight:700;">Promo: ${esc(d.promoCode)}</span>` : ''}
                                     ${d.adminNotes ? `<span>&bull;</span> <i style="color:var(--text-faint);">Note: "${esc(d.adminNotes)}"</i>` : ''}
                                 </div>
                             </div>
